@@ -3,6 +3,8 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy import text
 from core.db import engine
 from services.metrics import metrics_app
+from core.control import is_paused, pause_bot, resume_bot
+from services.telegram import send_telegram_alert
 
 app = FastAPI(title="Quant Fund OS")
 app.mount("/metrics", metrics_app)
@@ -264,7 +266,53 @@ def metrics_summary():
 
 @app.get("/status")
 def status():
-    return get_status_payload()
+    payload = get_status_payload()
+    paused = is_paused()
+    payload["paused"] = paused
+    payload["bot_state"] = "PAUSED" if paused else "RUNNING"
+    payload["controls"] = {
+        "pause": "/pause",
+        "resume": "/resume",
+        "kill_switch": "/kill-switch",
+    }
+    return payload
+
+
+@app.post("/pause")
+def pause():
+    pause_bot()
+    send_telegram_alert(
+        "<b>Quant Fund OS PAUSED</b>\n"
+        "New positions are blocked.\n"
+        "Existing monitoring remains active."
+    )
+    return {"status": "paused", "paused": True}
+
+
+@app.post("/resume")
+def resume():
+    resume_bot()
+    send_telegram_alert(
+        "<b>Quant Fund OS RESUMED</b>\n"
+        "Paper trading engine is active again.\n"
+        "Live trading remains OFF."
+    )
+    return {"status": "running", "paused": False}
+
+
+@app.post("/kill-switch")
+def kill_switch():
+    pause_bot()
+    send_telegram_alert(
+        "<b>EMERGENCY KILL SWITCH ACTIVATED</b>\n"
+        "New positions are blocked immediately.\n"
+        "Live trading remains OFF."
+    )
+    return {
+        "status": "kill_switch_active",
+        "paused": True,
+        "message": "Bot will not open new positions while kill switch is active.",
+    }
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
@@ -331,11 +379,31 @@ def dashboard():
       font-weight: 700;
     }
     h2 { margin-top: 0; }
+    .state-banner {
+      margin-bottom: 24px;
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-size: 20px;
+      font-weight: 800;
+      border: 1px solid #1f2937;
+      background: #111827;
+    }
+
+.state-running {
+  color: #22c55e;
+  border-color: #14532d;
+}
+
+.state-paused {
+  color: #f59e0b;
+  border-color: #92400e;
+}
   </style>
 </head>
 <body>
   <h1>Quant Fund OS</h1>
   <div class="subtitle">Paper-first autonomous trading dashboard - refreshes every 10 seconds</div>
+  <div id="botStateBanner" class="state-banner">Loading bot state...</div>
 
   <div class="grid">
     <div class="card"><div class="label">Risk Status</div><div id="risk" class="value">Loading...</div></div>
@@ -423,7 +491,15 @@ def dashboard():
 async function loadDashboard() {
   const res = await fetch('/status');
   const data = await res.json();
+  const banner = document.getElementById('botStateBanner');
 
+if (data.paused) {
+  banner.textContent = 'PAUSED - Kill switch active. New positions are blocked.';
+  banner.className = 'state-banner state-paused';
+} else {
+  banner.textContent = 'RUNNING - Paper trading active. Live trading OFF.';
+  banner.className = 'state-banner state-running';
+}
   const p = data.portfolio;
   const t = data.trading;
   const perf = data.performance;

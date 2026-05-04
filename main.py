@@ -12,7 +12,8 @@ from data.feature_store import FeatureStore
 from execution.executor import PaperExecutor
 from ai.autonomous_agent import AutonomousFundAgent
 from services.metrics import trades_total, equity_gauge, drawdown_gauge
-
+from core.control import is_paused, ensure_runtime_dir
+from services.telegram import send_telegram_alert
 
 INITIAL_EQUITY = 10_000.0
 
@@ -41,7 +42,9 @@ last_trade_time = {}
 
 print("Quant Fund OS starting. LIVE_TRADING=", settings.live_trading)
 print("Safety mode enabled. Paper trading only.")
-
+ensure_runtime_dir()
+send_telegram_alert("Quant Fund OS started. Paper mode active. Live trading is OFF.")
+last_risk_status = None
 
 def wait_for_database(max_attempts=30):
     for attempt in range(1, max_attempts + 1):
@@ -265,7 +268,11 @@ while True:
         for fill in proposed_fills:
             symbol = fill["symbol"]
             side = fill["side"]
+            paused = is_paused()
 
+            if paused:
+                proposed_fills = []
+                rejected.append({"symbol": "ALL", "reason": "kill_switch_active"})
             if side == "buy":
                 approved, reason = can_buy(symbol, fill, prices, equity)
                 if approved and apply_buy(fill):
@@ -283,6 +290,22 @@ while True:
             for fill in applied_fills:
                 trades_total.inc()
                 save_trade(conn, fill)
+
+                side = fill.get("side", "").upper()
+                symbol = fill.get("symbol", "")
+                qty = float(fill.get("quantity", 0))
+                price = float(fill.get("fill_price", 0))
+                strategy = fill.get("strategy", "unknown")
+                confidence = float(fill.get("confidence", 0))
+
+                send_telegram_alert(
+                    f"<b>{side}</b> {symbol}\n"
+                    f"Qty: {qty:.6f}\n"
+                    f"Price: {price:.4f}\n"
+                    f"Strategy: {strategy}\n"
+                    f"Confidence: {confidence:.2f}\n"
+                    f"Live: {settings.live_trading}"
+                )
 
             conn.execute(text("""
                 INSERT INTO portfolio_snapshots(
@@ -302,6 +325,25 @@ while True:
         equity_gauge.set(equity)
         drawdown_gauge.set(portfolio.drawdown)
 
+        current_risk_status = "SAFE"
+        exposure_pct = exposure / equity if equity else 0
+
+        if portfolio.drawdown <= -0.05 or exposure_pct >= 0.50:
+            current_risk_status = "BLOCKED"
+        elif portfolio.drawdown <= -0.02 or exposure_pct >= 0.35:
+            current_risk_status = "CAUTION"
+
+        global_last = globals().get("last_risk_status")
+        if current_risk_status != global_last:
+            send_telegram_alert(
+                f"Risk status changed: <b>{current_risk_status}</b>\n"
+                f"Equity: {equity:.2f}\n"
+                f"Exposure: {exposure:.2f}\n"
+                f"Exposure %: {exposure_pct * 100:.2f}%\n"
+                f"Drawdown: {portfolio.drawdown:.4f}"
+            )
+            globals()["last_risk_status"] = current_risk_status
+
         print({
             "regime": regime,
             "equity": round(equity, 2),
@@ -312,6 +354,8 @@ while True:
             "orders": len(applied_fills),
             "rejected": rejected[:3],
             "status": result["status"],
+            "paused": is_paused(),
+            "risk_status": current_risk_status,
         })
 
         time.sleep(settings.trade_interval_seconds)
