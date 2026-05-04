@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: quantfund
+      POSTGRES_USER: quant
+      POSTGRES_PASSWORD: quantpass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  api:
+    build: .
+    command: uvicorn services.api:app --host 0.0.0.0 --port 8000
+    env_file:
+      - .env.example
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+
+  bot:
+    build: .
+    command: python main.py
+    env_file:
+      - .env.example
+    depends_on:
+      - postgres
+      - redis
+
+volumes:
+  pgdata:
