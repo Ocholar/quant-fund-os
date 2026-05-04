@@ -16,6 +16,104 @@ def risk_status(exposure_pct, drawdown):
     return "SAFE"
 
 
+def get_positions(conn):
+    rows = conn.execute(text("""
+        WITH totals AS (
+            SELECT
+                symbol,
+                SUM(CASE WHEN side = 'buy' THEN quantity ELSE 0 END) AS buy_qty,
+                SUM(CASE WHEN side = 'sell' THEN quantity ELSE 0 END) AS sell_qty,
+                SUM(CASE WHEN side = 'buy' THEN quantity * fill_price ELSE 0 END) AS buy_notional
+            FROM trades
+            GROUP BY symbol
+        ),
+        last_prices AS (
+            SELECT DISTINCT ON (symbol)
+                symbol,
+                fill_price AS mark_price
+            FROM trades
+            ORDER BY symbol, created_at DESC
+        )
+        SELECT
+            t.symbol,
+            GREATEST(t.buy_qty - t.sell_qty, 0) AS quantity,
+            CASE
+                WHEN t.buy_qty > 0 THEN t.buy_notional / t.buy_qty
+                ELSE 0
+            END AS avg_entry,
+            COALESCE(l.mark_price, 0) AS mark_price
+        FROM totals t
+        LEFT JOIN last_prices l ON t.symbol = l.symbol
+        WHERE GREATEST(t.buy_qty - t.sell_qty, 0) > 0
+        ORDER BY symbol
+    """)).mappings().all()
+
+    positions = []
+    for r in rows:
+        qty = float(r["quantity"] or 0)
+        avg_entry = float(r["avg_entry"] or 0)
+        mark = float(r["mark_price"] or 0)
+        exposure = qty * mark
+        unrealized = qty * (mark - avg_entry)
+
+        positions.append({
+            "symbol": r["symbol"],
+            "quantity": round(qty, 6),
+            "avg_entry": round(avg_entry, 4),
+            "mark_price": round(mark, 4),
+            "exposure": round(exposure, 2),
+            "unrealized_pnl_estimate": round(unrealized, 2),
+        })
+
+    return positions
+
+
+def get_performance(conn, equity):
+    counts = conn.execute(text("""
+        SELECT
+            COUNT(*) AS total_trades,
+            COUNT(*) FILTER (WHERE side = 'buy') AS buy_count,
+            COUNT(*) FILTER (WHERE side = 'sell') AS sell_count,
+            COUNT(*) FILTER (WHERE strategy = 'take_profit') AS take_profit_count,
+            COUNT(*) FILTER (WHERE strategy = 'stop_loss') AS stop_loss_count,
+            COUNT(*) FILTER (WHERE strategy = 'risk_off_exit') AS risk_off_exit_count,
+            COUNT(*) FILTER (WHERE strategy = 'emergency_exposure_reduction') AS emergency_exit_count
+        FROM trades
+    """)).mappings().first()
+
+    by_symbol = conn.execute(text("""
+        SELECT
+            symbol,
+            COUNT(*) AS total,
+            COUNT(*) FILTER (WHERE side = 'buy') AS buys,
+            COUNT(*) FILTER (WHERE side = 'sell') AS sells
+        FROM trades
+        GROUP BY symbol
+        ORDER BY total DESC
+        LIMIT 10
+    """)).mappings().all()
+
+    sell_count = int(counts["sell_count"] or 0) if counts else 0
+    take_profit_count = int(counts["take_profit_count"] or 0) if counts else 0
+    stop_loss_count = int(counts["stop_loss_count"] or 0) if counts else 0
+
+    closed_count = take_profit_count + stop_loss_count
+    win_rate_estimate = take_profit_count / closed_count if closed_count else 0
+
+    return {
+        "total_trades": int(counts["total_trades"] or 0) if counts else 0,
+        "buy_count": int(counts["buy_count"] or 0) if counts else 0,
+        "sell_count": sell_count,
+        "take_profit_count": take_profit_count,
+        "stop_loss_count": stop_loss_count,
+        "risk_off_exit_count": int(counts["risk_off_exit_count"] or 0) if counts else 0,
+        "emergency_exit_count": int(counts["emergency_exit_count"] or 0) if counts else 0,
+        "win_rate_estimate": round(win_rate_estimate, 4),
+        "realized_pnl_estimate": round(float(equity or 0) - 10000.0, 2),
+        "by_symbol": [dict(r) for r in by_symbol],
+    }
+
+
 def get_status_payload():
     with engine.begin() as conn:
         latest = conn.execute(text("""
@@ -23,14 +121,6 @@ def get_status_payload():
             FROM portfolio_snapshots
             ORDER BY id DESC
             LIMIT 1
-        """)).mappings().first()
-
-        counts = conn.execute(text("""
-            SELECT
-                COUNT(*) AS total_trades,
-                COUNT(*) FILTER (WHERE side = 'buy') AS buy_count,
-                COUNT(*) FILTER (WHERE side = 'sell') AS sell_count
-            FROM trades
         """)).mappings().first()
 
         latest_trades = conn.execute(text("""
@@ -41,21 +131,23 @@ def get_status_payload():
             LIMIT 10
         """)).mappings().all()
 
-    portfolio = dict(latest) if latest else {
-        "equity": 0,
-        "cash": 0,
-        "exposure": 0,
-        "drawdown": 0,
-        "regime": "UNKNOWN",
-        "created_at": None,
-    }
+        portfolio = dict(latest) if latest else {
+            "equity": 0,
+            "cash": 0,
+            "exposure": 0,
+            "drawdown": 0,
+            "regime": "UNKNOWN",
+            "created_at": None,
+        }
 
-    equity = float(portfolio.get("equity") or 0)
-    cash = float(portfolio.get("cash") or 0)
-    exposure = float(portfolio.get("exposure") or 0)
-    drawdown = float(portfolio.get("drawdown") or 0)
-    exposure_pct = exposure / equity if equity else 0
-    pnl = equity - 10000.0
+        equity = float(portfolio.get("equity") or 0)
+        cash = float(portfolio.get("cash") or 0)
+        exposure = float(portfolio.get("exposure") or 0)
+        drawdown = float(portfolio.get("drawdown") or 0)
+        exposure_pct = exposure / equity if equity else 0
+
+        positions = get_positions(conn)
+        performance = get_performance(conn, equity)
 
     return {
         "name": "Quant Fund OS",
@@ -69,13 +161,15 @@ def get_status_payload():
             "exposure_pct": round(exposure_pct, 4),
             "drawdown": round(drawdown, 4),
             "regime": portfolio.get("regime"),
-            "realized_pnl_estimate": round(pnl, 2),
+            "realized_pnl_estimate": performance["realized_pnl_estimate"],
             "updated_at": portfolio.get("created_at"),
         },
+        "positions": positions,
+        "performance": performance,
         "trading": {
-            "total_trades": counts["total_trades"] if counts else 0,
-            "buy_count": counts["buy_count"] if counts else 0,
-            "sell_count": counts["sell_count"] if counts else 0,
+            "total_trades": performance["total_trades"],
+            "buy_count": performance["buy_count"],
+            "sell_count": performance["sell_count"],
             "latest_trades": [dict(t) for t in latest_trades],
         },
         "risk_rules": {
@@ -97,6 +191,8 @@ def root():
         "api": {
             "status": "/status",
             "trades": "/trades",
+            "positions": "/positions",
+            "metrics": "/metrics-summary",
             "portfolio": "/portfolio/latest",
         },
     }
@@ -146,6 +242,26 @@ def latest_portfolio():
     }
 
 
+@app.get("/positions")
+def positions():
+    with engine.begin() as conn:
+        return get_positions(conn)
+
+
+@app.get("/metrics-summary")
+def metrics_summary():
+    with engine.begin() as conn:
+        latest = conn.execute(text("""
+            SELECT equity
+            FROM portfolio_snapshots
+            ORDER BY id DESC
+            LIMIT 1
+        """)).mappings().first()
+
+        equity = float(latest["equity"] or 0) if latest else 0
+        return get_performance(conn, equity)
+
+
 @app.get("/status")
 def status():
     return get_status_payload()
@@ -181,6 +297,7 @@ def dashboard():
       border-radius: 14px;
       padding: 18px;
       box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+      margin-bottom: 24px;
     }
     .label { color: #9ca3af; font-size: 13px; margin-bottom: 8px; }
     .value { font-size: 26px; font-weight: 700; }
@@ -213,6 +330,7 @@ def dashboard():
       background: #1f2937;
       font-weight: 700;
     }
+    h2 { margin-top: 0; }
   </style>
 </head>
 <body>
@@ -231,6 +349,49 @@ def dashboard():
     <div class="card"><div class="label">Exposure</div><div id="exposure" class="value">-</div></div>
     <div class="card"><div class="label">Exposure %</div><div id="exposurePct" class="value">-</div></div>
     <div class="card"><div class="label">Trades</div><div id="trades" class="value">-</div></div>
+  </div>
+
+  <div class="grid">
+    <div class="card"><div class="label">Win Rate Estimate</div><div id="winRate" class="value">-</div></div>
+    <div class="card"><div class="label">Take Profits</div><div id="takeProfits" class="value positive">-</div></div>
+    <div class="card"><div class="label">Stop Losses</div><div id="stopLosses" class="value negative">-</div></div>
+    <div class="card"><div class="label">Open Positions</div><div id="openPositions" class="value">-</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Open Positions</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Symbol</th>
+          <th>Quantity</th>
+          <th>Avg Entry</th>
+          <th>Mark Price</th>
+          <th>Exposure</th>
+          <th>Unrealized PnL Estimate</th>
+        </tr>
+      </thead>
+      <tbody id="positionsTable">
+        <tr><td colspan="6">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Trades Per Symbol</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Symbol</th>
+          <th>Total</th>
+          <th>Buys</th>
+          <th>Sells</th>
+        </tr>
+      </thead>
+      <tbody id="symbolTable">
+        <tr><td colspan="4">Loading...</td></tr>
+      </tbody>
+    </table>
   </div>
 
   <div class="card">
@@ -265,6 +426,8 @@ async function loadDashboard() {
 
   const p = data.portfolio;
   const t = data.trading;
+  const perf = data.performance;
+  const positions = data.positions;
 
   const risk = document.getElementById('risk');
   risk.textContent = data.risk_status;
@@ -286,27 +449,67 @@ async function loadDashboard() {
     '<span class="buy">Buy ' + t.buy_count + '</span> / ' +
     '<span class="sell">Sell ' + t.sell_count + '</span>';
 
-  const tbody = document.getElementById('latestTrades');
-  tbody.innerHTML = '';
+  document.getElementById('winRate').textContent = (perf.win_rate_estimate * 100).toFixed(1) + '%';
+  document.getElementById('takeProfits').textContent = perf.take_profit_count;
+  document.getElementById('stopLosses').textContent = perf.stop_loss_count;
+  document.getElementById('openPositions').textContent = positions.length;
 
-  if (!t.latest_trades.length) {
-    tbody.innerHTML = '<tr><td colspan="8">No trades yet</td></tr>';
-    return;
+  const positionsTable = document.getElementById('positionsTable');
+  positionsTable.innerHTML = '';
+  if (!positions.length) {
+    positionsTable.innerHTML = '<tr><td colspan="6">No open positions</td></tr>';
+  } else {
+    for (const pos of positions) {
+      const pnlClass = pos.unrealized_pnl_estimate >= 0 ? 'positive' : 'negative';
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${pos.symbol}</td>
+        <td>${Number(pos.quantity).toFixed(6)}</td>
+        <td>${Number(pos.avg_entry).toFixed(4)}</td>
+        <td>${Number(pos.mark_price).toFixed(4)}</td>
+        <td>$${Number(pos.exposure).toFixed(2)}</td>
+        <td class="${pnlClass}">${pos.unrealized_pnl_estimate >= 0 ? '+' : '-'}$${Math.abs(pos.unrealized_pnl_estimate).toFixed(2)}</td>
+      `;
+      positionsTable.appendChild(row);
+    }
   }
 
-  for (const trade of t.latest_trades) {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${trade.created_at}</td>
-      <td>${trade.symbol}</td>
-      <td class="${trade.side}">${trade.side.toUpperCase()}</td>
-      <td>${Number(trade.quantity).toFixed(6)}</td>
-      <td>${Number(trade.fill_price).toFixed(4)}</td>
-      <td>${Number(trade.slippage_bps).toFixed(2)}</td>
-      <td>${trade.strategy}</td>
-      <td>${Number(trade.confidence).toFixed(2)}</td>
-    `;
-    tbody.appendChild(row);
+  const symbolTable = document.getElementById('symbolTable');
+  symbolTable.innerHTML = '';
+  if (!perf.by_symbol.length) {
+    symbolTable.innerHTML = '<tr><td colspan="4">No symbol data</td></tr>';
+  } else {
+    for (const s of perf.by_symbol) {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${s.symbol}</td>
+        <td>${s.total}</td>
+        <td class="buy">${s.buys}</td>
+        <td class="sell">${s.sells}</td>
+      `;
+      symbolTable.appendChild(row);
+    }
+  }
+
+  const latestTrades = document.getElementById('latestTrades');
+  latestTrades.innerHTML = '';
+  if (!t.latest_trades.length) {
+    latestTrades.innerHTML = '<tr><td colspan="8">No trades yet</td></tr>';
+  } else {
+    for (const trade of t.latest_trades) {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${trade.created_at}</td>
+        <td>${trade.symbol}</td>
+        <td class="${trade.side}">${trade.side.toUpperCase()}</td>
+        <td>${Number(trade.quantity).toFixed(6)}</td>
+        <td>${Number(trade.fill_price).toFixed(4)}</td>
+        <td>${Number(trade.slippage_bps).toFixed(2)}</td>
+        <td>${trade.strategy}</td>
+        <td>${Number(trade.confidence).toFixed(2)}</td>
+      `;
+      latestTrades.appendChild(row);
+    }
   }
 }
 

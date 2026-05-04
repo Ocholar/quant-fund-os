@@ -1,4 +1,4 @@
-import time
+﻿import time
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 
@@ -7,7 +7,7 @@ from core.db import engine
 from core.portfolio import Portfolio
 from core.regime import detect_regime
 from core.risk_engine import RiskEngine
-from data.ingestion import PaperMarketData
+from data.ingestion import build_market_data
 from data.feature_store import FeatureStore
 from execution.executor import PaperExecutor
 from ai.autonomous_agent import AutonomousFundAgent
@@ -29,7 +29,7 @@ ALLOW_SELLS = True
 
 
 portfolio = Portfolio()
-market = PaperMarketData(settings.symbol_list)
+market = build_market_data(settings.symbol_list)
 features = FeatureStore()
 risk = RiskEngine()
 executor = PaperExecutor()
