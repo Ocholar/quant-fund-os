@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy import text
 from core.db import engine
 from services.metrics import metrics_app
-from core.control import is_paused, pause_bot, resume_bot
+from core.control import is_paused, pause_bot, resume_bot, pause_reason, get_control_state
 from services.telegram import send_telegram_alert
 
 app = FastAPI(title="Quant Fund OS")
@@ -18,59 +18,58 @@ def risk_status(exposure_pct, drawdown):
     return "SAFE"
 
 
-def get_positions(conn):
-    rows = conn.execute(text("""
-        WITH totals AS (
-            SELECT
-                symbol,
-                SUM(CASE WHEN side = 'buy' THEN quantity ELSE 0 END) AS buy_qty,
-                SUM(CASE WHEN side = 'sell' THEN quantity ELSE 0 END) AS sell_qty,
-                SUM(CASE WHEN side = 'buy' THEN quantity * fill_price ELSE 0 END) AS buy_notional
-            FROM trades
-            GROUP BY symbol
-        ),
-        last_prices AS (
-            SELECT DISTINCT ON (symbol)
-                symbol,
-                fill_price AS mark_price
-            FROM trades
-            ORDER BY symbol, created_at DESC
+def ensure_positions_table(conn):
+    conn.execute(text("""
+        CREATE TABLE IF NOT EXISTS positions (
+            symbol TEXT PRIMARY KEY,
+            quantity DOUBLE PRECISION NOT NULL DEFAULT 0,
+            avg_entry DOUBLE PRECISION NOT NULL DEFAULT 0,
+            realized_pnl DOUBLE PRECISION NOT NULL DEFAULT 0,
+            unrealized_pnl DOUBLE PRECISION NOT NULL DEFAULT 0,
+            last_price DOUBLE PRECISION NOT NULL DEFAULT 0,
+            exposure DOUBLE PRECISION NOT NULL DEFAULT 0,
+            updated_at TIMESTAMPTZ DEFAULT NOW()
         )
+    """))
+
+
+def get_positions(conn):
+    ensure_positions_table(conn)
+
+    rows = conn.execute(text("""
         SELECT
-            t.symbol,
-            GREATEST(t.buy_qty - t.sell_qty, 0) AS quantity,
-            CASE
-                WHEN t.buy_qty > 0 THEN t.buy_notional / t.buy_qty
-                ELSE 0
-            END AS avg_entry,
-            COALESCE(l.mark_price, 0) AS mark_price
-        FROM totals t
-        LEFT JOIN last_prices l ON t.symbol = l.symbol
-        WHERE GREATEST(t.buy_qty - t.sell_qty, 0) > 0
-        ORDER BY symbol
+            symbol,
+            quantity,
+            avg_entry,
+            last_price AS mark_price,
+            exposure,
+            realized_pnl,
+            unrealized_pnl,
+            updated_at
+        FROM positions
+        WHERE quantity > 0.0001
+          AND exposure >= 1
+        ORDER BY exposure DESC
     """)).mappings().all()
 
-    positions = []
-    for r in rows:
-        qty = float(r["quantity"] or 0)
-        avg_entry = float(r["avg_entry"] or 0)
-        mark = float(r["mark_price"] or 0)
-        exposure = qty * mark
-        unrealized = qty * (mark - avg_entry)
-
-        positions.append({
+    return [
+        {
             "symbol": r["symbol"],
-            "quantity": round(qty, 6),
-            "avg_entry": round(avg_entry, 4),
-            "mark_price": round(mark, 4),
-            "exposure": round(exposure, 2),
-            "unrealized_pnl_estimate": round(unrealized, 2),
-        })
-
-    return positions
+            "quantity": round(float(r["quantity"] or 0), 6),
+            "avg_entry": round(float(r["avg_entry"] or 0), 4),
+            "mark_price": round(float(r["mark_price"] or 0), 4),
+            "exposure": round(float(r["exposure"] or 0), 2),
+            "realized_pnl": round(float(r["realized_pnl"] or 0), 2),
+            "unrealized_pnl": round(float(r["unrealized_pnl"] or 0), 2),
+            "updated_at": r["updated_at"],
+        }
+        for r in rows
+    ]
 
 
 def get_performance(conn, equity):
+    ensure_positions_table(conn)
+
     counts = conn.execute(text("""
         SELECT
             COUNT(*) AS total_trades,
@@ -83,12 +82,20 @@ def get_performance(conn, equity):
         FROM trades
     """)).mappings().first()
 
+    pnl_row = conn.execute(text("""
+        SELECT
+            COALESCE(SUM(realized_pnl), 0) AS realized_pnl,
+            COALESCE(SUM(unrealized_pnl), 0) AS unrealized_pnl
+        FROM positions
+    """)).mappings().first()
+
     by_symbol = conn.execute(text("""
         SELECT
             symbol,
             COUNT(*) AS total,
             COUNT(*) FILTER (WHERE side = 'buy') AS buys,
-            COUNT(*) FILTER (WHERE side = 'sell') AS sells
+            COUNT(*) FILTER (WHERE side = 'sell') AS sells,
+            ROUND(COALESCE(SUM(pnl), 0)::numeric, 2) AS realized_pnl
         FROM trades
         GROUP BY symbol
         ORDER BY total DESC
@@ -102,6 +109,9 @@ def get_performance(conn, equity):
     closed_count = take_profit_count + stop_loss_count
     win_rate_estimate = take_profit_count / closed_count if closed_count else 0
 
+    realized_pnl = float(pnl_row["realized_pnl"] or 0) if pnl_row else 0.0
+    unrealized_pnl = float(pnl_row["unrealized_pnl"] or 0) if pnl_row else 0.0
+
     return {
         "total_trades": int(counts["total_trades"] or 0) if counts else 0,
         "buy_count": int(counts["buy_count"] or 0) if counts else 0,
@@ -111,13 +121,17 @@ def get_performance(conn, equity):
         "risk_off_exit_count": int(counts["risk_off_exit_count"] or 0) if counts else 0,
         "emergency_exit_count": int(counts["emergency_exit_count"] or 0) if counts else 0,
         "win_rate_estimate": round(win_rate_estimate, 4),
-        "realized_pnl_estimate": round(float(equity or 0) - 10000.0, 2),
+        "realized_pnl": round(realized_pnl, 2),
+        "unrealized_pnl": round(unrealized_pnl, 2),
+        "total_pnl": round(realized_pnl + unrealized_pnl, 2),
         "by_symbol": [dict(r) for r in by_symbol],
     }
 
 
 def get_status_payload():
     with engine.begin() as conn:
+        ensure_positions_table(conn)
+
         latest = conn.execute(text("""
             SELECT equity, cash, exposure, drawdown, regime, created_at
             FROM portfolio_snapshots
@@ -134,8 +148,8 @@ def get_status_payload():
         """)).mappings().all()
 
         portfolio = dict(latest) if latest else {
-            "equity": 0,
-            "cash": 0,
+            "equity": 10000,
+            "cash": 10000,
             "exposure": 0,
             "drawdown": 0,
             "regime": "UNKNOWN",
@@ -163,7 +177,9 @@ def get_status_payload():
             "exposure_pct": round(exposure_pct, 4),
             "drawdown": round(drawdown, 4),
             "regime": portfolio.get("regime"),
-            "realized_pnl_estimate": performance["realized_pnl_estimate"],
+            "realized_pnl": performance["realized_pnl"],
+            "unrealized_pnl": performance["unrealized_pnl"],
+            "total_pnl": performance["total_pnl"],
             "updated_at": portfolio.get("created_at"),
         },
         "positions": positions,
@@ -236,8 +252,8 @@ def latest_portfolio():
         """)).mappings().first()
 
     return dict(row) if row else {
-        "equity": 0,
-        "cash": 0,
+        "equity": 10000,
+        "cash": 10000,
         "exposure": 0,
         "drawdown": 0,
         "regime": "UNKNOWN",
@@ -260,15 +276,18 @@ def metrics_summary():
             LIMIT 1
         """)).mappings().first()
 
-        equity = float(latest["equity"] or 0) if latest else 0
+        equity = float(latest["equity"] or 0) if latest else 10000
         return get_performance(conn, equity)
 
 
 @app.get("/status")
 def status():
     payload = get_status_payload()
-    paused = is_paused()
+    control = get_control_state()
+    paused = control["paused"]
+
     payload["paused"] = paused
+    payload["pause_reason"] = control.get("reason") or ""
     payload["bot_state"] = "PAUSED" if paused else "RUNNING"
     payload["controls"] = {
         "pause": "/pause",
@@ -280,7 +299,7 @@ def status():
 
 @app.post("/pause")
 def pause():
-    pause_bot()
+    pause_bot("manual_pause")
     send_telegram_alert(
         "<b>Quant Fund OS PAUSED</b>\n"
         "New positions are blocked.\n"
@@ -302,7 +321,7 @@ def resume():
 
 @app.post("/kill-switch")
 def kill_switch():
-    pause_bot()
+    pause_bot("manual_kill_switch")
     send_telegram_alert(
         "<b>EMERGENCY KILL SWITCH ACTIVATED</b>\n"
         "New positions are blocked immediately.\n"
@@ -388,16 +407,40 @@ def dashboard():
       border: 1px solid #1f2937;
       background: #111827;
     }
-
-.state-running {
-  color: #22c55e;
-  border-color: #14532d;
-}
-
-.state-paused {
-  color: #f59e0b;
-  border-color: #92400e;
-}
+    .state-running {
+      color: #22c55e;
+      border-color: #14532d;
+    }
+    .state-paused {
+      color: #f59e0b;
+      border-color: #92400e;
+    }
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .btn-resume {
+      background: #16a34a;
+      color: white;
+    }
+    .btn-pause {
+      background: #f59e0b;
+      color: #111827;
+    }
+    .btn-kill {
+      background: #dc2626;
+      color: white;
+    }
+    button:hover { opacity: 0.88; }
   </style>
 </head>
 <body>
@@ -405,10 +448,16 @@ def dashboard():
   <div class="subtitle">Paper-first autonomous trading dashboard - refreshes every 10 seconds</div>
   <div id="botStateBanner" class="state-banner">Loading bot state...</div>
 
+  <div class="controls">
+    <button class="btn-resume" onclick="controlBot('resume')">Resume</button>
+    <button class="btn-pause" onclick="controlBot('pause')">Pause</button>
+    <button class="btn-kill" onclick="controlBot('kill-switch')">Kill Switch</button>
+  </div>
+
   <div class="grid">
     <div class="card"><div class="label">Risk Status</div><div id="risk" class="value">Loading...</div></div>
     <div class="card"><div class="label">Equity</div><div id="equity" class="value">-</div></div>
-    <div class="card"><div class="label">PnL Estimate</div><div id="pnl" class="value">-</div></div>
+    <div class="card"><div class="label">Total Real PnL</div><div id="pnl" class="value">-</div></div>
     <div class="card"><div class="label">Regime</div><div id="regime" class="value">-</div></div>
   </div>
 
@@ -420,10 +469,17 @@ def dashboard():
   </div>
 
   <div class="grid">
+    <div class="card"><div class="label">Realized PnL</div><div id="realizedPnl" class="value">-</div></div>
+    <div class="card"><div class="label">Unrealized PnL</div><div id="unrealizedPnl" class="value">-</div></div>
     <div class="card"><div class="label">Win Rate Estimate</div><div id="winRate" class="value">-</div></div>
+    <div class="card"><div class="label">Open Positions</div><div id="openPositions" class="value">-</div></div>
+  </div>
+
+  <div class="grid">
     <div class="card"><div class="label">Take Profits</div><div id="takeProfits" class="value positive">-</div></div>
     <div class="card"><div class="label">Stop Losses</div><div id="stopLosses" class="value negative">-</div></div>
-    <div class="card"><div class="label">Open Positions</div><div id="openPositions" class="value">-</div></div>
+    <div class="card"><div class="label">Risk-Off Exits</div><div id="riskOffExits" class="value">-</div></div>
+    <div class="card"><div class="label">Emergency Exits</div><div id="emergencyExits" class="value">-</div></div>
   </div>
 
   <div class="card">
@@ -436,11 +492,12 @@ def dashboard():
           <th>Avg Entry</th>
           <th>Mark Price</th>
           <th>Exposure</th>
-          <th>Unrealized PnL Estimate</th>
+          <th>Realized PnL</th>
+          <th>Unrealized PnL</th>
         </tr>
       </thead>
       <tbody id="positionsTable">
-        <tr><td colspan="6">Loading...</td></tr>
+        <tr><td colspan="7">Loading...</td></tr>
       </tbody>
     </table>
   </div>
@@ -454,10 +511,11 @@ def dashboard():
           <th>Total</th>
           <th>Buys</th>
           <th>Sells</th>
+          <th>Realized PnL</th>
         </tr>
       </thead>
       <tbody id="symbolTable">
-        <tr><td colspan="4">Loading...</td></tr>
+        <tr><td colspan="5">Loading...</td></tr>
       </tbody>
     </table>
   </div>
@@ -488,104 +546,160 @@ def dashboard():
   </div>
 
 <script>
-async function loadDashboard() {
-  const res = await fetch('/status');
-  const data = await res.json();
-  const banner = document.getElementById('botStateBanner');
-
-if (data.paused) {
-  banner.textContent = 'PAUSED - Kill switch active. New positions are blocked.';
-  banner.className = 'state-banner state-paused';
-} else {
-  banner.textContent = 'RUNNING - Paper trading active. Live trading OFF.';
-  banner.className = 'state-banner state-running';
+function money(value) {
+  const n = Number(value ?? 0);
+  const sign = n >= 0 ? '+$' : '-$';
+  return sign + Math.abs(n).toFixed(2);
 }
-  const p = data.portfolio;
-  const t = data.trading;
-  const perf = data.performance;
-  const positions = data.positions;
 
-  const risk = document.getElementById('risk');
-  risk.textContent = data.risk_status;
-  risk.className = 'value ' + data.risk_status.toLowerCase();
+function dollars(value) {
+  return '$' + Number(value ?? 0).toFixed(2);
+}
 
-  document.getElementById('equity').textContent = '$' + p.equity.toFixed(2);
+function num(value, digits = 2) {
+  return Number(value ?? 0).toFixed(digits);
+}
 
-  const pnl = document.getElementById('pnl');
-  pnl.textContent = (p.realized_pnl_estimate >= 0 ? '+$' : '-$') + Math.abs(p.realized_pnl_estimate).toFixed(2);
-  pnl.className = 'value ' + (p.realized_pnl_estimate >= 0 ? 'positive' : 'negative');
+function pnlClass(value) {
+  return Number(value ?? 0) >= 0 ? 'positive' : 'negative';
+}
 
-  document.getElementById('regime').textContent = p.regime;
-  document.getElementById('cash').textContent = '$' + p.cash.toFixed(2);
-  document.getElementById('exposure').textContent = '$' + p.exposure.toFixed(2);
-  document.getElementById('exposurePct').textContent = (p.exposure_pct * 100).toFixed(2) + '%';
+async function controlBot(action) {
+  const confirmed = action === 'kill-switch'
+    ? confirm('Activate emergency kill switch? New positions will be blocked.')
+    : true;
 
-  document.getElementById('trades').innerHTML =
-    '<span class="pill">' + t.total_trades + '</span> ' +
-    '<span class="buy">Buy ' + t.buy_count + '</span> / ' +
-    '<span class="sell">Sell ' + t.sell_count + '</span>';
+  if (!confirmed) return;
 
-  document.getElementById('winRate').textContent = (perf.win_rate_estimate * 100).toFixed(1) + '%';
-  document.getElementById('takeProfits').textContent = perf.take_profit_count;
-  document.getElementById('stopLosses').textContent = perf.stop_loss_count;
-  document.getElementById('openPositions').textContent = positions.length;
+  const res = await fetch('/' + action, { method: 'POST' });
 
-  const positionsTable = document.getElementById('positionsTable');
-  positionsTable.innerHTML = '';
-  if (!positions.length) {
-    positionsTable.innerHTML = '<tr><td colspan="6">No open positions</td></tr>';
-  } else {
-    for (const pos of positions) {
-      const pnlClass = pos.unrealized_pnl_estimate >= 0 ? 'positive' : 'negative';
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${pos.symbol}</td>
-        <td>${Number(pos.quantity).toFixed(6)}</td>
-        <td>${Number(pos.avg_entry).toFixed(4)}</td>
-        <td>${Number(pos.mark_price).toFixed(4)}</td>
-        <td>$${Number(pos.exposure).toFixed(2)}</td>
-        <td class="${pnlClass}">${pos.unrealized_pnl_estimate >= 0 ? '+' : '-'}$${Math.abs(pos.unrealized_pnl_estimate).toFixed(2)}</td>
-      `;
-      positionsTable.appendChild(row);
-    }
+  if (!res.ok) {
+    alert('Control action failed: ' + action);
+    return;
   }
 
-  const symbolTable = document.getElementById('symbolTable');
-  symbolTable.innerHTML = '';
-  if (!perf.by_symbol.length) {
-    symbolTable.innerHTML = '<tr><td colspan="4">No symbol data</td></tr>';
-  } else {
-    for (const s of perf.by_symbol) {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${s.symbol}</td>
-        <td>${s.total}</td>
-        <td class="buy">${s.buys}</td>
-        <td class="sell">${s.sells}</td>
-      `;
-      symbolTable.appendChild(row);
-    }
-  }
+  await loadDashboard();
+}
 
-  const latestTrades = document.getElementById('latestTrades');
-  latestTrades.innerHTML = '';
-  if (!t.latest_trades.length) {
-    latestTrades.innerHTML = '<tr><td colspan="8">No trades yet</td></tr>';
-  } else {
-    for (const trade of t.latest_trades) {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${trade.created_at}</td>
-        <td>${trade.symbol}</td>
-        <td class="${trade.side}">${trade.side.toUpperCase()}</td>
-        <td>${Number(trade.quantity).toFixed(6)}</td>
-        <td>${Number(trade.fill_price).toFixed(4)}</td>
-        <td>${Number(trade.slippage_bps).toFixed(2)}</td>
-        <td>${trade.strategy}</td>
-        <td>${Number(trade.confidence).toFixed(2)}</td>
-      `;
-      latestTrades.appendChild(row);
+async function loadDashboard() {
+  try {
+    const res = await fetch('/status');
+    const data = await res.json();
+
+    const p = data.portfolio ?? {};
+    const t = data.trading ?? {};
+    const perf = data.performance ?? {};
+    const positions = data.positions ?? [];
+
+    const banner = document.getElementById('botStateBanner');
+    if (data.paused) {
+     const reason = data.pause_reason || 'paused';
+     const isAuto = reason.includes('max_daily_loss') || reason.includes('liquidity_error');
+     banner.textContent = (isAuto ? 'AUTO-PAUSED' : 'PAUSED') + ' - ' + reason + '. New positions are blocked.';
+     banner.className = 'state-banner state-paused';
+    } else {
+     banner.textContent = 'RUNNING - Paper trading active. Live trading OFF.';
+     banner.className = 'state-banner state-running';
     }
+
+    const risk = document.getElementById('risk');
+    risk.textContent = data.risk_status ?? 'UNKNOWN';
+    risk.className = 'value ' + String(data.risk_status ?? 'safe').toLowerCase();
+
+    document.getElementById('equity').textContent = dollars(p.equity);
+    document.getElementById('regime').textContent = p.regime ?? 'UNKNOWN';
+    document.getElementById('cash').textContent = dollars(p.cash);
+    document.getElementById('exposure').textContent = dollars(p.exposure);
+    document.getElementById('exposurePct').textContent = (Number(p.exposure_pct ?? 0) * 100).toFixed(2) + '%';
+
+    const pnl = document.getElementById('pnl');
+    pnl.textContent = money(p.total_pnl);
+    pnl.className = 'value ' + pnlClass(p.total_pnl);
+
+    const realizedPnl = document.getElementById('realizedPnl');
+    realizedPnl.textContent = money(p.realized_pnl);
+    realizedPnl.className = 'value ' + pnlClass(p.realized_pnl);
+
+    const unrealizedPnl = document.getElementById('unrealizedPnl');
+    unrealizedPnl.textContent = money(p.unrealized_pnl);
+    unrealizedPnl.className = 'value ' + pnlClass(p.unrealized_pnl);
+
+    document.getElementById('trades').innerHTML =
+      '<span class="pill">' + Number(t.total_trades ?? 0) + '</span> ' +
+      '<span class="buy">Buy ' + Number(t.buy_count ?? 0) + '</span> / ' +
+      '<span class="sell">Sell ' + Number(t.sell_count ?? 0) + '</span>';
+
+    document.getElementById('winRate').textContent = (Number(perf.win_rate_estimate ?? 0) * 100).toFixed(1) + '%';
+    document.getElementById('takeProfits').textContent = Number(perf.take_profit_count ?? 0);
+    document.getElementById('stopLosses').textContent = Number(perf.stop_loss_count ?? 0);
+    document.getElementById('riskOffExits').textContent = Number(perf.risk_off_exit_count ?? 0);
+    document.getElementById('emergencyExits').textContent = Number(perf.emergency_exit_count ?? 0);
+    document.getElementById('openPositions').textContent = positions.length;
+
+    const positionsTable = document.getElementById('positionsTable');
+    positionsTable.innerHTML = '';
+
+    if (!positions.length) {
+      positionsTable.innerHTML = '<tr><td colspan="7">No open positions</td></tr>';
+    } else {
+      for (const pos of positions) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${pos.symbol}</td>
+          <td>${num(pos.quantity, 6)}</td>
+          <td>${num(pos.avg_entry, 4)}</td>
+          <td>${num(pos.mark_price, 4)}</td>
+          <td>${dollars(pos.exposure)}</td>
+          <td class="${pnlClass(pos.realized_pnl)}">${money(pos.realized_pnl)}</td>
+          <td class="${pnlClass(pos.unrealized_pnl)}">${money(pos.unrealized_pnl)}</td>
+        `;
+        positionsTable.appendChild(row);
+      }
+    }
+
+    const symbolTable = document.getElementById('symbolTable');
+    symbolTable.innerHTML = '';
+
+    if (!Array.isArray(perf.by_symbol) || !perf.by_symbol.length) {
+      symbolTable.innerHTML = '<tr><td colspan="5">No symbol data</td></tr>';
+    } else {
+      for (const s of perf.by_symbol) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${s.symbol}</td>
+          <td>${Number(s.total ?? 0)}</td>
+          <td class="buy">${Number(s.buys ?? 0)}</td>
+          <td class="sell">${Number(s.sells ?? 0)}</td>
+          <td class="${pnlClass(s.realized_pnl)}">${money(s.realized_pnl)}</td>
+        `;
+        symbolTable.appendChild(row);
+      }
+    }
+
+    const latestTrades = document.getElementById('latestTrades');
+    latestTrades.innerHTML = '';
+
+    const latest = t.latest_trades ?? [];
+    if (!latest.length) {
+      latestTrades.innerHTML = '<tr><td colspan="8">No trades yet</td></tr>';
+    } else {
+      for (const trade of latest) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${trade.created_at}</td>
+          <td>${trade.symbol}</td>
+          <td class="${trade.side}">${String(trade.side).toUpperCase()}</td>
+          <td>${num(trade.quantity, 6)}</td>
+          <td>${num(trade.fill_price, 4)}</td>
+          <td>${num(trade.slippage_bps, 2)}</td>
+          <td>${trade.strategy}</td>
+          <td>${num(trade.confidence, 2)}</td>
+        `;
+        latestTrades.appendChild(row);
+      }
+    }
+  } catch (err) {
+    console.error('Dashboard load failed:', err);
   }
 }
 

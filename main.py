@@ -1,7 +1,7 @@
 ﻿import time
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
-
+from datetime import datetime, timezone, timedelta
 from core.config import settings
 from core.db import engine
 from core.portfolio import Portfolio
@@ -12,7 +12,7 @@ from data.feature_store import FeatureStore
 from execution.executor import PaperExecutor
 from ai.autonomous_agent import AutonomousFundAgent
 from services.metrics import trades_total, equity_gauge, drawdown_gauge
-from core.control import is_paused, ensure_runtime_dir
+from core.control import is_paused, pause_bot, pause_reason
 from services.telegram import send_telegram_alert
 
 INITIAL_EQUITY = 10_000.0
@@ -24,6 +24,17 @@ STOP_LOSS_PCT = 0.02
 TAKE_PROFIT_PCT = 0.03
 DAILY_LOSS_LIMIT_PCT = 0.05
 COOLDOWN_SECONDS = 30
+
+MAX_DAILY_LOSS_PCT = 0.01
+SIDEWAYS_MAX_ENTRIES_PER_HOUR = 2
+SIDEWAYS_MIN_CONFIDENCE = 0.80
+TRENDING_MAX_ENTRIES_PER_HOUR = 5
+TRENDING_MIN_CONFIDENCE = 0.75
+LIQUIDITY_ERROR_LIMIT = 3
+LIQUIDITY_ERROR_WINDOW_SECONDS = 600
+
+liquidity_error_times = []
+last_auto_pause_reason = None
 
 ALLOW_BUYS = True
 ALLOW_SELLS = True
@@ -42,7 +53,6 @@ last_trade_time = {}
 
 print("Quant Fund OS starting. LIVE_TRADING=", settings.live_trading)
 print("Safety mode enabled. Paper trading only.")
-ensure_runtime_dir()
 send_telegram_alert("Quant Fund OS started. Paper mode active. Live trading is OFF.")
 last_risk_status = None
 
@@ -231,8 +241,254 @@ def save_trade(conn, fill):
         )
     """), fill | {"live": settings.live_trading})
 
+def ensure_positions_table():
+    with engine.begin() as conn:
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS positions (
+                symbol TEXT PRIMARY KEY,
+                quantity DOUBLE PRECISION NOT NULL DEFAULT 0,
+                avg_entry DOUBLE PRECISION NOT NULL DEFAULT 0,
+                realized_pnl DOUBLE PRECISION NOT NULL DEFAULT 0,
+                unrealized_pnl DOUBLE PRECISION NOT NULL DEFAULT 0,
+                last_price DOUBLE PRECISION NOT NULL DEFAULT 0,
+                exposure DOUBLE PRECISION NOT NULL DEFAULT 0,
+                updated_at TIMESTAMPTZ DEFAULT NOW()
+            )
+        """))
 
+
+def update_position_from_fill(conn, fill):
+    symbol = fill["symbol"]
+    side = fill["side"]
+    qty = float(fill["quantity"])
+    price = float(fill["fill_price"])
+
+    existing = conn.execute(text("""
+        SELECT symbol, quantity, avg_entry, realized_pnl
+        FROM positions
+        WHERE symbol = :symbol
+    """), {"symbol": symbol}).mappings().first()
+
+    if not existing:
+        existing_qty = 0.0
+        avg_entry = 0.0
+        realized_pnl = 0.0
+    else:
+        existing_qty = float(existing["quantity"] or 0)
+        avg_entry = float(existing["avg_entry"] or 0)
+        realized_pnl = float(existing["realized_pnl"] or 0)
+
+    if side == "buy":
+        new_qty = existing_qty + qty
+        if new_qty > 0:
+            new_avg_entry = ((existing_qty * avg_entry) + (qty * price)) / new_qty
+        else:
+            new_avg_entry = 0.0
+
+        new_realized_pnl = realized_pnl
+        fill_pnl = 0.0
+
+    elif side == "sell":
+        sell_qty = min(qty, existing_qty)
+        fill_pnl = sell_qty * (price - avg_entry)
+
+        new_qty = max(existing_qty - sell_qty, 0.0)
+        new_avg_entry = avg_entry if new_qty > 0 else 0.0
+        new_realized_pnl = realized_pnl + fill_pnl
+
+    else:
+        return 0.0
+
+    exposure = new_qty * price
+    unrealized_pnl = new_qty * (price - new_avg_entry) if new_qty > 0 else 0.0
+
+    conn.execute(text("""
+        INSERT INTO positions(
+            symbol, quantity, avg_entry, realized_pnl,
+            unrealized_pnl, last_price, exposure, updated_at
+        )
+        VALUES(
+            :symbol, :quantity, :avg_entry, :realized_pnl,
+            :unrealized_pnl, :last_price, :exposure, NOW()
+        )
+        ON CONFLICT (symbol)
+        DO UPDATE SET
+            quantity = EXCLUDED.quantity,
+            avg_entry = EXCLUDED.avg_entry,
+            realized_pnl = EXCLUDED.realized_pnl,
+            unrealized_pnl = EXCLUDED.unrealized_pnl,
+            last_price = EXCLUDED.last_price,
+            exposure = EXCLUDED.exposure,
+            updated_at = NOW()
+    """), {
+        "symbol": symbol,
+        "quantity": new_qty,
+        "avg_entry": new_avg_entry,
+        "realized_pnl": new_realized_pnl,
+        "unrealized_pnl": unrealized_pnl,
+        "last_price": price,
+        "exposure": exposure,
+    })
+
+    return fill_pnl
+
+
+def mark_positions_to_market(conn, prices):
+    for symbol, price in prices.items():
+        row = conn.execute(text("""
+            SELECT quantity, avg_entry, realized_pnl
+            FROM positions
+            WHERE symbol = :symbol
+        """), {"symbol": symbol}).mappings().first()
+
+        if not row:
+            continue
+
+        qty = float(row["quantity"] or 0)
+        avg_entry = float(row["avg_entry"] or 0)
+
+        exposure = qty * float(price)
+        unrealized_pnl = qty * (float(price) - avg_entry) if qty > 0 else 0.0
+
+        conn.execute(text("""
+            UPDATE positions
+            SET last_price = :last_price,
+                exposure = :exposure,
+                unrealized_pnl = :unrealized_pnl,
+                updated_at = NOW()
+            WHERE symbol = :symbol
+        """), {
+            "symbol": symbol,
+            "last_price": float(price),
+            "exposure": exposure,
+            "unrealized_pnl": unrealized_pnl,
+        })
 wait_for_database()
+ensure_positions_table()
+
+def send_auto_pause(reason: str, equity: float, exposure: float, regime: str):
+    global last_auto_pause_reason
+
+    if last_auto_pause_reason == reason:
+        return
+
+    last_auto_pause_reason = reason
+    pause_bot(reason)
+
+    send_telegram_alert(
+        f"<b>Quant Fund OS AUTO-PAUSED</b>\n"
+        f"Reason: {reason}\n"
+        f"Equity: {equity:.2f}\n"
+        f"Exposure: {exposure:.2f}\n"
+        f"Regime: {regime}\n"
+        f"Live trading: {settings.live_trading}"
+    )
+
+
+def get_day_start_equity(default_equity: float = 10000.0):
+    with engine.begin() as conn:
+        row = conn.execute(text("""
+            SELECT equity
+            FROM portfolio_snapshots
+            WHERE created_at >= date_trunc('day', NOW())
+            ORDER BY id ASC
+            LIMIT 1
+        """)).mappings().first()
+
+    if not row:
+        return default_equity
+
+    return float(row["equity"] or default_equity)
+
+
+def check_daily_loss_guard(equity: float, exposure: float, regime: str):
+    day_start_equity = get_day_start_equity(10000.0)
+
+    if day_start_equity <= 0:
+        return False
+
+    daily_pnl_pct = (equity - day_start_equity) / day_start_equity
+
+    if daily_pnl_pct <= -MAX_DAILY_LOSS_PCT:
+        send_auto_pause(
+            f"max_daily_loss_hit_{daily_pnl_pct:.2%}",
+            equity,
+            exposure,
+            regime,
+        )
+        return True
+
+    return False
+
+
+def recent_buy_count():
+    with engine.begin() as conn:
+        row = conn.execute(text("""
+            SELECT COUNT(*) AS count
+            FROM trades
+            WHERE side = 'buy'
+              AND created_at >= NOW() - INTERVAL '1 hour'
+        """)).mappings().first()
+
+    return int(row["count"] or 0) if row else 0
+
+
+def is_trending_regime(regime: str):
+    r = str(regime or "").upper()
+    return r in {"BULL", "BULLISH", "TRENDING", "UPTREND", "TREND"}
+
+
+def entry_policy_allows(regime: str, confidence: float, entries_this_cycle: int):
+    r = str(regime or "").upper()
+
+    if r == "RISK_OFF":
+        return False, "risk_off_blocks_new_buys"
+
+    recent_entries = recent_buy_count() + entries_this_cycle
+
+    if r == "SIDEWAYS":
+        if confidence < SIDEWAYS_MIN_CONFIDENCE:
+            return False, f"sideways_confidence_too_low_{confidence:.2f}"
+        if recent_entries >= SIDEWAYS_MAX_ENTRIES_PER_HOUR:
+            return False, "sideways_max_entries_per_hour_hit"
+        return True, "ok"
+
+    if is_trending_regime(r):
+        if confidence < TRENDING_MIN_CONFIDENCE:
+            return False, f"trending_confidence_too_low_{confidence:.2f}"
+        if recent_entries >= TRENDING_MAX_ENTRIES_PER_HOUR:
+            return False, "trending_max_entries_per_hour_hit"
+        return True, "ok"
+
+    if confidence < SIDEWAYS_MIN_CONFIDENCE:
+        return False, f"default_confidence_too_low_{confidence:.2f}"
+
+    if recent_entries >= SIDEWAYS_MAX_ENTRIES_PER_HOUR:
+        return False, "default_max_entries_per_hour_hit"
+
+    return True, "ok"
+
+
+def register_liquidity_error(error_message: str):
+    global liquidity_error_times
+
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(seconds=LIQUIDITY_ERROR_WINDOW_SECONDS)
+
+    liquidity_error_times = [
+        t for t in liquidity_error_times
+        if t >= cutoff
+    ]
+
+    liquidity_error_times.append(now)
+
+    if len(liquidity_error_times) >= LIQUIDITY_ERROR_LIMIT:
+        send_auto_pause(
+            "liquidity_error_circuit_breaker",
+            0.0,
+            0.0,
+            "UNKNOWN",
+        )
 
 while True:
     try:
@@ -264,21 +520,48 @@ while True:
 
         applied_fills = []
         rejected = []
+        entries_this_cycle = 0
 
-        for fill in proposed_fills:
-            symbol = fill["symbol"]
-            side = fill["side"]
-            paused = is_paused()
+        paused = is_paused()
 
-            if paused:
-                proposed_fills = []
-                rejected.append({"symbol": "ALL", "reason": "kill_switch_active"})
-            if side == "buy":
-                approved, reason = can_buy(symbol, fill, prices, equity)
-                if approved and apply_buy(fill):
+        if paused:
+            rejected.append({
+                "symbol": "ALL",
+                "reason": pause_reason() or "paused",
+            })
+        else:
+            for fill in proposed_fills:
+                symbol = fill["symbol"]
+                side = fill["side"]
+                confidence = float(fill.get("confidence", 0))
+
+                if side == "buy":
+                    allowed, reason = entry_policy_allows(
+                        regime,
+                        confidence,
+                        entries_this_cycle,
+                    )
+
+                    if not allowed:
+                        rejected.append({
+                            "symbol": symbol,
+                            "reason": reason,
+                        })
+                        continue
+
+                    approved, reason = can_buy(symbol, fill, prices, equity)
+
+                    if approved and apply_buy(fill):
+                        applied_fills.append(fill)
+                        entries_this_cycle += 1
+                    else:
+                        rejected.append({
+                            "symbol": symbol,
+                            "reason": reason,
+                        })
+
+                elif side == "sell":
                     applied_fills.append(fill)
-                else:
-                    rejected.append({"symbol": symbol, "reason": reason})
 
         applied_fills.extend(generate_sells(prices, regime))
         applied_fills.extend(emergency_reduce_exposure(prices))
@@ -286,10 +569,31 @@ while True:
         equity = portfolio.mark_to_market(prices)
         exposure = total_exposure(prices)
 
+        if check_daily_loss_guard(equity, exposure, regime):
+            proposed_fills = []
+            applied_fills = []
+            rejected.append({
+                "symbol": "ALL",
+                "reason": "max_daily_loss_auto_pause",
+            })
+
         with engine.begin() as conn:
             for fill in applied_fills:
+                fill_pnl = update_position_from_fill(conn, fill)
+                fill["pnl"] = fill_pnl
+
                 trades_total.inc()
-                save_trade(conn, fill)
+
+                conn.execute(text("""
+                    INSERT INTO trades(
+                        symbol, side, quantity, expected_price, fill_price,
+                        slippage_bps, pnl, strategy, confidence, live
+                    )
+                    VALUES(
+                        :symbol, :side, :quantity, :expected_price, :fill_price,
+                        :slippage_bps, :pnl, :strategy, :confidence, :live
+                    )
+                """), fill | {"live": settings.live_trading})
 
                 side = fill.get("side", "").upper()
                 symbol = fill.get("symbol", "")
@@ -302,10 +606,13 @@ while True:
                     f"<b>{side}</b> {symbol}\n"
                     f"Qty: {qty:.6f}\n"
                     f"Price: {price:.4f}\n"
+                    f"PnL: {fill_pnl:.2f}\n"
                     f"Strategy: {strategy}\n"
                     f"Confidence: {confidence:.2f}\n"
                     f"Live: {settings.live_trading}"
                 )
+
+            mark_positions_to_market(conn, prices)
 
             conn.execute(text("""
                 INSERT INTO portfolio_snapshots(
@@ -361,5 +668,10 @@ while True:
         time.sleep(settings.trade_interval_seconds)
 
     except Exception as e:
-        print("Bot loop error:", str(e))
-        time.sleep(5)
+        error_message = str(e)
+        print("Bot loop error:", error_message)
+
+        if "insufficient synthetic liquidity" in error_message.lower():
+            register_liquidity_error(error_message)
+
+        time.sleep(settings.trade_interval_seconds)
