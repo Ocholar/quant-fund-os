@@ -1,5 +1,5 @@
 class Portfolio:
-    def __init__(self, cash=10_000.0):
+    def __init__(self, cash=100.0):
         self.cash = cash
         self.positions = {}
         self.equity = cash

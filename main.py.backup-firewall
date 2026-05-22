@@ -497,37 +497,6 @@ def register_liquidity_error(error_message: str):
             "UNKNOWN",
         )
 
-def final_trade_firewall(fill, regime):
-    side = str(fill.get("side", "")).lower()
-    strategy = str(fill.get("strategy", ""))
-    confidence = float(fill.get("confidence", 0))
-
-    # Sells are always allowed for safety exits.
-    if side == "sell":
-        return True, "sell_allowed"
-
-    # Only buys need strict gating.
-    if side != "buy":
-        return False, "unknown_side_blocked"
-
-    r = str(regime or "").upper()
-
-    if r == "RISK_OFF":
-        return False, "risk_off_blocks_buy"
-
-    if r == "SIDEWAYS" and confidence < 0.80:
-        return False, f"sideways_confidence_too_low_{confidence:.2f}"
-
-    if r in {"BULL", "BULLISH", "TRENDING", "UPTREND", "TREND"} and confidence < 0.75:
-        return False, f"trending_confidence_too_low_{confidence:.2f}"
-
-    # Unknown regimes should be conservative.
-    if r not in {"SIDEWAYS", "BULL", "BULLISH", "TRENDING", "UPTREND", "TREND"}:
-        return False, f"unknown_regime_blocks_buy_{r}"
-
-    return True, "buy_allowed"
-
-
 while True:
     try:
         tick = market.tick()
@@ -633,21 +602,6 @@ while True:
             })
 
         with engine.begin() as conn:
-            filtered_fills = []
-
-            for fill in applied_fills:
-                allowed, reason = final_trade_firewall(fill, regime)
-
-                if allowed:
-                    filtered_fills.append(fill)
-                else:
-                    rejected.append({
-                        "symbol": fill.get("symbol", "UNKNOWN"),
-                        "reason": reason,
-                    })
-
-            applied_fills = filtered_fills
-
             for fill in applied_fills:
                 fill_pnl = update_position_from_fill(conn, fill)
                 fill["pnl"] = fill_pnl
@@ -745,5 +699,4 @@ while True:
             register_liquidity_error(error_message)
 
         time.sleep(settings.trade_interval_seconds)
-
 
