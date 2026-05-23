@@ -654,38 +654,38 @@ def dashboard():
   <header>
     <div>
       <h1>Quant Fund OS</h1>
-      <div class="subtitle">Institutional Grade Autonomous Research v2.5</div>
+      <div class="subtitle">Paper-first autonomous trading dashboard</div>
     </div>
     <div id="botStateBadge" class="state-badge">
        <div class="pulse"></div>
-       <span id="stateText">Initializing Hub...</span>
+       <span id="stateText">Loading...</span>
     </div>
   </header>
 
   <div class="controls">
-    <button class="btn-resume" onclick="controlBot('resume')">Deploy Fleet</button>
-    <button class="btn-pause" onclick="controlBot('pause')">Secure Standby</button>
-    <button class="btn-kill" onclick="controlBot('kill-switch')">Abort Cycle</button>
+    <button class="btn-resume" onclick="controlBot('resume')">Resume</button>
+    <button class="btn-pause" onclick="controlBot('pause')">Pause</button>
+    <button class="btn-kill" onclick="controlBot('kill-switch')">Kill Switch</button>
   </div>
 
   <div class="grid">
     <div class="card">
-      <div class="label">Net Equity <span>REALTIME</span></div>
+      <div class="label">Equity</div>
       <div id="equity" class="value">--</div>
       <div id="pnl" class="pnl-chip">--</div>
     </div>
     <div class="card">
-      <div class="label">Market Regime <span>V-SCORE</span></div>
+      <div class="label">Regime</div>
       <div id="regime" class="value">--</div>
       <div id="risk" class="pnl-chip">--</div>
     </div>
     <div class="card">
-      <div class="label">Utilization <span>MAX 1.0x</span></div>
+      <div class="label">Exposure</div>
       <div id="exposure" class="value">--</div>
       <div id="exposurePct" class="pnl-chip">--</div>
     </div>
     <div class="card">
-      <div class="label">Growth Performance <span>NETT</span></div>
+      <div class="label">Total Real PnL</div>
       <div id="totalPnl" class="value">--</div>
       <div class="pnl-chip">Kenyan Time (GMT+3)</div>
     </div>
@@ -693,30 +693,30 @@ def dashboard():
 
   <div class="grid" style="grid-template-columns: 3fr 2fr;">
     <div class="card">
-      <h2 class="section-title">Active Fleet Positions</h2>
+      <h2 class="section-title">Open Positions</h2>
       <table>
         <thead>
           <tr>
-            <th>Asset</th>
-            <th>Qty</th>
-            <th>Entry</th>
-            <th>Mark</th>
-            <th>Weight</th>
-            <th>PnL</th>
+            <th>Symbol</th>
+            <th>Quantity</th>
+            <th>Avg Entry</th>
+            <th>Mark Price</th>
+            <th>Exposure %</th>
+            <th>Unrealized PnL</th>
           </tr>
         </thead>
         <tbody id="positionsTable"></tbody>
       </table>
     </div>
     <div class="card">
-        <h2 class="section-title">Fleet Efficiency</h2>
+        <h2 class="section-title">Trading Metrics</h2>
         <div style="display: flex; flex-direction: column; gap: 20px;">
             <div>
-                <div class="label">Execution Count</div>
+                <div class="label">Trades</div>
                 <div id="trades" style="font-size: 20px; font-weight: 700;">--</div>
             </div>
             <div>
-                <div class="label">Alpha Probability</div>
+                <div class="label">Win Rate Estimate</div>
                 <div id="winRate" style="font-size: 20px; font-weight: 700; color: var(--accent);">--</div>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -735,29 +735,29 @@ def dashboard():
 
   <div class="grid">
     <div class="card" style="grid-column: span 2;">
-        <h2 class="section-title">Live Execution Stream (GMT+3)</h2>
+        <h2 class="section-title">Latest Trades</h2>
         <table>
           <thead>
             <tr>
               <th>Time</th>
-              <th>Asset</th>
+              <th>Symbol</th>
               <th>Side</th>
               <th>Quantity</th>
-              <th>Fill</th>
+              <th>Fill Price</th>
               <th>Strategy</th>
-              <th>Conf</th>
+              <th>Confidence</th>
             </tr>
           </thead>
           <tbody id="latestTrades"></tbody>
         </table>
     </div>
     <div class="card">
-        <h2 class="section-title">Evolutionary Scores</h2>
+        <h2 class="section-title">Strategy Performance</h2>
         <table>
           <thead>
             <tr>
-              <th>Agent ID</th>
-              <th>Net Alpha</th>
+              <th>Strategy</th>
+              <th>Score</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -767,7 +767,7 @@ def dashboard():
   </div>
 
   <div class="footer">
-    Restricted System Access • Quantitative Research OS • Institutional Standard
+    Live trading is OFF. This dashboard is running in paper mode.
   </div>
 
 <script>
@@ -806,10 +806,10 @@ async function loadDashboard() {
     const text = document.getElementById('stateText');
     if (data.paused) {
         badge.className = 'state-badge state-paused';
-        text.textContent = 'SECURE STANDBY';
+        text.textContent = 'PAUSED';
     } else {
         badge.className = 'state-badge state-running';
-        text.textContent = 'SYSTEM OPERATIONAL';
+        text.textContent = 'RUNNING';
     }
 
     // Top Row
@@ -828,8 +828,8 @@ async function loadDashboard() {
     totalPnl.className = 'value ' + pnlClass(p.total_pnl);
 
     // Sidebar Stats
-    document.getElementById('trades').innerHTML = `<span class="positive">${t.buy_count} L</span> / <span class="negative">${t.sell_count} S</span> (${t.total_trades})`;
-    document.getElementById('winRate').textContent = (Number(perf.win_rate_estimate ?? 0) * 100).toFixed(1) + '% Success';
+    document.getElementById('trades').innerHTML = `<span class="positive">Buy ${t.buy_count}</span> / <span class="negative">Sell ${t.sell_count}</span> (${t.total_trades})`;
+    document.getElementById('winRate').textContent = (Number(perf.win_rate_estimate ?? 0) * 100).toFixed(1) + '%';
     document.getElementById('takeProfits').textContent = perf.take_profit_count ?? 0;
     document.getElementById('stopLosses').textContent = perf.stop_loss_count ?? 0;
 
@@ -837,7 +837,7 @@ async function loadDashboard() {
     const posTable = document.getElementById('positionsTable');
     posTable.innerHTML = '';
     if (!positions.length) {
-        posTable.innerHTML = '<tr><td colspan="6" style="text-align:center; opacity:0.5; padding:40px;">No Active Fleet Positions</td></tr>';
+        posTable.innerHTML = '<tr><td colspan="6" style="text-align:center; opacity:0.5; padding:40px;">No open positions</td></tr>';
     } else {
         positions.forEach(pos => {
             posTable.innerHTML += `
