@@ -20,7 +20,11 @@ class AutonomousFundAgent:
             return {"status": "blocked_by_risk", "orders": []}
         fills = []
         for order in approved["orders"]:
-            fills.append(self.executor.execute(order["symbol"], order["side"], order["qty"], order["price"]) | {"strategy": order["strategy"], "confidence": order["confidence"]})
+            fills.append(self.executor.execute(order["symbol"], order["side"], order["qty"], order["price"]) | {
+                "strategy": order["strategy"],
+                "confidence": order["confidence"],
+                "shadow_mode": order.get("shadow_mode", False)
+            })
         self.cycles += 1
         if self.cycles % 50 == 0:
             self.strategy_pool.evolve(scored)

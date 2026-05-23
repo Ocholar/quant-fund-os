@@ -10,12 +10,14 @@ class Settings(BaseSettings):
     max_portfolio_drawdown: float = 0.05
     max_leverage: float = 0.5
     trade_interval_seconds: int = 30
-    symbols: str = "BTC/USDT,ETH/USDT,SOL/USDT"
+    symbols: str = "BTC/USDT,ETH/USDT,SOL/USDT,BNB/USDT,XRP/USDT"
     telegram_bot_token: str = ""
     telegram_chat_id: str = ""
     exchange_name: str = "paper"
     exchange_api_key: str = ""
     exchange_api_secret: str = ""
+    mexc_api_key: str = ""
+    mexc_api_secret: str = ""
 
     @property
     def symbol_list(self) -> list[str]:
