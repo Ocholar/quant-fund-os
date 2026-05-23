@@ -7,14 +7,16 @@ class StrategyDNA:
     trend_threshold: float
     momentum_threshold: float
     risk_fraction: float
+    shadow_mode: bool = False
 
     @staticmethod
     def random(name="evo"):
         return StrategyDNA(
             name=f"{name}_{random.randint(1000,9999)}",
-            trend_threshold=random.uniform(0.002, 0.03),
-            momentum_threshold=random.uniform(0.001, 0.02),
-            risk_fraction=random.uniform(0.005, 0.03),
+            trend_threshold=random.uniform(-0.0001, 0.0001),
+            momentum_threshold=random.uniform(-0.0001, 0.0001),
+            risk_fraction=random.uniform(0.1, 0.2),
+            shadow_mode=random.random() < 0.3, # 30% of new strategies start in shadow mode
         )
 
     def mutate(self):
@@ -23,6 +25,7 @@ class StrategyDNA:
             trend_threshold=max(0.0005, self.trend_threshold * random.uniform(0.8, 1.2)),
             momentum_threshold=max(0.0005, self.momentum_threshold * random.uniform(0.8, 1.2)),
             risk_fraction=min(0.03, max(0.002, self.risk_fraction * random.uniform(0.8, 1.2))),
+            shadow_mode=self.shadow_mode,
         )
 
 class StrategyPool:

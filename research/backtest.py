@@ -1,7 +1,7 @@
 from core.metrics import sharpe_ratio, max_drawdown
 
 def run_backtest(price_series):
-    equity = [10_000.0]
+    equity = [100.0]
     returns = []
     for i in range(1, len(price_series)):
         r = price_series[i] / price_series[i-1] - 1

@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS trades (
     strategy TEXT NOT NULL,
     confidence DOUBLE PRECISION NOT NULL DEFAULT 0,
     live BOOLEAN NOT NULL DEFAULT FALSE,
+    shadow_mode BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE TABLE IF NOT EXISTS portfolio_snapshots (
@@ -30,8 +31,6 @@ CREATE TABLE IF NOT EXISTS strategy_scores (
     status TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
-
 CREATE TABLE IF NOT EXISTS positions (
     symbol TEXT PRIMARY KEY,
     quantity DOUBLE PRECISION NOT NULL DEFAULT 0,
@@ -42,4 +41,9 @@ CREATE TABLE IF NOT EXISTS positions (
     exposure DOUBLE PRECISION NOT NULL DEFAULT 0,
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-
+CREATE TABLE IF NOT EXISTS symbol_quarantine (
+    symbol TEXT PRIMARY KEY,
+    reason TEXT NOT NULL,
+    blocked_until TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);

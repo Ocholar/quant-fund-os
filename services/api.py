@@ -1,4 +1,4 @@
-﻿from fastapi import FastAPI
+from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from sqlalchemy import text
 from core.db import engine
@@ -22,15 +22,42 @@ def ensure_positions_table(conn):
     conn.execute(text("""
         CREATE TABLE IF NOT EXISTS positions (
             symbol TEXT PRIMARY KEY,
-            quantity DOUBLE PRECISION NOT NULL DEFAULT 0,
-            avg_entry DOUBLE PRECISION NOT NULL DEFAULT 0,
-            realized_pnl DOUBLE PRECISION NOT NULL DEFAULT 0,
-            unrealized_pnl DOUBLE PRECISION NOT NULL DEFAULT 0,
-            last_price DOUBLE PRECISION NOT NULL DEFAULT 0,
-            exposure DOUBLE PRECISION NOT NULL DEFAULT 0,
-            updated_at TIMESTAMPTZ DEFAULT NOW()
+            quantity REAL NOT NULL DEFAULT 0,
+            avg_entry REAL NOT NULL DEFAULT 0,
+            realized_pnl REAL NOT NULL DEFAULT 0,
+            unrealized_pnl REAL NOT NULL DEFAULT 0,
+            last_price REAL NOT NULL DEFAULT 0,
+            exposure REAL NOT NULL DEFAULT 0,
+            strategy TEXT,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     """))
+    conn.execute(text("""
+        CREATE TABLE IF NOT EXISTS symbol_quarantine (
+            symbol TEXT PRIMARY KEY,
+            reason TEXT NOT NULL,
+            blocked_until DATETIME,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """))
+
+
+def get_quarantine(conn):
+    rows = conn.execute(text("""
+        SELECT symbol, reason, blocked_until, created_at
+        FROM symbol_quarantine
+        WHERE blocked_until IS NULL OR blocked_until > CURRENT_TIMESTAMP
+        ORDER BY created_at DESC
+    """)).mappings().all()
+    return [
+        {
+            "symbol": r["symbol"],
+            "reason": r["reason"],
+            "blocked_until": str(r["blocked_until"]) if r["blocked_until"] else "indefinite",
+            "quarantined_at": str(r["created_at"]),
+        }
+        for r in rows
+    ]
 
 
 def get_positions(conn):
@@ -70,15 +97,15 @@ def get_positions(conn):
 def get_performance(conn, equity):
     ensure_positions_table(conn)
 
-    counts = conn.execute(text("""
+    summary = conn.execute(text("""
         SELECT
             COUNT(*) AS total_trades,
-            COUNT(*) FILTER (WHERE side = 'buy') AS buy_count,
-            COUNT(*) FILTER (WHERE side = 'sell') AS sell_count,
-            COUNT(*) FILTER (WHERE strategy = 'take_profit') AS take_profit_count,
-            COUNT(*) FILTER (WHERE strategy = 'stop_loss') AS stop_loss_count,
-            COUNT(*) FILTER (WHERE strategy = 'risk_off_exit') AS risk_off_exit_count,
-            COUNT(*) FILTER (WHERE strategy = 'emergency_exposure_reduction') AS emergency_exit_count
+            SUM(CASE WHEN UPPER(side) = 'BUY' THEN 1 ELSE 0 END) AS buy_count,
+            SUM(CASE WHEN UPPER(side) = 'SELL' THEN 1 ELSE 0 END) AS sell_count,
+            SUM(CASE WHEN strategy = 'take_profit' THEN 1 ELSE 0 END) AS take_profit_count,
+            SUM(CASE WHEN strategy = 'stop_loss' THEN 1 ELSE 0 END) AS stop_loss_count,
+            SUM(CASE WHEN strategy = 'risk_off_exit' THEN 1 ELSE 0 END) AS risk_off_exit_count,
+            SUM(CASE WHEN strategy = 'emergency_exposure_reduction' THEN 1 ELSE 0 END) AS emergency_exit_count
         FROM trades
     """)).mappings().first()
 
@@ -93,18 +120,18 @@ def get_performance(conn, equity):
         SELECT
             symbol,
             COUNT(*) AS total,
-            COUNT(*) FILTER (WHERE side = 'buy') AS buys,
-            COUNT(*) FILTER (WHERE side = 'sell') AS sells,
-            ROUND(COALESCE(SUM(pnl), 0)::numeric, 2) AS realized_pnl
+            SUM(CASE WHEN UPPER(side) = 'BUY' THEN 1 ELSE 0 END) AS buys,
+            SUM(CASE WHEN UPPER(side) = 'SELL' THEN 1 ELSE 0 END) AS sells,
+            CAST(COALESCE(SUM(pnl), 0) AS NUMERIC) AS realized_pnl
         FROM trades
         GROUP BY symbol
         ORDER BY total DESC
         LIMIT 10
     """)).mappings().all()
 
-    sell_count = int(counts["sell_count"] or 0) if counts else 0
-    take_profit_count = int(counts["take_profit_count"] or 0) if counts else 0
-    stop_loss_count = int(counts["stop_loss_count"] or 0) if counts else 0
+    sell_count = int(summary["sell_count"] or 0) if summary else 0
+    take_profit_count = int(summary["take_profit_count"] or 0) if summary else 0
+    stop_loss_count = int(summary["stop_loss_count"] or 0) if summary else 0
 
     closed_count = take_profit_count + stop_loss_count
     win_rate_estimate = take_profit_count / closed_count if closed_count else 0
@@ -113,18 +140,23 @@ def get_performance(conn, equity):
     unrealized_pnl = float(pnl_row["unrealized_pnl"] or 0) if pnl_row else 0.0
 
     return {
-        "total_trades": int(counts["total_trades"] or 0) if counts else 0,
-        "buy_count": int(counts["buy_count"] or 0) if counts else 0,
-        "sell_count": sell_count,
-        "take_profit_count": take_profit_count,
-        "stop_loss_count": stop_loss_count,
-        "risk_off_exit_count": int(counts["risk_off_exit_count"] or 0) if counts else 0,
-        "emergency_exit_count": int(counts["emergency_exit_count"] or 0) if counts else 0,
-        "win_rate_estimate": round(win_rate_estimate, 4),
+        "total_trades": int(summary["total_trades"] or 0) if summary else 0,
+        "buy_count": int(summary["buy_count"] or 0) if summary else 0,
+        "sell_count": int(summary["sell_count"] or 0) if summary else 0,
+        "win_rate": round(win_rate_estimate, 4),
         "realized_pnl": round(realized_pnl, 2),
         "unrealized_pnl": round(unrealized_pnl, 2),
         "total_pnl": round(realized_pnl + unrealized_pnl, 2),
-        "by_symbol": [dict(r) for r in by_symbol],
+        "by_symbol": [
+            {
+                "symbol": r["symbol"],
+                "total": int(r["total"] or 0),
+                "buys": int(r["buys"] or 0),
+                "sells": int(r["sells"] or 0),
+                "realized_pnl": float(r["realized_pnl"] or 0)
+            }
+            for r in by_symbol
+        ],
     }
 
 
@@ -148,8 +180,8 @@ def get_status_payload():
         """)).mappings().all()
 
         portfolio = dict(latest) if latest else {
-            "equity": 10000,
-            "cash": 10000,
+            "equity": 100,
+            "cash": 100,
             "exposure": 0,
             "drawdown": 0,
             "regime": "UNKNOWN",
@@ -164,6 +196,13 @@ def get_status_payload():
 
         positions = get_positions(conn)
         performance = get_performance(conn, equity)
+        quarantine = get_quarantine(conn)
+
+        scores = conn.execute(text("""
+            SELECT strategy, score, status
+            FROM strategy_scores
+            ORDER BY score DESC
+        """)).mappings().all()
 
     return {
         "name": "Quant Fund OS",
@@ -196,6 +235,8 @@ def get_status_payload():
             "blocked_drawdown": -0.05,
             "caution_drawdown": -0.02,
         },
+        "quarantine": quarantine,
+        "strategy_scores": [dict(s) for s in scores],
     }
 
 
@@ -252,8 +293,8 @@ def latest_portfolio():
         """)).mappings().first()
 
     return dict(row) if row else {
-        "equity": 10000,
-        "cash": 10000,
+        "equity": 100,
+        "cash": 100,
         "exposure": 0,
         "drawdown": 0,
         "regime": "UNKNOWN",
@@ -266,6 +307,38 @@ def positions():
         return get_positions(conn)
 
 
+@app.get("/quarantine")
+def quarantine():
+    with engine.begin() as conn:
+        ensure_positions_table(conn)
+        return get_quarantine(conn)
+
+
+@app.delete("/quarantine/{symbol}")
+def release_quarantine(symbol: str):
+    with engine.begin() as conn:
+        conn.execute(text("DELETE FROM symbol_quarantine WHERE symbol = :sym"), {"sym": symbol})
+    return {"status": "released", "symbol": symbol}
+
+
+@app.get("/strategy-scores")
+def strategy_scores():
+    with engine.begin() as conn:
+        rows = conn.execute(text("""
+            SELECT strategy, sharpe, drawdown, score, status, created_at
+            FROM strategy_scores
+            ORDER BY score DESC
+        """)).mappings().all()
+    return [dict(r) for r in rows]
+
+
+@app.delete("/strategy-scores/{strategy}")
+def reset_strategy(strategy: str):
+    with engine.begin() as conn:
+        conn.execute(text("DELETE FROM strategy_scores WHERE strategy = :s"), {"s": strategy})
+    return {"status": "reset", "strategy": strategy}
+
+
 @app.get("/metrics-summary")
 def metrics_summary():
     with engine.begin() as conn:
@@ -276,7 +349,7 @@ def metrics_summary():
             LIMIT 1
         """)).mappings().first()
 
-        equity = float(latest["equity"] or 0) if latest else 10000
+        equity = float(latest["equity"] or 0) if latest else 100
         return get_performance(conn, equity)
 
 
@@ -541,6 +614,41 @@ def dashboard():
     </table>
   </div>
 
+  <div class="card">
+    <h2>Strategy Performance</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Strategy</th>
+          <th>Score</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="strategyTable">
+        <tr><td colspan="4">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Symbol Quarantine</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Symbol</th>
+          <th>Reason</th>
+          <th>Blocked Until</th>
+          <th>Quarantined At</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="quarantineTable">
+        <tr><td colspan="5">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
   <div class="footer">
     Live trading is OFF. This dashboard is running in paper mode.
   </div>
@@ -698,9 +806,59 @@ async function loadDashboard() {
         latestTrades.appendChild(row);
       }
     }
+
+    const quarantineTable = document.getElementById('quarantineTable');
+    quarantineTable.innerHTML = '';
+    const quarantine = data.quarantine ?? [];
+    if (!quarantine.length) {
+      quarantineTable.innerHTML = '<tr><td colspan="5" style="color:#22c55e">No symbols quarantined ✓</td></tr>';
+    } else {
+      for (const q of quarantine) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td style="color:#ef4444;font-weight:700">${q.symbol}</td>
+          <td>${q.reason}</td>
+          <td>${q.blocked_until}</td>
+          <td>${q.quarantined_at}</td>
+          <td><button onclick="releaseSymbol('${q.symbol}')" style="padding:4px 8px;font-size:12px;background:#374151;color:#fff;border:none;border-radius:6px;cursor:pointer">Release</button></td>
+        `;
+        quarantineTable.appendChild(row);
+      }
+    }
+
+    const strategyTable = document.getElementById('strategyTable');
+    strategyTable.innerHTML = '';
+    const scores = data.strategy_scores ?? [];
+    if (!scores.length) {
+      strategyTable.innerHTML = '<tr><td colspan="4">No strategy scores yet</td></tr>';
+    } else {
+      for (const s of scores) {
+        const row = document.createElement('tr');
+        const isBlocked = s.status === 'blocked';
+        row.innerHTML = `
+          <td>${s.strategy}</td>
+          <td class="${pnlClass(s.score)}">${money(s.score)}</td>
+          <td class="${isBlocked ? 'blocked' : 'safe'}">${s.status}</td>
+          <td><button onclick="resetStrategy('${s.strategy}')" style="padding:4px 8px;font-size:12px;background:#374151;color:#fff;border:none;border-radius:6px;cursor:pointer">Reset</button></td>
+        `;
+        strategyTable.appendChild(row);
+      }
+    }
   } catch (err) {
     console.error('Dashboard load failed:', err);
   }
+}
+
+async function releaseSymbol(symbol) {
+  if (!confirm('Release ' + symbol + ' from quarantine?')) return;
+  await fetch('/quarantine/' + encodeURIComponent(symbol), { method: 'DELETE' });
+  await loadDashboard();
+}
+
+async function resetStrategy(strategy) {
+  if (!confirm('Reset scores even if blocked for ' + strategy + '?')) return;
+  await fetch('/strategy-scores/' + encodeURIComponent(strategy), { method: 'DELETE' });
+  await loadDashboard();
 }
 
 loadDashboard();
