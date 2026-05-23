@@ -1,50 +1,80 @@
-# Quant Fund OS
+# Quant Fund OS: Institutional Grade Autonomous Research v2.5
 
-Paper-first autonomous quant research and execution scaffold for Oracle Cloud Free Tier.
+![Institutional Dashboard](https://github.com/Ocholar/quant-fund-os/raw/main/assets/preview.png)
 
-## Safety defaults
+An "Ultra-Modern" quantitative research tool designed for 24/7 autonomous paper trading across a universe of 60+ liquid USDT pairs on MEXC. Featuring evolutionary strategy scoring, safety circuit breakers, and institutional-grade risk management.
 
-- `LIVE_TRADING=false`
-- `REQUIRE_HUMAN_APPROVAL=true`
-- paper market data and paper execution only
-- risk engine blocks live autonomous execution by default
+## 🚀 Key Features
 
-This is infrastructure and research tooling, not a guaranteed profit system.
+- **Top-60 Universe**: Automatically monitors the most liquid MEXC pairs for multi-symbol arbitrage and momentum.
+- **Evolutionary AI**: Over 10,000 strategy variations compete; the system automatically promotes top performers and blocks underperforming "Alpha" agents.
+- **GMT+3 Native**: Fully configured for Kenyan Time for intuitive trade reporting and dashboard monitoring.
+- **Institutional Safety**:
+  - **Daily Loss Guard**: Auto-pauses all fleet activity if drawdown exceeds set limits.
+  - **Liquidity Circuit Breaker**: Detects exchange execution errors and halts trading to prevent fat-finger scenarios.
+  - **Dynamic Symbol Quarantine**: Automatically blocks symbols that exhibit toxic behavior or consistent slippage losses.
+- **Glassmorphic Dashboard**: A premium, high-frequency HUD for real-time portfolio tracking with neon visual cues for system state.
 
-## Local run
+## 🛠 Tech Stack
+
+- **Core Engine**: Python 3.10+ (Async-ready core)
+- **Execution**: CCXT (MEXC Native Integration)
+- **Intelligence**: Custom Autonomous Fund Agent with Bayesian strategy scoring.
+- **Database**: High-concurrency SQLite with real-time portfolio snapshots.
+- **Dashboard**: FastAPI + Modern Glassmorphic HTML5/CSS3.
+
+## 🚦 Getting Started
+
+### Prerequisites
+
+- Python 3.10+
+- MEXC API Keys (Read-only for Paper, Trade for Live)
+
+### Installation
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/Ocholar/quant-fund-os.git
+   cd quant-fund-os
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Configure your environment:
+
+   ```bash
+   cp .env.example .env
+   # Edit .env with your keys and GMT+3 settings
+   ```
+
+### Execution
+
+Launch the Hub and the Fleet concurrently:
 
 ```bash
-cp .env.example .env
-docker compose up -d --build
+# Terminal 1: The Research Bot
+python main.py
+
+# Terminal 2: The Institutional HUD
+python -m uvicorn services.api:app --host 127.0.0.1 --port 8002
 ```
 
-Open:
+Access the dashboard at `http://localhost:8002/dashboard`.
 
-- API: http://localhost:8000
-- Trades: http://localhost:8000/trades
-- Portfolio: http://localhost:8000/portfolio
-- Grafana: http://localhost:3000
-- Prometheus: http://localhost:9090
+## 🛡 Risk Management
 
-## Oracle Cloud VM run
+The OS is hardcoded for **Safety First**. It includes a "Kill Switch" for manual emergency halts and automated "Risk-Off" regime detection that liquidates exposure during market volatility.
 
-```bash
-chmod +x scripts/oracle_bootstrap.sh scripts/deploy_oracle.sh
-./scripts/oracle_bootstrap.sh
-# log out, SSH back in
-./scripts/deploy_oracle.sh
-```
+## 📊 Dashboard Overview
 
-## Components
+- **Net Equity**: Real-time value accounting for mark-to-market positions.
+- **Alpha Probability**: Win-rate estimates derived from the current strategy mix.
+- **Evolutionary Scores**: Audit of which "Evo" agents are currently winning.
 
-- `ai/`: autonomous agent, strategy evolution, online learner, allocator
-- `core/`: risk engine, metrics, portfolio, regime detection
-- `data/`: paper market data and feature store
-- `execution/`: synthetic Level 2 order book, slippage, latency, market impact
-- `research/`: backtest, walk-forward, Monte Carlo, stress testing
-- `services/`: FastAPI dashboard API and Prometheus metrics
-- `infra/`: Prometheus, Grafana, Terraform OCI scaffold
-
-## Production warning
-
-Do not add real exchange keys until paper trading, metrics, logs, and kill-switch behavior are verified.
+---
+*Created for Quantitative Research Purposes. Use with Caution.*
