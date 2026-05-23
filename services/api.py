@@ -29,7 +29,7 @@ def ensure_positions_table(conn):
             last_price REAL NOT NULL DEFAULT 0,
             exposure REAL NOT NULL DEFAULT 0,
             strategy TEXT,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            updated_at DATETIME DEFAULT (DATETIME('now', '+3 hours'))
         )
     """))
     conn.execute(text("""
@@ -37,7 +37,7 @@ def ensure_positions_table(conn):
             symbol TEXT PRIMARY KEY,
             reason TEXT NOT NULL,
             blocked_until DATETIME,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            created_at DATETIME DEFAULT (DATETIME('now', '+3 hours'))
         )
     """))
 
@@ -46,7 +46,7 @@ def get_quarantine(conn):
     rows = conn.execute(text("""
         SELECT symbol, reason, blocked_until, created_at
         FROM symbol_quarantine
-        WHERE blocked_until IS NULL OR blocked_until > CURRENT_TIMESTAMP
+        WHERE blocked_until IS NULL OR blocked_until > DATETIME('now', '+3 hours')
         ORDER BY created_at DESC
     """)).mappings().all()
     return [
@@ -387,6 +387,7 @@ def resume():
     send_telegram_alert(
         "<b>Quant Fund OS RESUMED</b>\n"
         "Paper trading engine is active again.\n"
+        "Timezone: Kenyan Time (GMT+3)\n"
         "Live trading remains OFF."
     )
     return {"status": "running", "paused": False}

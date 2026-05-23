@@ -370,7 +370,7 @@ def ensure_positions_table():
                 unrealized_pnl REAL NOT NULL DEFAULT 0,
                 last_price REAL NOT NULL DEFAULT 0,
                 exposure REAL NOT NULL DEFAULT 0,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                updated_at DATETIME DEFAULT (DATETIME('now', '+3 hours'))
             )
         """))
         conn.execute(text("""
@@ -378,7 +378,7 @@ def ensure_positions_table():
                 symbol TEXT PRIMARY KEY,
                 reason TEXT NOT NULL,
                 blocked_until DATETIME,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                created_at DATETIME DEFAULT (DATETIME('now', '+3 hours'))
             )
         """))
 
@@ -455,7 +455,7 @@ def update_position_from_fill(conn, fill):
         )
         VALUES(
             :symbol, :quantity, :avg_entry, :realized_pnl,
-            :unrealized_pnl, :last_price, :exposure, :strategy, CURRENT_TIMESTAMP
+            :unrealized_pnl, :last_price, :exposure, :strategy, DATETIME('now', '+3 hours')
         )
         ON CONFLICT (symbol)
         DO UPDATE SET
@@ -466,7 +466,7 @@ def update_position_from_fill(conn, fill):
             last_price = EXCLUDED.last_price,
             exposure = EXCLUDED.exposure,
             strategy = EXCLUDED.strategy,
-            updated_at = CURRENT_TIMESTAMP
+            updated_at = DATETIME('now', '+3 hours')
     """), {
         "symbol": symbol,
         "quantity": new_qty,
@@ -503,7 +503,7 @@ def mark_positions_to_market(conn, prices):
             SET last_price = :last_price,
                 exposure = :exposure,
                 unrealized_pnl = :unrealized_pnl,
-                updated_at = CURRENT_TIMESTAMP
+                updated_at = DATETIME('now', '+3 hours')
             WHERE symbol = :symbol
         """), {
             "symbol": symbol,
