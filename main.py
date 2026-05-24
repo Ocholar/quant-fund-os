@@ -71,8 +71,15 @@ def load_state_from_db():
                 SELECT cash, equity FROM portfolio_snapshots ORDER BY id DESC LIMIT 1
             """)).mappings().first()
             if snap:
-                portfolio.cash = float(snap["cash"])
-                portfolio.peak = max(portfolio.peak, float(snap["equity"]))
+                recovered_cash = float(snap["cash"])
+                # Sanity check: if recovered cash is implausibly large (>3x starting capital)
+                # the snapshot is likely corrupted (double-add bug). Reset to INITIAL_EQUITY.
+                if recovered_cash > INITIAL_EQUITY * 3:
+                    print(f"WARNING: Corrupted cash ${recovered_cash:.2f} detected, resetting to ${INITIAL_EQUITY:.2f}")
+                    portfolio.cash = INITIAL_EQUITY
+                else:
+                    portfolio.cash = recovered_cash
+                portfolio.peak = max(portfolio.peak, float(snap["equity"]) if float(snap["equity"]) <= INITIAL_EQUITY * 3 else INITIAL_EQUITY)
                 print(f"Recovered cash: ${portfolio.cash:.2f}")
 
             # 2. Recover open positions
@@ -386,7 +393,7 @@ def quarantine_symbol(symbol: str, reason: str, hours: int = 24):
     with engine.begin() as conn:
         conn.execute(text("""
             INSERT INTO symbol_quarantine (symbol, reason, blocked_until, created_at)
-            VALUES (:symbol, :reason, datetime('now', '+' || :hours || ' hours'), datetime('now'))
+            VALUES (:symbol, :reason, datetime('now', '+' || :hours || ' hours', '+3 hours'), datetime('now', '+3 hours'))
             ON CONFLICT (symbol) DO UPDATE SET
             reason = EXCLUDED.reason,
             blocked_until = EXCLUDED.blocked_until,
@@ -576,7 +583,7 @@ def recent_buy_count():
             SELECT COUNT(*) AS count
             FROM trades
             WHERE side = 'buy'
-              AND created_at >= datetime('now', '-1 hour')
+              AND created_at >= datetime('now', '+3 hours', '-1 hour')
         """)).mappings().first()
 
     return int(row["count"] or 0) if row else 0
