@@ -11,6 +11,8 @@ RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
 
 COPY . .
 
+RUN chmod +x start.sh
+
 EXPOSE 8000
 
-CMD ["python", "main.py"]
+CMD ["./start.sh"]
