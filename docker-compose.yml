@@ -1,62 +1,20 @@
-services:
-  bot:
-    build: .
-    command: python main.py
-    restart: unless-stopped
-    env_file: .env
-    depends_on:
-      - postgres
-      - redis
-    volumes:
-      - ./logs:/app/logs
+# docker-compose.yml — Oracle Cloud Always Free deployment
+# Single container: runs bot + dashboard API together via start.sh
 
-  api:
+services:
+  quant:
     build: .
-    command: uvicorn services.api:app --host 0.0.0.0 --port 8000
     restart: unless-stopped
     env_file: .env
     ports:
       - "8000:8000"
-    depends_on:
-      - postgres
-      - redis
-
-  postgres:
-    image: postgres:16
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: quantfund
-      POSTGRES_USER: quant
-      POSTGRES_PASSWORD: quantpass
-    ports:
-      - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
-
-  redis:
-    image: redis:7
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-
-  prometheus:
-    image: prom/prometheus
-    restart: unless-stopped
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-
-  grafana:
-    image: grafana/grafana
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - quant_data:/app
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
 
 volumes:
-  postgres_data:
-  grafana_data:
+  quant_data:
