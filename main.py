@@ -27,9 +27,9 @@ COOLDOWN_SECONDS = 10  # was 30 — faster re-entry after a closed position
 
 MAX_DAILY_LOSS_PCT = 0.01
 SIDEWAYS_MAX_ENTRIES_PER_HOUR = 24   # was 3 — allow re-entry every ~2.5 min
-SIDEWAYS_MIN_CONFIDENCE = 0.50        # was 0.60 — accept more signals
+SIDEWAYS_MIN_CONFIDENCE = 0.60        # restored — only trade on solid signals
 TRENDING_MAX_ENTRIES_PER_HOUR = 48   # was 6 — rapid re-entry in trending
-TRENDING_MIN_CONFIDENCE = 0.45        # was 0.55
+TRENDING_MIN_CONFIDENCE = 0.55        # restored — solid signals in trending too
 LIQUIDITY_ERROR_LIMIT = 3
 LIQUIDITY_ERROR_WINDOW_SECONDS = 600
 
