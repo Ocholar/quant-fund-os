@@ -8,20 +8,23 @@ logger = logging.getLogger(__name__)
 
 class PaperExecutor:
     def execute(self, symbol: str, side: str, qty: float, expected_price: float) -> dict:
-        book = OrderBook.synthetic(expected_price)
-        try:
-            fill = book.market_buy(qty) if side == "buy" else book.market_sell(qty)
-        except ValueError as e:
-            if "insufficient synthetic liquidity" in str(e).lower():
-                raise ValueError(f"insufficient synthetic liquidity for {symbol}") from e
-            raise
+        notional = qty * expected_price
+        max_notional = 1000.0
+
+        if notional > max_notional:
+            raise ValueError(f"insufficient synthetic liquidity for {symbol}")
+
+        spread_bps = 6
+        slip = expected_price * spread_bps / 10000
+        fill_price = expected_price + slip if side == "buy" else expected_price - slip
+
         return {
             "symbol": symbol,
             "side": side,
             "quantity": qty,
             "expected_price": expected_price,
-            "fill_price": fill,
-            "slippage_bps": slippage_bps(expected_price, fill, side),
+            "fill_price": fill_price,
+            "slippage_bps": spread_bps,
         }
 
 class RealMEXCExecutor:

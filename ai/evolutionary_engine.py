@@ -38,8 +38,14 @@ class StrategyPool:
     def score(self, candidates, features_by_symbol=None):
         scored = []
         for s in candidates:
-            score = random.uniform(0.2, 0.8)
-            scored.append({"strategy": s, "score": score})
+            # Deterministic scoring logic instead of random
+            base_score = 0.5 
+            if features_by_symbol:
+                positive_matches = sum(1 for sym, f in features_by_symbol.items() 
+                                     if f.get("trend", 0) > s.trend_threshold 
+                                     and f.get("momentum", 0) > s.momentum_threshold)
+                base_score = min(0.9, 0.4 + (positive_matches * 0.05))
+            scored.append({"strategy": s, "score": base_score})
         return sorted(scored, key=lambda x: x["score"], reverse=True)
 
     def evolve(self, scored):

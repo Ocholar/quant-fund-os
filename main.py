@@ -43,6 +43,9 @@ last_seen_paused_state = None
 ALLOW_BUYS = True
 ALLOW_SELLS = True
 
+quarantined_symbols = {}
+quarantined_strategies = {}
+
 
 portfolio = Portfolio(cash=10.0)
 market = build_market_data(settings.symbol_list)
@@ -143,6 +146,9 @@ def can_buy(symbol, fill, prices, equity):
     if not ALLOW_BUYS:
         return False, "buys_disabled"
 
+    if symbol in quarantined_symbols and time.time() < quarantined_symbols[symbol]:
+        return False, "symbol_quarantined"
+
     if equity <= INITIAL_EQUITY * (1 - DAILY_LOSS_LIMIT_PCT):
         return False, "daily_loss_limit"
 
@@ -171,7 +177,8 @@ def apply_buy(fill):
     symbol = fill["symbol"]
     qty = float(fill["quantity"])
     price = float(fill["fill_price"])
-    cost = qty * price
+    fee = (qty * price) * 0.0005 # 0.05% fee model
+    cost = (qty * price) + fee
 
     if portfolio.cash < cost:
         return False
@@ -198,7 +205,8 @@ def apply_sell(symbol, qty, price, reason):
     if sell_qty <= 0:
         return None
 
-    portfolio.cash += sell_qty * price
+    fee = (sell_qty * price) * 0.0005
+    portfolio.cash += (sell_qty * price) - fee
     portfolio.positions[symbol] = held - sell_qty
 
     if portfolio.positions[symbol] <= 0.00000001:
@@ -281,6 +289,7 @@ def generate_sells(prices, regime):
             sell = apply_sell(symbol, qty, price, "stop_loss")
             if sell:
                 sells.append(sell)
+                quarantined_symbols[symbol] = time.time() + 86400 # Block for 24h
 
         elif change >= TAKE_PROFIT_PCT:
             sell = apply_sell(symbol, qty * 0.75, price, "take_profit")
