@@ -74,8 +74,8 @@ def get_positions(conn):
             unrealized_pnl,
             updated_at
         FROM positions
-        WHERE quantity > 0.0001
-          AND exposure >= 1
+        WHERE quantity > 0.00000001
+          AND exposure >= 0.05
         ORDER BY exposure DESC
     """)).mappings().all()
 
@@ -169,7 +169,7 @@ def get_status_payload():
         ensure_positions_table(conn)
 
         latest = conn.execute(text("""
-            SELECT equity, cash, exposure, drawdown, regime, DATETIME(created_at, '+3 hours') AS created_at
+            SELECT equity, cash, exposure, drawdown, regime, created_at
             FROM portfolio_snapshots
             ORDER BY id DESC
             LIMIT 1
@@ -177,7 +177,7 @@ def get_status_payload():
 
         latest_trades = conn.execute(text("""
             SELECT symbol, side, quantity, fill_price, slippage_bps,
-                   strategy, confidence, live, DATETIME(created_at, '+3 hours') AS created_at
+                   strategy, confidence, live, created_at
             FROM trades
             ORDER BY id DESC
             LIMIT 10
@@ -266,7 +266,7 @@ def trades(limit: int = 50):
     with engine.begin() as conn:
         rows = conn.execute(text("""
             SELECT symbol, side, quantity, fill_price, slippage_bps,
-                   strategy, confidence, live, DATETIME(created_at, '+3 hours') AS created_at
+                   strategy, confidence, live, created_at
             FROM trades
             ORDER BY id DESC
             LIMIT :limit
@@ -278,7 +278,7 @@ def trades(limit: int = 50):
 def portfolio(limit: int = 100):
     with engine.begin() as conn:
         rows = conn.execute(text("""
-            SELECT equity, cash, exposure, drawdown, regime, DATETIME(created_at, '+3 hours') AS created_at
+            SELECT equity, cash, exposure, drawdown, regime, created_at
             FROM portfolio_snapshots
             ORDER BY id DESC
             LIMIT :limit
@@ -290,7 +290,7 @@ def portfolio(limit: int = 100):
 def latest_portfolio():
     with engine.begin() as conn:
         row = conn.execute(text("""
-            SELECT equity, cash, exposure, drawdown, regime, DATETIME(created_at, '+3 hours') AS created_at
+            SELECT equity, cash, exposure, drawdown, regime, created_at
             FROM portfolio_snapshots
             ORDER BY id DESC
             LIMIT 1
@@ -329,7 +329,7 @@ def release_quarantine(symbol: str):
 def strategy_scores():
     with engine.begin() as conn:
         rows = conn.execute(text("""
-            SELECT strategy, sharpe, drawdown, score, status, DATETIME(created_at, '+3 hours') AS created_at
+            SELECT strategy, sharpe, drawdown, score, status, created_at
             FROM strategy_scores
             ORDER BY score DESC
         """)).mappings().all()

@@ -4,7 +4,7 @@ class Settings(BaseSettings):
     app_env: str = "local"
     live_trading: bool = False
     require_human_approval: bool = True
-    database_url: str = "postgresql+psycopg2://quant:quantpass@localhost:5432/quantfund"
+    database_url: str = "sqlite:///quant.db"
     redis_url: str = "redis://localhost:6379/0"
     max_daily_loss: float = 0.01
     max_portfolio_drawdown: float = 0.05
@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     exchange_api_secret: str = ""
     mexc_api_key: str = ""
     mexc_api_secret: str = ""
+    mexc_exchange_type: str = "spot" # "spot" or "swap"
+    mexc_leverage: int = 1         # 1x for spot, up to 100x for futures
 
     @property
     def symbol_list(self) -> list[str]:

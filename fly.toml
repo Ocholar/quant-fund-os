@@ -7,9 +7,10 @@ primary_region = "jnb"  # Johannesburg - closest to Nairobi
 [env]
   LIVE_TRADING = "false"
   PYTHONUNBUFFERED = "1"
+  DATABASE_URL = "sqlite:///app/data/quant.db"
 
 [http_service]
-  internal_port = 8000
+  internal_port = 8080
   force_https = true
   auto_stop_machines = false
   auto_start_machines = true
