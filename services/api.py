@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from sqlalchemy import text
 from core.db import engine
+from core.config import settings
 from services.metrics import metrics_app
 from core.control import is_paused, pause_bot, resume_bot, pause_reason, get_control_state
 from services.telegram import send_telegram_alert
