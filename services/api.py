@@ -210,8 +210,11 @@ def get_status_payload():
 
     return {
         "name": "Quant Fund OS",
-        "mode": "paper-first",
-        "live_trading": False,
+        "mode": "live" if settings.live_trading else "paper",
+        "live_trading": settings.live_trading,
+        "exchange": "mexc" if settings.mexc_api_key else "simulated",
+        "exchange_type": settings.mexc_exchange_type,
+        "leverage": settings.mexc_leverage,
         "risk_status": risk_status(exposure_pct, drawdown),
         "portfolio": {
             "equity": round(equity, 2),
@@ -234,7 +237,7 @@ def get_status_payload():
             "latest_trades": [dict(t) for t in latest_trades],
         },
         "risk_rules": {
-            "max_total_exposure_pct": 0.50,
+            "max_total_exposure_pct": 0.95,
             "caution_exposure_pct": 0.35,
             "blocked_drawdown": -0.05,
             "caution_drawdown": -0.02,

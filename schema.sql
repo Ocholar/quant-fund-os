@@ -47,3 +47,9 @@ CREATE TABLE IF NOT EXISTS symbol_quarantine (
     blocked_until TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+CREATE TABLE IF NOT EXISTS strategy_quarantine (
+    strategy TEXT PRIMARY KEY,
+    reason TEXT NOT NULL,
+    blocked_until TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);

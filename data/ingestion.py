@@ -87,6 +87,12 @@ class RealMarketData:
             }
 
         except Exception as e:
+            from core.config import settings
+            if settings.live_trading:
+                import sys
+                print(f"CRITICAL: Real market data failed in LIVE MODE! Terminating immediately to prevent simulated prices from executing live orders. Exception: {e}")
+                sys.exit(1)
+            
             fallback_tick = self.fallback.tick()
             fallback_tick["source"] = f"fallback_simulated_after_error:{str(e)[:120]}"
             return fallback_tick
