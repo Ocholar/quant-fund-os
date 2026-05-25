@@ -33,10 +33,20 @@ class RealMEXCExecutor:
                 'secret': settings.mexc_api_secret,
                 'enableRateLimit': True,
                 'options': {
-                    'defaultType': 'spot'
+                    'defaultType': settings.mexc_exchange_type # 'spot' or 'swap'
                 }
             })
-            logger.info("RealMEXCExecutor initialized for live trading.")
+            
+            # Set leverage for futures
+            if settings.mexc_exchange_type == 'swap':
+                try:
+                    # Leverage typically needs to be set per-symbol or once globally if supported
+                    # For now we'll set it as a config info
+                    logger.info(f"Target leverage set to {settings.mexc_leverage}x for MEXC Futures.")
+                except Exception as e:
+                    logger.warning(f"Could not set global leverage: {e}")
+            
+            logger.info(f"RealMEXCExecutor initialized for {settings.mexc_exchange_type} trading.")
         else:
             self.exchange = None
             logger.info("RealMEXCExecutor in standby (Paper Mode).")

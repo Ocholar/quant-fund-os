@@ -17,7 +17,7 @@ from services.telegram import send_telegram_alert
 
 INITIAL_EQUITY = 10.0
 
-MAX_TOTAL_EXPOSURE_PCT = 0.50
+MAX_TOTAL_EXPOSURE_PCT = 0.95
 MAX_SYMBOL_EXPOSURE_PCT = 0.20
 MAX_TRADES_PER_SYMBOL = 3
 STOP_LOSS_PCT = 0.02
@@ -26,10 +26,10 @@ DAILY_LOSS_LIMIT_PCT = 0.05
 COOLDOWN_SECONDS = 10  # was 30 — faster re-entry after a closed position
 
 MAX_DAILY_LOSS_PCT = 0.01
-SIDEWAYS_MAX_ENTRIES_PER_HOUR = 24   # was 3 — allow re-entry every ~2.5 min
-SIDEWAYS_MIN_CONFIDENCE = 0.60        # restored — only trade on solid signals
-TRENDING_MAX_ENTRIES_PER_HOUR = 48   # was 6 — rapid re-entry in trending
-TRENDING_MIN_CONFIDENCE = 0.55        # restored — solid signals in trending too
+SIDEWAYS_MAX_ENTRIES_PER_HOUR = 999999
+SIDEWAYS_MIN_CONFIDENCE = 0.55
+TRENDING_MAX_ENTRIES_PER_HOUR = 999999
+TRENDING_MIN_CONFIDENCE = 0.50
 LIQUIDITY_ERROR_LIMIT = 3
 LIQUIDITY_ERROR_WINDOW_SECONDS = 600
 
@@ -266,7 +266,7 @@ def generate_sells(prices, regime):
         return sells
 
     for symbol, qty in list(portfolio.positions.items()):
-        if qty <= 0:
+        if qty <= 0.0001:
             continue
 
         price = prices.get(symbol)
@@ -844,6 +844,14 @@ def main():
                     strategy = fill.get("strategy", "unknown")
                     confidence = float(fill.get("confidence", 0))
                     is_shadow = fill.get("shadow_mode", False)
+
+                    # Sync in-memory Portfolio state from DB to ensure absolute consistency
+                    if not is_shadow:
+                        pos_row = conn.execute(text("SELECT quantity FROM positions WHERE symbol = :s"), {"s": symbol}).mappings().first()
+                        if pos_row:
+                            portfolio.positions[symbol] = float(pos_row["quantity"])
+                        else:
+                            portfolio.positions[symbol] = 0.0
 
                     send_telegram_alert(
                         f"<b>{side} {'(SHADOW)' if is_shadow else ''}</b> {symbol}\n"

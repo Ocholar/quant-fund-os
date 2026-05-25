@@ -15,7 +15,7 @@ class StrategyDNA:
             name=f"{name}_{random.randint(1000,9999)}",
             trend_threshold=random.uniform(-0.0001, 0.0001),
             momentum_threshold=random.uniform(-0.0001, 0.0001),
-            risk_fraction=random.uniform(0.1, 0.2),
+            risk_fraction=random.uniform(0.01, 0.03), # 1% to 3% max per trade
             shadow_mode=random.random() < 0.3, # 30% of new strategies start in shadow mode
         )
 
