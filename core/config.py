@@ -1,14 +1,35 @@
 from pydantic_settings import BaseSettings
 
+
 class Settings(BaseSettings):
     app_env: str = "local"
     live_trading: bool = False
     require_human_approval: bool = True
     database_url: str = "sqlite:///quant.db"
     redis_url: str = "redis://localhost:6379/0"
+
+    # Capital and risk controls. Keep these in .env so the bot does not
+    # silently mix $10, $100, and $10,000 assumptions across modules.
+    starting_equity: float = 100.0
     max_daily_loss: float = 0.01
     max_portfolio_drawdown: float = 0.05
     max_leverage: float = 0.5
+    max_total_exposure_pct: float = 0.95
+    max_symbol_exposure_pct: float = 0.12
+    max_trades_per_symbol: int = 8
+    stop_loss_pct: float = 0.012
+    take_profit_pct: float = 0.035
+    take_profit_sell_fraction: float = 1.00
+    trading_fee_rate: float = 0.0005
+    cooldown_seconds: int = 300
+    sideways_max_entries_per_hour: int = 24
+    sideways_min_confidence: float = 0.55
+    trending_max_entries_per_hour: int = 48
+    trending_min_confidence: float = 0.52
+    max_new_entries_per_cycle: int = 2
+    min_trade_notional: float = 0.05
+    stablecoin_filter_enabled: bool = True
+
     trade_interval_seconds: int = 30
     symbols: str = "BTC/USDT,ETH/USDT,SOL/USDT,BNB/USDT,XRP/USDT"
     telegram_bot_token: str = ""
@@ -18,8 +39,8 @@ class Settings(BaseSettings):
     exchange_api_secret: str = ""
     mexc_api_key: str = ""
     mexc_api_secret: str = ""
-    mexc_exchange_type: str = "spot" # "spot" or "swap"
-    mexc_leverage: int = 1         # 1x for spot, up to 100x for futures
+    mexc_exchange_type: str = "spot"  # "spot" or "swap"
+    mexc_leverage: int = 1             # 1x for spot; futures support still needs more guards
 
     @property
     def symbol_list(self) -> list[str]:
@@ -29,4 +50,24 @@ class Settings(BaseSettings):
         env_file = ".env"
         extra = "ignore"
 
+
 settings = Settings()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

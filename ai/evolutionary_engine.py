@@ -1,6 +1,7 @@
 import random
 from dataclasses import dataclass
 
+
 @dataclass
 class StrategyDNA:
     name: str
@@ -11,22 +12,25 @@ class StrategyDNA:
 
     @staticmethod
     def random(name="evo"):
+        # Thresholds are intentionally positive. Near-zero thresholds caused the
+        # bot to buy weak noise across almost the whole universe.
         return StrategyDNA(
-            name=f"{name}_{random.randint(1000,9999)}",
-            trend_threshold=random.uniform(-0.0001, 0.0001),
-            momentum_threshold=random.uniform(-0.0001, 0.0001),
-            risk_fraction=random.uniform(0.01, 0.03), # 1% to 3% max per trade
-            shadow_mode=random.random() < 0.3, # 30% of new strategies start in shadow mode
+            name=f"{name}_{random.randint(1000, 9999)}",
+            trend_threshold=random.uniform(0.0004, 0.0030),
+            momentum_threshold=random.uniform(0.0004, 0.0035),
+            risk_fraction=random.uniform(0.020, 0.045),
+            shadow_mode=False,
         )
 
     def mutate(self):
         return StrategyDNA(
             name=f"{self.name}_m",
-            trend_threshold=max(0.0005, self.trend_threshold * random.uniform(0.8, 1.2)),
-            momentum_threshold=max(0.0005, self.momentum_threshold * random.uniform(0.8, 1.2)),
-            risk_fraction=min(0.03, max(0.002, self.risk_fraction * random.uniform(0.8, 1.2))),
-            shadow_mode=self.shadow_mode,
+            trend_threshold=min(0.0060, max(0.0006, self.trend_threshold * random.uniform(0.85, 1.15))),
+            momentum_threshold=min(0.0065, max(0.0006, self.momentum_threshold * random.uniform(0.85, 1.15))),
+            risk_fraction=min(0.050, max(0.015, self.risk_fraction * random.uniform(0.85, 1.15))),
+            shadow_mode=False,
         )
+
 
 class StrategyPool:
     def __init__(self, size=12):
@@ -38,20 +42,40 @@ class StrategyPool:
     def score(self, candidates, features_by_symbol=None):
         scored = []
         for s in candidates:
-            # Deterministic scoring logic instead of random
-            base_score = 0.5 
+            matches = 0
+            strength = 0.0
             if features_by_symbol:
-                positive_matches = sum(1 for sym, f in features_by_symbol.items() 
-                                     if f.get("trend", 0) > s.trend_threshold 
-                                     and f.get("momentum", 0) > s.momentum_threshold)
-                base_score = min(0.9, 0.4 + (positive_matches * 0.05))
-            scored.append({"strategy": s, "score": base_score})
+                for _sym, f in features_by_symbol.items():
+                    if not f.get("ready"):
+                        continue
+                    trend = f.get("trend", 0.0)
+                    momentum = f.get("momentum", 0.0)
+                    if trend > s.trend_threshold and momentum > s.momentum_threshold:
+                        matches += 1
+                        strength += f.get("signal_strength", 0.0)
+
+            if matches == 0:
+                base_score = 0.0
+            else:
+                # Confidence now reflects quality, not just the number of coins
+                # with tiny positive moves.
+                avg_strength = strength / matches
+                base_score = min(0.90, 0.55 + matches * 0.015 + avg_strength * 35)
+
+            scored.append({"strategy": s, "score": base_score, "matches": matches})
         return sorted(scored, key=lambda x: x["score"], reverse=True)
 
     def evolve(self, scored):
-        survivors = [x["strategy"] for x in scored[: max(2, len(scored)//3)]]
+        survivors = [x["strategy"] for x in scored[: max(2, len(scored) // 3)] if x.get("score", 0) > 0]
+        if not survivors:
+            survivors = [StrategyDNA.random() for _ in range(2)]
         children = []
         for s in survivors:
             children.append(s)
             children.append(s.mutate())
-        self.strategies = children[:len(self.strategies)]
+        while len(children) < len(self.strategies):
+            children.append(StrategyDNA.random())
+        self.strategies = children[: len(self.strategies)]
+
+
+
