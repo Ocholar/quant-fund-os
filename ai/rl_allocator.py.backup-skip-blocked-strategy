@@ -1,0 +1,110 @@
+from core.config import settings
+
+STABLE_OR_FIAT_BASES = {
+    "USDC", "USD1", "USDT", "BUSD", "TUSD", "DAI", "FDUSD",
+    "EUR", "GBP", "TRY", "BRL", "USD", "JPY"
+}
+
+
+def passes_strict_long_filter(f: dict) -> bool:
+    """
+    Strict buy rule:
+    only buy when trend, momentum, and one-tick momentum are all positive.
+    """
+    try:
+        return (
+            bool(f.get("ready", False))
+            and float(f.get("trend", 0.0)) > 0
+            and float(f.get("momentum", 0.0)) > 0
+            and float(f.get("one_tick_momentum", 0.0)) > 0
+        )
+    except Exception:
+        return False
+
+
+class SimpleAllocator:
+    def allocate(self, scored, market_state):
+        if not scored:
+            return {"orders": [], "leverage": 0, "estimated_var": 0}
+
+        best = scored[0]
+        if best.get("score", 0) <= 0:
+            return {"orders": [], "leverage": 0, "estimated_var": 0}
+
+        features = market_state.get("features", {})
+        equity = float(market_state.get("equity", 0) or 0)
+        remaining_cash = float(market_state.get("cash", equity) or 0)
+
+        if not features or equity <= 0 or remaining_cash <= 0:
+            return {"orders": [], "leverage": 0, "estimated_var": 0}
+
+        strategy = best.get("strategy")
+        if strategy is None:
+            return {"orders": [], "leverage": 0, "estimated_var": 0}
+
+        orders = []
+
+        ranked = sorted(
+            features.items(),
+            key=lambda item: item[1].get("signal_strength", 0.0),
+            reverse=True,
+        )
+
+        for symbol, f in ranked:
+            real_order_count = len([o for o in orders if not o.get("shadow_mode")])
+            if real_order_count >= settings.max_new_entries_per_cycle:
+                break
+
+            if not passes_strict_long_filter(f):
+                continue
+
+            base = symbol.split("/")[0].upper()
+            if settings.stablecoin_filter_enabled and base in STABLE_OR_FIAT_BASES:
+                continue
+
+            trend_ok = float(f.get("trend", 0.0)) > float(strategy.trend_threshold)
+            momentum_ok = float(f.get("momentum", 0.0)) > float(strategy.momentum_threshold)
+            long_trend_ok = float(f.get("long_trend", 0.0)) >= -0.003
+            one_tick_ok = float(f.get("one_tick_momentum", 0.0)) > 0
+
+            if not (trend_ok and momentum_ok and long_trend_ok and one_tick_ok):
+                continue
+
+            notional = equity * float(strategy.risk_fraction)
+
+            # Reduce trade size while account is in drawdown/caution.
+            starting_equity = float(getattr(settings, "starting_equity", 10.0) or 10.0)
+            if equity < starting_equity * 0.98:
+                notional *= 0.50
+
+            notional = min(notional, remaining_cash)
+
+            if notional < settings.min_trade_notional:
+                continue
+
+            price = float(f["price"])
+            qty = notional / price
+
+            orders.append({
+                "symbol": symbol,
+                "side": "buy",
+                "qty": qty,
+                "price": price,
+                "strategy": strategy.name,
+                "confidence": best["score"],
+                "shadow_mode": False,
+            })
+
+            remaining_cash -= notional
+            if remaining_cash < settings.min_trade_notional:
+                break
+
+        leverage = (equity - remaining_cash) / equity if equity else 0
+        return {
+            "orders": orders,
+            "leverage": leverage,
+            "estimated_var": 0.005 if orders else 0,
+        }
+
+
+RLAllocator = SimpleAllocator

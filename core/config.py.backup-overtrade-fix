@@ -10,24 +10,24 @@ class Settings(BaseSettings):
 
     # Capital and risk controls. Keep these in .env so the bot does not
     # silently mix $10, $100, and $10,000 assumptions across modules.
-    starting_equity: float = 100.0
+    starting_equity: float = 10.0
     max_daily_loss: float = 0.01
     max_portfolio_drawdown: float = 0.05
     max_leverage: float = 0.5
     max_total_exposure_pct: float = 0.95
-    max_symbol_exposure_pct: float = 0.12
-    max_trades_per_symbol: int = 8
+    max_symbol_exposure_pct: float = 0.20
+    max_trades_per_symbol: int = 999999
     stop_loss_pct: float = 0.012
     take_profit_pct: float = 0.035
-    take_profit_sell_fraction: float = 1.00
+    take_profit_sell_fraction: float = 0.60
     trading_fee_rate: float = 0.0005
-    cooldown_seconds: int = 300
-    sideways_max_entries_per_hour: int = 24
-    sideways_min_confidence: float = 0.55
-    trending_max_entries_per_hour: int = 48
-    trending_min_confidence: float = 0.52
-    max_new_entries_per_cycle: int = 2
-    min_trade_notional: float = 0.05
+    cooldown_seconds: int = 10
+    sideways_max_entries_per_hour: int = 999999
+    sideways_min_confidence: float = 0.62
+    trending_max_entries_per_hour: int = 999999
+    trending_min_confidence: float = 0.58
+    max_new_entries_per_cycle: int = 12
+    min_trade_notional: float = 0.10
     stablecoin_filter_enabled: bool = True
 
     trade_interval_seconds: int = 30
@@ -52,22 +52,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

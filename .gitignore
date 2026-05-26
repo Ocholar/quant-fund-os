@@ -7,3 +7,26 @@ logs/
 *.db
 *.log
 .DS_Store
+
+# Local runtime / secrets
+.env
+*.db
+*.sqlite
+*.sqlite3
+
+# Bot runtime output
+logs/
+execution_logs/
+__pycache__/
+*.pyc
+
+# Local patch/backups
+main_backup_*.py
+auto_fix_main.py
+refine_fallback.py
+safe_refine_fallback.py
+patch_*.py
+reset_*.py
+inspect_db.py
+unblock_fallback_test.py
+repair_quant_main.ps1

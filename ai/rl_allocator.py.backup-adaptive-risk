@@ -268,40 +268,6 @@ def has_hit_hourly_entry_cap(regime: str) -> bool:
         print(f"ALLOCATOR WARN: hourly cap check failed: {e}")
         return False
 
-
-def recent_stop_loss_ratio(limit=10):
-    """
-    Looks at recent closed sells.
-    If stop_loss dominates, allocator becomes more selective and smaller.
-    """
-    try:
-        conn = sqlite3.connect("quant.db")
-        cur = conn.cursor()
-
-        rows = cur.execute("""
-            SELECT strategy
-            FROM trades
-            WHERE side = 'sell'
-            ORDER BY created_at DESC
-            LIMIT ?
-        """, (limit,)).fetchall()
-
-        conn.close()
-
-        if not rows:
-            return 0.0
-
-        stop_losses = sum(
-            1 for r in rows
-            if str(r[0] or "").lower() == "stop_loss"
-        )
-
-        return stop_losses / len(rows)
-
-    except Exception as e:
-        print(f"ALLOCATOR WARN: stop loss ratio check failed: {e}")
-        return 0.0
-
 class SimpleAllocator:
     def allocate(self, scored, market_state):
         if not scored:
@@ -340,22 +306,6 @@ class SimpleAllocator:
             size_multiplier = min(size_multiplier, 0.50)
 
         orders = []
-
-        # Adaptive scout mode:
-        # If recent closed trades are mostly stop-losses, do not stop completely.
-        # Instead, reduce position size and demand stronger signals.
-        sl_ratio = recent_stop_loss_ratio(10)
-
-        if sl_ratio >= 0.60:
-            print(f"ALLOCATOR MODE: SCOUT stop_loss_ratio={sl_ratio:.2f}")
-            size_multiplier = min(size_multiplier, 0.25)
-            min_signal_strength = 0.030
-        elif sl_ratio >= 0.40:
-            print(f"ALLOCATOR MODE: DEFENSIVE stop_loss_ratio={sl_ratio:.2f}")
-            size_multiplier = min(size_multiplier, 0.50)
-            min_signal_strength = 0.025
-        else:
-            min_signal_strength = 0.018
 
         regime = str(market_state.get("regime", "") or "").upper()
         if has_hit_hourly_entry_cap(regime):
@@ -445,10 +395,6 @@ class SimpleAllocator:
 
 
 RLAllocator = SimpleAllocator
-
-
-
-
 
 
 

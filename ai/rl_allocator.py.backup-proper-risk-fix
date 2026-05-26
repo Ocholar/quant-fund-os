@@ -1,0 +1,67 @@
+from core.config import settings
+
+
+STABLE_OR_FIAT_BASES = {
+    "USDC", "USD1", "USDT", "BUSD", "TUSD", "DAI", "FDUSD", "EUR", "GBP", "TRY", "BRL"
+}
+
+
+class SimpleAllocator:
+    def allocate(self, scored, market_state):
+        if not scored:
+            return {"orders": [], "leverage": 0, "estimated_var": 0}
+
+        best = scored[0]
+        if best.get("score", 0) <= 0:
+            return {"orders": [], "leverage": 0, "estimated_var": 0}
+
+        features = market_state["features"]
+        equity = float(market_state.get("equity", 0) or 0)
+        remaining_cash = float(market_state.get("cash", equity) or 0)
+        orders = []
+
+        ranked = sorted(
+            features.items(),
+            key=lambda item: item[1].get("signal_strength", 0.0),
+            reverse=True,
+        )
+
+        for symbol, f in ranked:
+            if len([o for o in orders if not o.get("shadow_mode")]) >= settings.max_new_entries_per_cycle:
+                break
+            if not f.get("ready"):
+                continue
+
+            base = symbol.split("/")[0].upper()
+            if settings.stablecoin_filter_enabled and base in STABLE_OR_FIAT_BASES:
+                continue
+
+            trend_ok = f.get("trend", 0.0) > best["strategy"].trend_threshold
+            momentum_ok = f.get("momentum", 0.0) > best["strategy"].momentum_threshold
+            long_trend_ok = f.get("long_trend", 0.0) >= -0.003
+            one_tick_not_dumping = f.get("one_tick_momentum", 0.0) > -0.007
+            if not (trend_ok and momentum_ok and long_trend_ok and one_tick_not_dumping):
+                continue
+
+            notional = equity * best["strategy"].risk_fraction
+            notional = min(notional, remaining_cash)
+            if notional < settings.min_trade_notional:
+                continue
+
+            qty = notional / f["price"]
+            orders.append({
+                "symbol": symbol,
+                "side": "buy",
+                "qty": qty,
+                "price": f["price"],
+                "strategy": best["strategy"].name,
+                "confidence": best["score"],
+                "shadow_mode": best["strategy"].shadow_mode,
+            })
+
+            if not best["strategy"].shadow_mode:
+                remaining_cash -= notional
+
+        leverage = (equity - remaining_cash) / equity if equity else 0
+        return {"orders": orders, "leverage": leverage, "estimated_var": 0.005 if orders else 0}
+

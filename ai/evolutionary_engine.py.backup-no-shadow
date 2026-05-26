@@ -19,7 +19,7 @@ class StrategyDNA:
             trend_threshold=random.uniform(0.0004, 0.0030),
             momentum_threshold=random.uniform(0.0004, 0.0035),
             risk_fraction=random.uniform(0.020, 0.045),
-            shadow_mode=False,
+            shadow_mode=random.random() < 0.25,
         )
 
     def mutate(self):
@@ -28,7 +28,7 @@ class StrategyDNA:
             trend_threshold=min(0.0060, max(0.0006, self.trend_threshold * random.uniform(0.85, 1.15))),
             momentum_threshold=min(0.0065, max(0.0006, self.momentum_threshold * random.uniform(0.85, 1.15))),
             risk_fraction=min(0.050, max(0.015, self.risk_fraction * random.uniform(0.85, 1.15))),
-            shadow_mode=False,
+            shadow_mode=self.shadow_mode,
         )
 
 
@@ -76,6 +76,5 @@ class StrategyPool:
         while len(children) < len(self.strategies):
             children.append(StrategyDNA.random())
         self.strategies = children[: len(self.strategies)]
-
 
 
