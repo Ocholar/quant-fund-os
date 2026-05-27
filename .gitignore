@@ -30,3 +30,14 @@ reset_*.py
 inspect_db.py
 unblock_fallback_test.py
 repair_quant_main.ps1
+
+# Local secrets and runtime files
+.env
+*.log
+*.db
+*.sqlite
+*.sqlite3
+db_backups/
+old_logs/
+__pycache__/
+*.pyc
