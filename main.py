@@ -1,3 +1,18 @@
+
+# Live dashboard/status cache.
+# Keeps /status aligned with the running loop instead of stale DB reads.
+LIVE_STATUS_CACHE = {}
+
+def update_live_status_cache(payload: dict):
+    try:
+        LIVE_STATUS_CACHE.clear()
+        LIVE_STATUS_CACHE.update(payload or {})
+    except Exception:
+        pass
+
+def get_live_status_cache() -> dict:
+    return dict(LIVE_STATUS_CACHE)
+
 import time
 import math
 import statistics
@@ -10,6 +25,7 @@ from core.db import engine
 from core.portfolio import Portfolio
 from core.regime import detect_regime
 from core.risk_engine import RiskEngine
+from core.telegram_alerts import send_telegram_alert, send_startup_alert
 from data.ingestion import build_market_data
 from data.feature_store import FeatureStore
 from execution.executor import PaperExecutor, RealMEXCExecutor
@@ -17,6 +33,39 @@ from ai.autonomous_agent import AutonomousFundAgent
 from services.metrics import trades_total, equity_gauge, drawdown_gauge
 from core.control import is_paused, pause_bot, pause_reason
 from services.telegram import send_telegram_alert
+
+# QFOS_RISK_STATUS_DEFAULT
+risk_status = "SAFE"
+
+
+# === ONE-PATCH EXIT ORDER NORMALIZATION ===
+EXIT_REASON_STRATEGIES = {
+    "stop_loss",
+    "stop_loss_exit",
+    "adaptive_stop_loss",
+    "take_profit",
+    "adaptive_take_profit",
+    "risk_off_exit",
+    "emergency_exposure_reduction",
+    "breakeven_protection_exit",
+    "time_stop_exit",
+}
+
+def normalize_exit_order(order):
+    if not isinstance(order, dict):
+        return order
+    side = str(order.get("side") or "").lower()
+    strategy = str(order.get("strategy") or "").strip()
+    if side == "sell" and strategy.lower() in EXIT_REASON_STRATEGIES:
+        order.setdefault("exit_reason", strategy.lower())
+        order.setdefault("raw_strategy", strategy)
+        order.setdefault("display_strategy", strategy.lower())
+    else:
+        order.setdefault("entry_strategy", strategy)
+        order.setdefault("display_strategy", strategy)
+    return order
+# === END ONE-PATCH EXIT ORDER NORMALIZATION ===
+
 
 INITIAL_EQUITY = float(settings.starting_equity)
 
@@ -201,6 +250,10 @@ def load_state_from_db():
 
 print("Quant Fund OS starting. LIVE_TRADING=", settings.live_trading)
 print("Safety mode enabled. Paper trading only.")
+try:
+    send_startup_alert()
+except Exception as e:
+    print('Startup Telegram alert failed:', e)
 send_telegram_alert("Quant Fund OS started. Paper mode active. Live trading is OFF.")
 last_risk_status = None
 
@@ -217,6 +270,141 @@ def wait_for_database(max_attempts=30):
 
     raise RuntimeError("Database was not ready after waiting.")
 
+
+
+# ============================================================
+# MARKET DATA INTEGRITY LAYER
+# Real platform rule:
+# - Never feed raw unchecked exchange ticks into strategy/PnL.
+# - Validate per-symbol price continuity.
+# - Keep last known good price.
+# - Reject obvious bad ticks before features, orders, exits, equity.
+# ============================================================
+
+LAST_GOOD_PRICES = {}
+PENDING_PRICES = {}
+BAD_PRICE_TICKS = {}
+
+def validate_market_prices(raw_prices):
+    """
+    Market data integrity layer.
+
+    Important:
+    - Never let the first tick become trusted blindly.
+    - Some startup/paper fallback ticks produce fake ~$100 prices for many symbols.
+    - A symbol becomes trusted only after two consecutive ticks are reasonably close.
+    - After trust is established, reject impossible discontinuities.
+    """
+    clean = {}
+
+    if not isinstance(raw_prices, dict):
+        print("PRICE VALIDATION BLOCK: raw_prices_not_dict")
+        return clean
+
+    for symbol, raw_price in raw_prices.items():
+        try:
+            price = float(raw_price or 0)
+        except Exception:
+            BAD_PRICE_TICKS[symbol] = BAD_PRICE_TICKS.get(symbol, 0) + 1
+            print(f"PRICE VALIDATION REJECT {symbol}: non_numeric price={raw_price}")
+            continue
+
+        if price <= 0:
+            BAD_PRICE_TICKS[symbol] = BAD_PRICE_TICKS.get(symbol, 0) + 1
+            print(f"PRICE VALIDATION REJECT {symbol}: non_positive price={price}")
+            continue
+
+        last_good = LAST_GOOD_PRICES.get(symbol)
+
+        # Bootstrap rule: do not trust the first tick blindly.
+        if not last_good:
+            pending = PENDING_PRICES.get(symbol)
+
+            if not pending:
+                PENDING_PRICES[symbol] = price
+                print(f"PRICE VALIDATION PENDING {symbol}: first_seen price={price:.12f}")
+                continue
+
+            ratio = price / pending if pending else 0
+
+            if ratio > 3.0 or ratio < 0.333:
+                # First tick was probably synthetic/stale. Replace pending and wait.
+                print(
+                    f"PRICE VALIDATION RESET_PENDING {symbol}: "
+                    f"new_price={price:.12f} old_pending={pending:.12f} ratio={ratio:.6f}"
+                )
+                PENDING_PRICES[symbol] = price
+                continue
+
+            LAST_GOOD_PRICES[symbol] = price
+            clean[symbol] = price
+            print(f"PRICE VALIDATION TRUSTED {symbol}: price={price:.12f}")
+            continue
+
+        ratio = price / last_good if last_good else 0
+
+        if ratio > 3.0 or ratio < 0.333:
+            BAD_PRICE_TICKS[symbol] = BAD_PRICE_TICKS.get(symbol, 0) + 1
+            print(
+                f"PRICE VALIDATION REJECT {symbol}: extreme_tick "
+                f"price={price:.12f} last_good={last_good:.12f} ratio={ratio:.6f} "
+                f"bad_count={BAD_PRICE_TICKS[symbol]}"
+            )
+            clean[symbol] = last_good
+            continue
+
+        if ratio > 1.35 or ratio < 0.65:
+            print(
+                f"PRICE VALIDATION WARN {symbol}: large_tick "
+                f"price={price:.12f} last_good={last_good:.12f} ratio={ratio:.6f}"
+            )
+
+        LAST_GOOD_PRICES[symbol] = price
+        clean[symbol] = price
+
+    return clean
+
+    for symbol, raw_price in raw_prices.items():
+        try:
+            price = float(raw_price or 0)
+        except Exception:
+            BAD_PRICE_TICKS[symbol] = BAD_PRICE_TICKS.get(symbol, 0) + 1
+            print(f"PRICE VALIDATION REJECT {symbol}: non_numeric price={raw_price}")
+            continue
+
+        if price <= 0:
+            BAD_PRICE_TICKS[symbol] = BAD_PRICE_TICKS.get(symbol, 0) + 1
+            print(f"PRICE VALIDATION REJECT {symbol}: non_positive price={price}")
+            continue
+
+        last_good = LAST_GOOD_PRICES.get(symbol)
+
+        if last_good and last_good > 0:
+            ratio = price / last_good
+
+            # Exchange symbols should not jump 10x or crash 90% in one tick.
+            # This catches symbol mapping bugs like BOB/USDT 0.0002 -> 100.
+            if ratio > 3.0 or ratio < 0.333:
+                BAD_PRICE_TICKS[symbol] = BAD_PRICE_TICKS.get(symbol, 0) + 1
+                print(
+                    f"PRICE VALIDATION REJECT {symbol}: extreme_tick "
+                    f"price={price:.12f} last_good={last_good:.12f} ratio={ratio:.6f} "
+                    f"bad_count={BAD_PRICE_TICKS[symbol]}"
+                )
+                clean[symbol] = last_good
+                continue
+
+            # Softer warning for very large moves. Still accept because crypto can move fast.
+            if ratio > 1.35 or ratio < 0.65:
+                print(
+                    f"PRICE VALIDATION WARN {symbol}: large_tick "
+                    f"price={price:.12f} last_good={last_good:.12f} ratio={ratio:.6f}"
+                )
+
+        LAST_GOOD_PRICES[symbol] = price
+        clean[symbol] = price
+
+    return clean
 
 def total_exposure(prices):
     return sum(
@@ -239,6 +427,174 @@ def cleanup_expired_quarantines():
             """))
     except Exception:
         pass
+
+
+
+
+# ============================================================
+# FINAL ENTRY PACING FIREWALL
+# Prevents clustered buys inside a few minutes.
+#
+# Global regime = market weather.
+# Symbol regime = each coin's own behavior.
+#
+# This does not create trades. It only spaces accepted buys.
+# ============================================================
+
+LAST_GLOBAL_BUY_TS = 0.0
+LAST_BUY_BY_SYMBOL_TS = {}
+
+def _now_ts():
+    import time
+    return time.time()
+
+def _entry_pacing_seconds(regime: str) -> int:
+    r = str(regime or "").upper()
+
+    # RISK_OFF should be defensive and slow.
+    if r == "RISK_OFF":
+        return int(float(getattr(settings, "risk_off_min_seconds_between_buys", 1200)))
+
+    # SIDEWAYS is choppy, so still avoid clustered entries.
+    if r == "SIDEWAYS":
+        return int(float(getattr(settings, "sideways_min_seconds_between_buys", 900)))
+
+    # TREND can be slightly faster, but still not clustered.
+    return int(float(getattr(settings, "trend_min_seconds_between_buys", 600)))
+
+def _same_symbol_pacing_seconds(regime: str) -> int:
+    r = str(regime or "").upper()
+    if r == "RISK_OFF":
+        return int(float(getattr(settings, "risk_off_same_symbol_cooldown_seconds", 3600)))
+    if r == "SIDEWAYS":
+        return int(float(getattr(settings, "sideways_same_symbol_cooldown_seconds", 2400)))
+    return int(float(getattr(settings, "trend_same_symbol_cooldown_seconds", 1800)))
+
+def _strong_symbol_trend_for_risk_off(fill_or_feature: dict) -> bool:
+    try:
+        f = fill_or_feature or {}
+
+        # Candidate fills may carry feature fields directly or under feature/data.
+        if isinstance(f.get("feature"), dict):
+            f = f["feature"]
+        elif isinstance(f.get("features"), dict):
+            f = f["features"]
+
+        source = str(f.get("source", "NORMAL")).upper()
+        if source == "RAW_MOMENTUM_FALLBACK":
+            return False
+
+        symbol_regime = str(f.get("symbol_regime", "")).upper()
+        trend = float(f.get("trend", 0.0) or 0.0)
+        momentum = float(f.get("momentum", 0.0) or 0.0)
+        one_tick = float(f.get("one_tick_momentum", 0.0) or 0.0)
+        signal = float(f.get("signal_strength", f.get("confidence", 0.0)) or 0.0)
+        quality = float(f.get("trend_quality", 0.0) or 0.0)
+
+        if symbol_regime not in ("SYMBOL_TREND_UP", "SYMBOL_BREAKOUT_UP"):
+            return False
+
+        if trend <= 0 or momentum <= 0 or one_tick < -0.0015:
+            return False
+
+        return signal >= 0.004 or quality >= 0.004 or (trend > 0.002 and momentum > 0.002)
+
+    except Exception:
+        return False
+
+
+
+# ============================================================
+# SYMBOL BUY EXCLUSION LADDER
+#
+# After 3 buys on the same symbol, do not keep buying it unless
+# the signal becomes exceptional.
+#
+# Ladder:
+# 4th buy  requires >= 0.045
+# 5th buy  requires >= 0.050
+# 6th buy  requires >= 0.055
+# 7th buy  requires >= 0.060
+# 8th buy  requires >= 0.065
+# 9th buy  requires >= 0.070
+# 10th+    requires >= 0.075
+# ============================================================
+
+SYMBOL_BUY_COUNTS = {}
+SYMBOL_EXCEPTIONAL_LADDER = [0.045, 0.050, 0.055, 0.060, 0.065, 0.070, 0.075]
+
+def _fill_signal_strength(fill: dict) -> float:
+    try:
+        if not isinstance(fill, dict):
+            return 0.0
+
+        for key in ("signal_strength", "confidence", "score"):
+            if key in fill:
+                return float(fill.get(key) or 0.0)
+
+        f = fill.get("feature") or fill.get("features") or {}
+        if isinstance(f, dict):
+            for key in ("signal_strength", "confidence", "trend_quality", "breakout_score"):
+                if key in f:
+                    return float(f.get(key) or 0.0)
+
+        return 0.0
+    except Exception:
+        return 0.0
+
+def symbol_exclusion_ladder_allows(symbol: str, fill: dict) -> tuple[bool, str]:
+    count = int(SYMBOL_BUY_COUNTS.get(symbol, 0) or 0)
+
+    # First 3 buys are controlled by normal entry rules.
+    if count < 3:
+        return True, f"normal_symbol_buy_count_{count}"
+
+    ladder_index = min(count - 3, len(SYMBOL_EXCEPTIONAL_LADDER) - 1)
+    required = float(SYMBOL_EXCEPTIONAL_LADDER[ladder_index])
+    signal = _fill_signal_strength(fill)
+
+    if signal >= required:
+        return True, f"exceptional_symbol_ladder_pass count={count} signal={signal:.5f} required={required:.5f}"
+
+    return False, f"symbol_excluded_after_3_buys count={count} signal={signal:.5f} required={required:.5f}"
+
+def symbol_exclusion_ladder_mark_buy(symbol: str):
+    SYMBOL_BUY_COUNTS[symbol] = int(SYMBOL_BUY_COUNTS.get(symbol, 0) or 0) + 1
+
+
+
+def final_entry_pacing_allows(symbol: str, fill: dict, regime: str) -> tuple[bool, str]:
+    global LAST_GLOBAL_BUY_TS, LAST_BUY_BY_SYMBOL_TS
+
+    now = _now_ts()
+    global_gap = _entry_pacing_seconds(regime)
+    symbol_gap = _same_symbol_pacing_seconds(regime)
+
+    since_global = now - float(LAST_GLOBAL_BUY_TS or 0.0)
+    if LAST_GLOBAL_BUY_TS and since_global < global_gap:
+        return False, f"global_buy_pacing_wait {int(global_gap - since_global)}s"
+
+    last_sym = float(LAST_BUY_BY_SYMBOL_TS.get(symbol, 0.0) or 0.0)
+    since_sym = now - last_sym
+    if last_sym and since_sym < symbol_gap:
+        return False, f"same_symbol_buy_pacing_wait {int(symbol_gap - since_sym)}s"
+
+    if str(regime or "").upper() == "RISK_OFF":
+        if not _strong_symbol_trend_for_risk_off(fill):
+            return False, "risk_off_requires_strong_symbol_trend"
+
+    ladder_ok, ladder_reason = symbol_exclusion_ladder_allows(symbol, fill)
+    if not ladder_ok:
+        return False, ladder_reason
+
+    return True, "allowed"
+
+def final_entry_pacing_mark_buy(symbol: str):
+    global LAST_GLOBAL_BUY_TS, LAST_BUY_BY_SYMBOL_TS
+    now = _now_ts()
+    LAST_GLOBAL_BUY_TS = now
+    LAST_BUY_BY_SYMBOL_TS[symbol] = now
+
 
 
 def can_buy(symbol, fill, prices, equity):
@@ -529,6 +885,37 @@ def clear_position_exit_trackers(symbol):
     position_peak_change.pop("shadow_" + symbol, None)
 
 
+
+def valid_exit_price(symbol, price, avg_entry, reason="exit"):
+    """
+    Prevent corrupted market ticks from creating fake paper PnL.
+    A normal crypto exit should not be hundreds/thousands of percent away
+    from the recorded entry price in one cycle.
+    """
+    try:
+        p = float(price or 0)
+        a = float(avg_entry or 0)
+
+        if p <= 0 or a <= 0:
+            print(f"EXIT PRICE BLOCK {symbol}: invalid price={p} avg_entry={a} reason={reason}")
+            return False
+
+        ratio = p / a
+
+        # Hard sanity guard only. Normal validation happens before prices enter strategy.
+        if ratio > 3.0 or ratio < 0.333:
+            print(
+                f"EXIT PRICE BLOCK {symbol}: suspicious_exit_price "
+                f"price={p:.8f} avg_entry={a:.8f} ratio={ratio:.4f} reason={reason}"
+            )
+            return False
+
+        return True
+
+    except Exception as e:
+        print(f"EXIT PRICE BLOCK {symbol}: validation_error {e}")
+        return False
+
 def generate_sells(prices, regime):
     sells = []
 
@@ -545,23 +932,26 @@ def generate_sells(prices, regime):
         if not price or not avg_entry:
             continue
 
+        if not valid_exit_price(symbol, price, avg_entry, "real_position_exit"):
+            continue
+
         change = (price - avg_entry) / avg_entry
         dynamic_stop_pct, dynamic_take_pct = adaptive_exit_thresholds(symbol, regime)
 
         if change <= -dynamic_stop_pct:
-            sell = apply_sell(symbol, qty, price, "adaptive_stop_loss")
+            sell = normalize_exit_order(apply_sell(symbol, qty, price, "adaptive_stop_loss"))
             if sell:
                 sells.append(sell)
                 quarantined_symbols[symbol] = time.time() + 86400 # Block for 24h
                 quarantine_symbol(symbol, "stop_loss_exit", hours=1)
 
         elif change >= dynamic_take_pct:
-            sell = apply_sell(symbol, qty * TAKE_PROFIT_SELL_FRACTION, price, "adaptive_take_profit")
+            sell = normalize_exit_order(apply_sell(symbol, qty * TAKE_PROFIT_SELL_FRACTION, price, "adaptive_take_profit"))
             if sell:
                 sells.append(sell)
 
         elif regime == "RISK_OFF":
-            sell = apply_sell(symbol, qty, price, "risk_off_exit")
+            sell = normalize_exit_order(apply_sell(symbol, qty, price, "risk_off_exit"))
             if sell:
                 sells.append(sell)
 
@@ -576,19 +966,22 @@ def generate_sells(prices, regime):
         if not price or not avg_entry:
             continue
 
+        if not valid_exit_price(symbol, price, avg_entry, "shadow_position_exit"):
+            continue
+
         change = (price - avg_entry) / avg_entry
         dynamic_stop_pct, dynamic_take_pct = adaptive_exit_thresholds(symbol, regime)
 
         if change <= -dynamic_stop_pct:
-            sell = apply_shadow_sell(symbol, qty, price, "adaptive_stop_loss")
+            sell = normalize_exit_order(apply_shadow_sell(symbol, qty, price, "adaptive_stop_loss"))
             if sell:
                 sells.append(sell)
         elif change >= dynamic_take_pct:
-            sell = apply_shadow_sell(symbol, qty * TAKE_PROFIT_SELL_FRACTION, price, "adaptive_take_profit")
+            sell = normalize_exit_order(apply_shadow_sell(symbol, qty * TAKE_PROFIT_SELL_FRACTION, price, "adaptive_take_profit"))
             if sell:
                 sells.append(sell)
         elif regime == "RISK_OFF":
-            sell = apply_shadow_sell(symbol, qty, price, "risk_off_exit")
+            sell = normalize_exit_order(apply_shadow_sell(symbol, qty, price, "risk_off_exit"))
             if sell:
                 sells.append(sell)
 
@@ -819,6 +1212,11 @@ def send_auto_pause(reason: str, equity: float, exposure: float, regime: str):
         f"Regime: {regime}\n"
         f"Live trading: {settings.live_trading}"
     )
+
+    try:
+        send_telegram_alert(msg)
+    except Exception as e:
+        print('Auto-pause Telegram alert failed:', e)
 
 
 def get_day_start_equity(default_equity: float = 100.0):
@@ -1573,6 +1971,65 @@ def _same_symbol_cooldown_reason(symbol, data):
     return None
 
 
+
+
+def build_entry_quality_top_symbols(features: dict, top_n: int = 10):
+    """
+    Rank normal FeatureStore symbols for entry quality.
+    This fixes cases where allocator sees good symbols but ENTRY QUALITY TOP 10 is [].
+    """
+    ranked = []
+
+    if not isinstance(features, dict):
+        return []
+
+    for symbol, f in features.items():
+        try:
+            if not isinstance(f, dict):
+                continue
+
+            if not f.get("ready"):
+                continue
+
+            source = str(f.get("source", "NORMAL")).upper()
+            if source == "RAW_MOMENTUM_FALLBACK":
+                continue
+
+            symbol_regime = str(f.get("symbol_regime", "")).upper()
+            if symbol_regime not in ("SYMBOL_TREND_UP", "SYMBOL_BREAKOUT_UP"):
+                continue
+
+            trend = float(f.get("trend", 0.0) or 0.0)
+            momentum = float(f.get("momentum", 0.0) or 0.0)
+            one_tick = float(f.get("one_tick_momentum", 0.0) or 0.0)
+            signal = float(f.get("signal_strength", 0.0) or 0.0)
+            quality = float(f.get("trend_quality", 0.0) or 0.0)
+            breakout = float(f.get("breakout_score", 0.0) or 0.0)
+
+            if trend <= 0 or momentum <= 0 or signal <= 0:
+                continue
+
+            if one_tick < -0.0015:
+                continue
+
+            score = signal + quality + breakout
+
+            ranked.append({
+                "symbol": symbol,
+                "score": score,
+                "symbol_regime": symbol_regime,
+                "signal_strength": signal,
+                "trend_quality": quality,
+                "breakout_score": breakout,
+            })
+
+        except Exception:
+            continue
+
+    ranked = sorted(ranked, key=lambda x: x["score"], reverse=True)
+    return ranked[:int(top_n)]
+
+
 def enforce_entry_quality_lockdown(result, feature_map, regime):
     """
     Final hard firewall before orders are printed/applied.
@@ -1637,8 +2094,17 @@ def main():
     while True:
         try:
             tick = market.tick()
-            print("MARKET TICK DATA:", tick["prices"])
-            prices = tick["prices"]
+            raw_prices = tick["prices"]
+            print("MARKET TICK DATA RAW:", raw_prices)
+
+            prices = validate_market_prices(raw_prices)
+            print("MARKET TICK DATA VALIDATED:", prices)
+
+            if not prices:
+                print("MARKET DATA BLOCK: no_valid_prices_this_cycle")
+                time.sleep(settings.trade_interval_seconds)
+                continue
+
             remember_prices(prices)
             refresh_recent_trade_counts()
 
@@ -1722,7 +2188,8 @@ def main():
                     "reason": pause_reason() or "paused",
                 })
             else:
-                for fill in proposed_fills:
+                buys_this_cycle = 0
+            for fill in proposed_fills:
                     strategy = fill.get("strategy")
                     is_shadow = fill.get("shadow_mode", False)
                     symbol = fill["symbol"]
@@ -1896,6 +2363,33 @@ def main():
                 )
                 globals()["last_risk_status"] = current_risk_status
 
+            live_payload = {
+                "name": "Quant Fund OS",
+                "mode": getattr(settings, "mode", "paper"),
+                "live_trading": bool(getattr(settings, "live_trading", False)),
+                "exchange": getattr(settings, "exchange", "mexc"),
+                "exchange_type": getattr(settings, "exchange_type", "spot"),
+                "regime": regime,
+                "risk_status": risk_status,
+                "bot_state": "PAUSED" if paused else "RUNNING",
+                "paused": bool(paused),
+                "pause_reason": pause_reason,
+                "portfolio": {
+                    "equity": equity,
+                    "cash": portfolio.cash,
+                    "exposure": exposure,
+                    "exposure_pct": exposure_pct,
+                    "regime": regime,
+                },
+                "positions": positions,
+                "orders": len(result.get("orders", [])) if isinstance(result, dict) else 0,
+                "controls": {
+                    "pause": "/pause",
+                    "resume": "/resume",
+                    "kill_switch": "/kill-switch",
+                },
+            }
+            update_live_status_cache(live_payload)
             print({
                 "regime": regime,
                 "equity": round(equity, 2),
@@ -1972,3 +2466,15 @@ if __name__ == "__main__":
 
 
 
+
+
+@app.get("/live-status")
+def live_status():
+    live = get_live_status_cache()
+    if live:
+        return live
+    return {
+        "name": "Quant Fund OS",
+        "status": "warming_up_or_no_live_cache",
+        "note": "Live cache not populated yet. Use dashboard/logs until first loop update.",
+    }
