@@ -1,20 +1,22 @@
-# docker-compose.yml — Oracle Cloud Always Free deployment
-# Single container: runs bot + dashboard API together via start.sh
-
 services:
+  redis:
+    image: redis:7
+    container_name: quant-fund-os-redis-1
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
   quant:
     build: .
-    restart: unless-stopped
-    env_file: .env
+    image: quant-fund-os-quant
+    container_name: quant-fund-os-quant-1
+    command: ./start.sh
+    env_file:
+      - .env
     ports:
-      - "8000:8000"
+      - "8080:8080"
     volumes:
-      - quant_data:/app
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
-
-volumes:
-  quant_data:
+      - ./data:/app/data
+    depends_on:
+      - redis
+    restart: unless-stopped

@@ -1,5 +1,31 @@
+from core.db import engine
+import os
+from sqlalchemy import text
 import sqlite3
 from core.config import settings
+
+
+def _sqlite_db_path() -> str:
+    """
+    Use the same SQLite file inside Docker and Windows.
+    Docker path should be /app/data/quant.db.
+    """
+    direct = os.getenv("SQLITE_DB_PATH")
+    if direct:
+        return direct
+
+    db_url = os.getenv("DATABASE_URL") or os.getenv("DB_URL") or getattr(settings, "database_url", "")
+    db_url = str(db_url or "")
+
+    if db_url.startswith("sqlite:///"):
+        return db_url.replace("sqlite:///", "", 1)
+
+    return "quant.db"
+
+
+def _connect_sqlite():
+    return sqlite3.connect(_sqlite_db_path())
+
 
 STABLE_OR_FIAT_BASES = {
     "USDC", "USD1", "USDT", "BUSD", "TUSD", "DAI", "FDUSD",
@@ -7,16 +33,93 @@ STABLE_OR_FIAT_BASES = {
 }
 
 
-def passes_strict_long_filter(f: dict) -> bool:
+
+
+def is_strong_symbol_uptrend(f: dict) -> bool:
+    """
+    Normal-feature only.
+    Allows a strong individual coin trend even if global market regime is RISK_OFF.
+    """
     try:
-        return (
-            bool(f.get("ready", False))
-            and float(f.get("trend", 0.0)) > 0
-            and float(f.get("momentum", 0.0)) > 0
-            and float(f.get("one_tick_momentum", 0.0)) > 0
-        )
+        if not bool(f.get("ready", False)):
+            return False
+
+        source = str(f.get("source", "NORMAL")).upper()
+        if source == "RAW_MOMENTUM_FALLBACK":
+            return False
+
+        symbol_regime = str(f.get("symbol_regime", "")).upper()
+        trend = float(f.get("trend", 0.0) or 0.0)
+        long_trend = float(f.get("long_trend", 0.0) or 0.0)
+        momentum = float(f.get("momentum", 0.0) or 0.0)
+        one_tick = float(f.get("one_tick_momentum", 0.0) or 0.0)
+        signal = float(f.get("signal_strength", 0.0) or 0.0)
+        quality = float(f.get("trend_quality", 0.0) or 0.0)
+
+        if symbol_regime not in ("SYMBOL_TREND_UP", "SYMBOL_BREAKOUT_UP"):
+            return False
+
+        if trend <= 0 or momentum <= 0 or signal <= 0:
+            return False
+
+        if one_tick < -0.0015:
+            return False
+
+        # Strong enough for defensive RISK_OFF participation.
+        return signal >= 0.004 or quality >= 0.004 or (trend > 0.002 and momentum > 0.002)
+
     except Exception:
         return False
+
+
+def risk_off_size_multiplier(regime: str, f: dict) -> float:
+    """
+    Global regime is market weather.
+    Symbol regime is the coin's own behavior.
+
+    During RISK_OFF, only allow strong symbol uptrends, and reduce size.
+    """
+    if str(regime).upper() != "RISK_OFF":
+        return 1.0
+
+    if is_strong_symbol_uptrend(f):
+        return 0.35
+
+    return 0.0
+
+
+def passes_strict_long_filter(f: dict) -> bool:
+    """
+    Normal-feature long filter.
+
+    Global regime is market weather.
+    Symbol regime is each coin's own behavior.
+
+    This blocks raw momentum fallback and allows flat one-tick movement
+    when trend and multi-tick momentum are positive.
+    """
+    try:
+        if not bool(f.get("ready", False)):
+            return False
+
+        source = str(f.get("source", "NORMAL")).upper()
+        if source == "RAW_MOMENTUM_FALLBACK":
+            return False
+
+        trend = float(f.get("trend", 0.0) or 0.0)
+        momentum = float(f.get("momentum", 0.0) or 0.0)
+        one_tick = float(f.get("one_tick_momentum", 0.0) or 0.0)
+        signal = float(f.get("signal_strength", 0.0) or 0.0)
+        symbol_regime = str(f.get("symbol_regime", "")).upper()
+
+        if symbol_regime in ("SYMBOL_TREND_UP", "SYMBOL_BREAKOUT_UP"):
+            return trend > 0 and momentum > 0 and signal > 0 and one_tick >= -0.0015
+
+        return trend > 0 and momentum > 0 and signal > 0 and one_tick >= -0.0015
+
+    except Exception:
+        return False
+
 
 
 def strategy_name(strategy):
@@ -38,7 +141,7 @@ def db_strategy_allowed(name: str) -> bool:
     can be tested, then blocked later if their score goes negative.
     """
     try:
-        conn = sqlite3.connect("quant.db")
+        conn = _connect_sqlite()
         cur = conn.cursor()
 
         row = cur.execute("""
@@ -67,8 +170,12 @@ def db_strategy_allowed(name: str) -> bool:
             return False
         return True
 
-    except Exception:
-        # Fail closed: if we cannot verify the strategy, do not trade it.
+    except Exception as e:
+        live = str(getattr(settings, "live_trading", False)).lower() in ("1", "true", "yes", "on")
+        if not live:
+            print(f"ALLOCATOR WARN: strategy DB check failed for {name}; allowing in paper mode: {e}")
+            return True
+        # Fail closed only in live mode.
         return False
 
 
@@ -97,7 +204,7 @@ def is_symbol_quarantined(symbol: str) -> bool:
     Uses Kenya-time DB convention.
     """
     try:
-        conn = sqlite3.connect("quant.db")
+        conn = _connect_sqlite()
         cur = conn.cursor()
         row = cur.execute("""
             SELECT symbol
@@ -126,7 +233,7 @@ def is_already_holding(symbol: str, market_state: dict) -> bool:
         pass
 
     try:
-        conn = sqlite3.connect("quant.db")
+        conn = _connect_sqlite()
         cur = conn.cursor()
         row = cur.execute("""
             SELECT quantity
@@ -149,12 +256,12 @@ def has_bad_symbol_history(symbol: str) -> bool:
     This mirrors the execution-layer symbol_bad_history rule.
     """
     try:
-        conn = sqlite3.connect("quant.db")
+        conn = _connect_sqlite()
         cur = conn.cursor()
         row = cur.execute("""
             SELECT
-                SUM(CASE WHEN strategy='stop_loss' THEN 1 ELSE 0 END) AS stop_losses,
-                SUM(CASE WHEN strategy='take_profit' THEN 1 ELSE 0 END) AS take_profits
+                SUM(CASE WHEN LOWER(TRIM(strategy)) IN ('stop_loss','stop_loss_exit','adaptive_stop_loss') THEN 1 ELSE 0 END) AS stop_losses,
+                SUM(CASE WHEN LOWER(TRIM(strategy)) IN ('take_profit','adaptive_take_profit') THEN 1 ELSE 0 END) AS take_profits
             FROM trades
             WHERE symbol = ?
               AND side = 'sell'
@@ -181,7 +288,7 @@ def is_symbol_in_cooldown(symbol: str) -> bool:
     that execution later rejects as cooldown.
     """
     try:
-        conn = sqlite3.connect("quant.db")
+        conn = _connect_sqlite()
         cur = conn.cursor()
 
         row = cur.execute("""
@@ -212,27 +319,40 @@ def is_symbol_in_cooldown(symbol: str) -> bool:
 
 def has_hit_max_trades_per_symbol(symbol: str) -> bool:
     """
-    Skip symbols that already reached the configured max_trades_per_symbol.
-    Mirrors execution-layer max_trades_per_symbol rule.
+    Rolling-window max trades check.
+
+    Old behavior counted all historical trades and blocked symbols for too long.
+    New behavior only counts recent BUY trades inside TRADE_COUNT_WINDOW_HOURS.
     """
     try:
-        conn = sqlite3.connect("quant.db")
-        cur = conn.cursor()
-
-        row = cur.execute("""
-            SELECT COUNT(*)
-            FROM trades
-            WHERE symbol = ?
-        """, (symbol,)).fetchone()
-
-        conn.close()
-
-        trade_count = int(row[0] or 0) if row else 0
         max_trades = int(getattr(settings, "max_trades_per_symbol", 7) or 7)
+        window_hours = float(getattr(settings, "trade_count_window_hours", 4) or 4)
 
-        return trade_count >= max_trades
+        with engine.begin() as conn:
+            row = conn.execute(text("""
+                SELECT COUNT(*) AS count
+                FROM trades
+                WHERE symbol = :symbol
+                  AND side = 'buy'
+                  AND created_at >= datetime('now', '+3 hours', '-' || :hours || ' hours')
+            """), {
+                "symbol": symbol,
+                "hours": window_hours,
+            }).mappings().first()
 
-    except Exception:
+        recent_count = int(row["count"] or 0) if row else 0
+
+        if recent_count >= max_trades:
+            print(
+                f"ALLOCATOR TRADE WINDOW {symbol}: "
+                f"{recent_count}/{max_trades} buys in {window_hours:g}h"
+            )
+            return True
+
+        return False
+
+    except Exception as e:
+        print(f"ALLOCATOR TRADE COUNT CHECK ERROR {symbol}: {e}")
         return False
 
 
@@ -242,7 +362,7 @@ def has_hit_hourly_entry_cap(regime: str) -> bool:
     per-hour cap for the current market regime.
     """
     try:
-        conn = sqlite3.connect("quant.db")
+        conn = _connect_sqlite()
         cur = conn.cursor()
 
         row = cur.execute("""
@@ -275,7 +395,7 @@ def recent_stop_loss_ratio(limit=10):
     If stop_loss dominates, allocator becomes more selective and smaller.
     """
     try:
-        conn = sqlite3.connect("quant.db")
+        conn = _connect_sqlite()
         cur = conn.cursor()
 
         rows = cur.execute("""
@@ -293,7 +413,7 @@ def recent_stop_loss_ratio(limit=10):
 
         stop_losses = sum(
             1 for r in rows
-            if str(r[0] or "").lower() == "stop_loss"
+            if str(r[0] or "").lower() in ("stop_loss", "stop_loss_exit", "adaptive_stop_loss")
         )
 
         return stop_losses / len(rows)
@@ -305,10 +425,21 @@ def recent_stop_loss_ratio(limit=10):
 class SimpleAllocator:
     def allocate(self, scored, market_state):
         if not scored:
+            print("ALLOCATOR BLOCK: no_scored_strategies")
             return {"orders": [], "leverage": 0, "estimated_var": 0}
 
         best = choose_allowed_strategy(scored)
         if not best:
+            top_scores = [
+                {
+                    "strategy": strategy_name(x.get("strategy")) if isinstance(x, dict) else "unknown",
+                    "score": round(float(x.get("score", 0) or 0), 4),
+                    "matches": x.get("matches", 0),
+                }
+                for x in scored[:5]
+                if isinstance(x, dict)
+            ]
+            print(f"ALLOCATOR BLOCK: no_allowed_positive_strategy top_scores={top_scores}")
             return {"orders": [], "leverage": 0, "estimated_var": 0}
 
         features = market_state.get("features", {})
@@ -317,14 +448,18 @@ class SimpleAllocator:
         risk_status = str(market_state.get("risk_status", "") or "").upper()
 
         if risk_status == "BLOCKED":
+            print("ALLOCATOR BLOCK: risk_status_BLOCKED")
             return {"orders": [], "leverage": 0, "estimated_var": 0}
 
         if not features or equity <= 0 or remaining_cash <= 0:
+            print(f"ALLOCATOR BLOCK: missing_inputs features={len(features) if isinstance(features, dict) else 0} equity={equity} cash={remaining_cash}")
             return {"orders": [], "leverage": 0, "estimated_var": 0}
 
         strategy = best.get("strategy")
         if strategy is None:
+            print("ALLOCATOR BLOCK: best_strategy_missing")
             return {"orders": [], "leverage": 0, "estimated_var": 0}
+        print(f"ALLOCATOR BEST: strategy={strategy_name(strategy)} score={float(best.get('score', 0) or 0):.4f} matches={best.get('matches', 0)} db={_sqlite_db_path()}")
 
         max_orders = int(settings.max_new_entries_per_cycle)
         size_multiplier = 1.0
@@ -389,7 +524,7 @@ class SimpleAllocator:
                 continue
 
             if has_hit_max_trades_per_symbol(symbol):
-                print(f"ALLOCATOR SKIP {symbol}: max_trades_per_symbol")
+                print(f"ALLOCATOR SKIP {symbol}: max_trades_per_symbol_recent_window")
                 continue
 
             if not passes_strict_long_filter(f):
@@ -411,6 +546,15 @@ class SimpleAllocator:
             one_tick_ok = float(f.get("one_tick_momentum", 0.0)) > 0
 
             if not (trend_ok and momentum_ok and long_trend_ok and one_tick_ok):
+                print(
+                    f"ALLOCATOR SKIP {symbol}: strategy_threshold "
+                    f"trend_ok={trend_ok} momentum_ok={momentum_ok} "
+                    f"long_trend_ok={long_trend_ok} one_tick_ok={one_tick_ok} "
+                    f"trend={float(f.get('trend', 0.0)):.5f} "
+                    f"momentum={float(f.get('momentum', 0.0)):.5f} "
+                    f"one_tick={float(f.get('one_tick_momentum', 0.0)):.5f} "
+                    f"signal={float(f.get('signal_strength', 0.0)):.5f}"
+                )
                 continue
 
             notional = equity * float(strategy_value(strategy, "risk_fraction", 0.02)) * size_multiplier
@@ -421,6 +565,10 @@ class SimpleAllocator:
 
             price = float(f["price"])
             qty = notional / price
+
+            if str(regime).upper() == "RISK_OFF" and not is_strong_symbol_uptrend(f):
+                print(f"ALLOCATOR SKIP {symbol}: global_RISK_OFF_without_symbol_uptrend symbol_regime={f.get('symbol_regime')}")
+                continue
 
             orders.append({
                 "symbol": symbol,

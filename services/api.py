@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy import text
 from core.db import engine
 from core.config import settings
@@ -7,7 +7,377 @@ from services.metrics import metrics_app
 from core.control import is_paused, pause_bot, resume_bot, pause_reason, get_control_state
 from services.telegram import send_telegram_alert
 
+# === QFOS_DIRECT_HELPERS_START ===
+QFOS_EXIT_WORDS = (
+    "stop_loss",
+    "take_profit",
+    "risk_off",
+    "emergency",
+    "breakeven",
+    "time_stop",
+    "exit",
+    "trailing_stop",
+    "manual_exit",
+    "liquidation",
+)
+
+def qfos_normalize_trade_row(row):
+    try:
+        d = dict(row)
+    except Exception:
+        return row
+
+    raw_strategy = d.get("raw_strategy", d.get("strategy"))
+    raw_l = str(raw_strategy or "").strip().lower()
+    is_exit = any(word in raw_l for word in QFOS_EXIT_WORDS)
+
+    d["raw_strategy"] = raw_strategy
+    d["is_exit"] = bool(is_exit)
+
+    if is_exit:
+        d["exit_reason"] = d.get("exit_reason") or raw_strategy
+        d["entry_strategy"] = d.get("entry_strategy")
+        d["display_strategy"] = d.get("display_strategy") or d["exit_reason"]
+    else:
+        d["exit_reason"] = None
+        d["entry_strategy"] = d.get("entry_strategy") or raw_strategy
+        d["display_strategy"] = d.get("display_strategy") or d["entry_strategy"]
+
+    return d
+
+def qfos_normalize_trade_list(rows):
+    return [qfos_normalize_trade_row(r) for r in (rows or [])]
+
+def qfos_normalize_payload(payload):
+    if isinstance(payload, list):
+        return qfos_normalize_trade_list(payload)
+
+    if isinstance(payload, dict):
+        if isinstance(payload.get("value"), list):
+            payload["value"] = qfos_normalize_trade_list(payload["value"])
+
+        if isinstance(payload.get("trades"), list):
+            payload["trades"] = qfos_normalize_trade_list(payload["trades"])
+
+        if isinstance(payload.get("latest_trades"), list):
+            payload["latest_trades"] = qfos_normalize_trade_list(payload["latest_trades"])
+
+        trading = payload.get("trading")
+        if isinstance(trading, dict) and isinstance(trading.get("latest_trades"), list):
+            trading["latest_trades"] = qfos_normalize_trade_list(trading["latest_trades"])
+
+        if payload.get("paused") is True:
+            payload["bot_state"] = "PAUSED"
+            payload["status_label"] = "PAUSED"
+            if isinstance(trading, dict):
+                trading["bot_state"] = "PAUSED"
+                trading["status_label"] = "PAUSED"
+
+    return payload
+# === QFOS_DIRECT_HELPERS_END ===
+
+
+
+
+
+
+
+
+# === FORCE TRADE NORMALIZER PATCH ===
+EXIT_REASON_STRATEGIES = {
+    "stop_loss",
+    "stop_loss_exit",
+    "adaptive_stop_loss",
+    "take_profit",
+    "adaptive_take_profit",
+    "risk_off_exit",
+    "emergency_exposure_reduction",
+    "breakeven_protection_exit",
+    "time_stop_exit",
+}
+
+def normalize_trade_for_dashboard(t):
+    try:
+        d = dict(t)
+    except Exception:
+        d = {}
+        for k in (
+            "symbol", "side", "quantity", "fill_price", "slippage_bps",
+            "strategy", "confidence", "live", "created_at"
+        ):
+            try:
+                d[k] = getattr(t, k)
+            except Exception:
+                pass
+
+    strategy = str(d.get("strategy") or "").strip()
+    side = str(d.get("side") or "").strip().lower()
+    strategy_l = strategy.lower()
+
+    d["raw_strategy"] = strategy
+
+    if side == "sell" and strategy_l in EXIT_REASON_STRATEGIES:
+        d["exit_reason"] = strategy_l
+        d["entry_strategy"] = None
+        d["display_strategy"] = strategy_l
+        d["is_exit"] = True
+    else:
+        d["exit_reason"] = None
+        d["entry_strategy"] = strategy
+        d["display_strategy"] = strategy
+        d["is_exit"] = False
+
+    return d
+def normalize_trades_for_dashboard(rows):
+    return qfos_normalize_payload([normalize_trade_for_dashboard(x) for x in (rows or [])])
+
+def status_label_from_api(data):
+    if bool(data.get("paused")):
+        return "PAUSED"
+    if bool(data.get("kill_switch") or data.get("killed")):
+        return "KILLED"
+    return "RUNNING"
+# === END FORCE TRADE NORMALIZER PATCH ===
+
+
+# === ONE-PATCH DASHBOARD/EXIT NORMALIZATION ===
+EXIT_REASON_STRATEGIES = {
+    "stop_loss",
+    "stop_loss_exit",
+    "adaptive_stop_loss",
+    "take_profit",
+    "adaptive_take_profit",
+    "risk_off_exit",
+    "emergency_exposure_reduction",
+    "breakeven_protection_exit",
+    "time_stop_exit",
+}
+
+STOP_LOSS_EXIT_STRATEGIES = {
+    "stop_loss",
+    "stop_loss_exit",
+    "adaptive_stop_loss",
+}
+
+TAKE_PROFIT_EXIT_STRATEGIES = {
+    "take_profit",
+    "adaptive_take_profit",
+}
+
+RISK_OFF_EXIT_STRATEGIES = {
+    "risk_off_exit",
+}
+
+EMERGENCY_EXIT_STRATEGIES = {
+    "emergency_exposure_reduction",
+}
+
+
+def _trade_to_plain_dict(row):
+    try:
+        d = dict(row)
+    except Exception:
+        d = {}
+        for k in ("symbol", "side", "quantity", "fill_price", "slippage_bps", "strategy", "confidence", "live", "created_at"):
+            try:
+                d[k] = getattr(row, k)
+            except Exception:
+                pass
+    return d
+def _normalize_trade_for_dashboard(row):
+    """
+    Do not let exit reasons pretend to be entry strategies.
+    Keeps old DB schema working, but adds:
+      raw_strategy
+      exit_reason
+      entry_strategy
+      display_strategy
+    """
+    d = _trade_to_plain_dict(row)
+    raw = str(d.get("strategy") or "").strip()
+    side = str(d.get("side") or "").lower().strip()
+    raw_l = raw.lower()
+
+    d["raw_strategy"] = raw
+
+    if side == "sell" and raw_l in EXIT_REASON_STRATEGIES:
+        d["exit_reason"] = raw_l
+        d["entry_strategy"] = d.get("entry_strategy") or None
+        d["display_strategy"] = raw_l
+    else:
+        d["exit_reason"] = d.get("exit_reason") or None
+        d["entry_strategy"] = raw
+        d["display_strategy"] = raw
+
+    return d
+def _normalize_trade_list_for_dashboard(rows):
+    return qfos_normalize_payload([_normalize_trade_for_dashboard(r) for r in (rows or [])])
+
+
+def _strategy_is_real_entry_strategy(strategy):
+    s = str(strategy or "").strip().lower()
+    return bool(s) and s not in EXIT_REASON_STRATEGIES
+
+
+def _bot_state_from_payload(payload):
+    paused = bool(payload.get("paused", False))
+    killed = bool(payload.get("kill_switch", False) or payload.get("killed", False))
+    if killed:
+        return "KILLED"
+    if paused:
+        return "PAUSED"
+    return "RUNNING"
+# === END ONE-PATCH DASHBOARD/EXIT NORMALIZATION ===
+
+
 app = FastAPI(title="Quant Fund OS")
+
+# === QFOS_FORCE_MIDDLEWARE_PATCH ===
+try:
+    from starlette.responses import JSONResponse
+    import json as _qfos_json
+
+    @app.middleware("http")
+    async def qfos_force_response_normalizer(request, call_next):
+        response = await call_next(request)
+        path = str(request.url.path)
+
+        if not (path.endswith("/status") or path.endswith("/trades")):
+            return response
+
+        if "application/json" not in response.headers.get("content-type", ""):
+            return response
+
+        body = b""
+        async for chunk in response.body_iterator:
+            body += chunk
+
+        try:
+            payload = _qfos_json.loads(body.decode("utf-8"))
+            payload = qfos_normalize_payload(payload)
+        except Exception as exc:
+            print("QFOS force middleware failed:", exc)
+            return response
+
+        headers = dict(response.headers)
+        headers.pop("content-length", None)
+
+        return JSONResponse(content=payload, status_code=response.status_code, headers=headers)
+except Exception as exc:
+    print("QFOS force middleware install failed:", exc)
+# === QFOS_FORCE_MIDDLEWARE_PATCH_END ===
+
+
+
+
+
+
+# === QFOS FINAL RESPONSE NORMALIZER PATCH ===
+QFOS_EXIT_REASON_STRATEGIES = {
+    "stop_loss",
+    "stop_loss_exit",
+    "adaptive_stop_loss",
+    "take_profit",
+    "adaptive_take_profit",
+    "risk_off_exit",
+    "emergency_exposure_reduction",
+    "breakeven_protection_exit",
+    "time_stop_exit",
+}
+
+def qfos_normalize_trade_row(row):
+    if not isinstance(row, dict):
+        return row
+    d = dict(row)
+    strategy = str(d.get("strategy") or "").strip()
+    side = str(d.get("side") or "").strip().lower()
+    strategy_l = strategy.lower()
+
+    d["raw_strategy"] = strategy
+
+    if side == "sell" and strategy_l in QFOS_EXIT_REASON_STRATEGIES:
+        d["exit_reason"] = strategy_l
+        d["entry_strategy"] = None
+        d["display_strategy"] = strategy_l
+        d["is_exit"] = True
+    else:
+        d["exit_reason"] = None
+        d["entry_strategy"] = strategy
+        d["display_strategy"] = strategy
+        d["is_exit"] = False
+
+    return d
+def qfos_normalize_trade_list(rows):
+    if not isinstance(rows, list):
+        return rows
+    return qfos_normalize_payload([qfos_normalize_trade_row(x) for x in rows])
+
+def qfos_normalize_api_payload(payload):
+    if not isinstance(payload, dict):
+        return payload
+
+    # /trades shape: {"value": [...], "Count": 50}
+    if isinstance(payload.get("value"), list):
+        payload["value"] = qfos_normalize_trade_list(payload["value"])
+
+    # /status shape: {"trading": {"latest_trades": [...]}}
+    trading = payload.get("trading")
+    if isinstance(trading, dict) and isinstance(trading.get("latest_trades"), list):
+        trading["latest_trades"] = qfos_normalize_trade_list(trading["latest_trades"])
+
+    # Force truthful bot state labels
+    if payload.get("paused") is True:
+        payload["bot_state"] = "PAUSED"
+        payload["status_label"] = "PAUSED"
+        payload["running"] = False
+    elif payload.get("kill_switch") is True or payload.get("killed") is True:
+        payload["bot_state"] = "KILLED"
+        payload["status_label"] = "KILLED"
+        payload["running"] = False
+    elif "bot_state" not in payload:
+        payload["bot_state"] = "RUNNING"
+        payload["status_label"] = "RUNNING"
+        payload["running"] = True
+
+    return payload
+
+@app.middleware("http")
+async def qfos_trade_response_normalizer(request, call_next):
+    response = await call_next(request)
+
+    path = request.url.path
+    if path not in {"/trades", "/status"}:
+        return response
+    content_type = response.headers.get("content-type", "")
+    if "application/json" not in content_type:
+        return response
+    body = b""
+    async for chunk in response.body_iterator:
+        body += chunk
+
+    try:
+        import json
+        payload = json.loads(body.decode("utf-8"))
+        payload = qfos_normalize_api_payload(payload)
+        return JSONResponse(
+            content=payload,
+            status_code=response.status_code,
+            headers={
+                k: v for k, v in response.headers.items()
+                if k.lower() not in {"content-length", "content-type"}
+            },
+        )
+    except Exception as e:
+        return JSONResponse(
+            content={
+                "error": "qfos_response_normalizer_failed",
+                "detail": str(e),
+            },
+            status_code=500,
+        )
+# === END QFOS FINAL RESPONSE NORMALIZER PATCH ===
+
+
 app.mount("/metrics", metrics_app)
 
 
@@ -17,8 +387,6 @@ def risk_status(exposure_pct, drawdown):
     if drawdown <= -0.02 or exposure_pct >= 0.35:
         return "CAUTION"
     return "SAFE"
-
-
 def ensure_positions_table(conn):
     conn.execute(text("""
         CREATE TABLE IF NOT EXISTS positions (
@@ -105,8 +473,8 @@ def get_performance(conn, equity):
             SUM(CASE WHEN UPPER(side) = 'SELL' THEN 1 ELSE 0 END) AS sell_count,
             SUM(CASE WHEN LOWER(TRIM(strategy)) IN ('take_profit', 'adaptive_take_profit', 'single_full_take_profit', 'fast_take_profit_stage_1', 'fast_take_profit_stage_2') THEN 1 ELSE 0 END) AS take_profit_count,
             SUM(CASE WHEN LOWER(TRIM(strategy)) IN ('stop_loss', 'adaptive_stop_loss', 'stop_loss_exit') THEN 1 ELSE 0 END) AS stop_loss_count,
-            SUM(CASE WHEN strategy = 'risk_off_exit' THEN 1 ELSE 0 END) AS risk_off_exit_count,
-            SUM(CASE WHEN strategy = 'emergency_exposure_reduction' THEN 1 ELSE 0 END) AS emergency_exit_count
+            SUM(CASE WHEN LOWER(TRIM(strategy)) IN ('risk_off_exit') THEN 1 ELSE 0 END) AS risk_off_exit_count,
+            SUM(CASE WHEN LOWER(TRIM(strategy)) IN ('emergency_exposure_reduction') THEN 1 ELSE 0 END) AS emergency_exit_count
         FROM trades
     """)).mappings().first()
 
@@ -236,7 +604,7 @@ def get_status_payload():
             "total_trades": performance["total_trades"],
             "buy_count": performance["buy_count"],
             "sell_count": performance["sell_count"],
-            "latest_trades": [dict(t) for t in latest_trades],
+            "latest_trades": qfos_normalize_trade_list([dict(t) for t in latest_trades]),
         },
         **_count_exit_strategies(),
         "risk_rules": {
@@ -275,6 +643,7 @@ def root():
 
 
 @app.get("/trades")
+
 def trades(limit: int = 50):
     with engine.begin() as conn:
         rows = conn.execute(text("""
@@ -284,7 +653,8 @@ def trades(limit: int = 50):
             ORDER BY id DESC
             LIMIT :limit
         """), {"limit": limit}).mappings().all()
-    return [dict(r) for r in rows]
+
+    return qfos_normalize_trade_list([dict(r) for r in rows])
 
 
 @app.get("/portfolio")
@@ -296,7 +666,7 @@ def portfolio(limit: int = 100):
             ORDER BY id DESC
             LIMIT :limit
         """), {"limit": limit}).mappings().all()
-    return [dict(r) for r in rows]
+    return qfos_normalize_trade_list([dict(r) for r in rows])
 
 
 @app.get("/portfolio/latest")
@@ -309,7 +679,7 @@ def latest_portfolio():
             LIMIT 1
         """)).mappings().first()
 
-    return dict(row) if row else {
+    return normalize_trades_for_dashboard(dict)(row) if row else {
         "equity": 100,
         "cash": 100,
         "exposure": 0,
@@ -424,6 +794,7 @@ def _count_exit_strategies():
 
 
 @app.get("/status")
+
 def status():
     payload = get_status_payload()
     control = get_control_state()
@@ -432,14 +803,26 @@ def status():
     payload["paused"] = paused
     payload["pause_reason"] = control.get("reason") or ""
     payload["bot_state"] = "PAUSED" if paused else "RUNNING"
+    payload["status_label"] = payload["bot_state"]
     payload["controls"] = {
         "pause": "/pause",
         "resume": "/resume",
         "kill_switch": "/kill-switch",
     }
-    return payload
+
+    return qfos_normalize_payload(payload)
 
 
+    payload["paused"] = paused
+    payload["pause_reason"] = control.get("reason") or ""
+    payload["bot_state"] = "PAUSED" if paused else "RUNNING"
+    payload["status_label"] = payload["bot_state"]
+    payload["controls"] = {
+        "pause": "/pause",
+        "resume": "/resume",
+        "kill_switch": "/kill-switch",
+    }
+    return qfos_normalize_payload(payload)
 @app.post("/pause")
 def pause():
     pause_bot("manual_pause")
@@ -875,7 +1258,7 @@ async function loadDashboard() {
         text.textContent = 'PAUSED';
     } else {
         badge.className = 'state-badge state-running';
-        text.textContent = 'RUNNING';
+        text.textContent = qfosBotState(data);
     }
 
     // Top Row
@@ -929,7 +1312,7 @@ async function loadDashboard() {
               <td class="${trade.side}">${trade.side.toUpperCase()}</td>
               <td>${trade.quantity.toFixed(5)}</td>
               <td>${trade.fill_price.toFixed(4)}</td>
-              <td><span class="strategy-pill">${trade.strategy}</span></td>
+              <td><span class="strategy-pill">${(trade.display_strategy || trade.strategy)}</span></td>
               <td style="color:var(--accent)">${(trade.confidence * 100).toFixed(0)}%</td>
             </tr>
         `;
@@ -954,7 +1337,145 @@ async function loadDashboard() {
 
 setInterval(loadDashboard, 10000);
 loadDashboard();
+
+function qfosBotState(data) {
+  if (!data) return "UNKNOWN";
+  if (data.bot_state) return String(data.bot_state).toUpperCase();
+  if (data.paused === true) return "PAUSED";
+  if (data.paused === false) return "RUNNING";
+  return "UNKNOWN";
+}
+function qfosApplyBotState(data) {
+  const state = qfosBotState(data);
+  const badge =
+    document.getElementById("botStatus") ||
+    document.getElementById("statusBadge") ||
+    document.getElementById("runningStatus") ||
+    document.querySelector("[data-bot-status]");
+  if (badge) {
+    badge.textContent = state;
+    badge.classList.remove("running", "paused", "killed", "safe", "danger");
+    badge.classList.add(state.toLowerCase());
+  }
+}
+
+
+const EXIT_REASON_STRATEGIES_JS = new Set([
+  "stop_loss","stop_loss_exit","adaptive_stop_loss",
+  "take_profit","adaptive_take_profit",
+  "risk_off_exit","emergency_exposure_reduction",
+  "breakeven_protection_exit","time_stop_exit"
+]);
+
 </script>
+
+<script>
+async function qfosForceStatusRefresh() {
+  try {
+    const r = await fetch('/status', {cache: 'no-store'});
+    const data = await r.json();
+    const state = data.bot_state || (data.paused ? 'PAUSED' : 'RUNNING');
+
+    const candidates = [
+      document.getElementById('botStatus'),
+      document.getElementById('statusBadge'),
+      document.getElementById('runningStatus'),
+      document.querySelector('[data-bot-status]')
+    ].filter(Boolean);
+
+    for (const el of candidates) {
+      el.textContent = state;
+      el.classList.remove('running', 'paused', 'killed');
+      el.classList.add(String(state).toLowerCase());
+    }
+  } catch (e) {
+    console.log('status refresh failed', e);
+  }
+}
+setInterval(qfosForceStatusRefresh, 3000);
+qfosForceStatusRefresh();
+</script>
+
 </body>
 </html>
 """
+
+# === QFOS_FINAL_HELPER_OVERRIDE_START ===
+# Final override: route functions already call qfos_normalize_trade_list()
+# and qfos_normalize_payload(). These definitions must come last so they
+# override any stale/broken earlier definitions.
+
+QFOS_EXIT_WORDS = (
+    "stop_loss",
+    "take_profit",
+    "risk_off",
+    "emergency",
+    "breakeven",
+    "time_stop",
+    "exit",
+    "trailing_stop",
+    "manual_exit",
+    "liquidation",
+)
+
+def qfos_normalize_trade_row(row):
+    try:
+        d = dict(row)
+    except Exception:
+        return row
+
+    raw_strategy = d.get("raw_strategy", d.get("strategy"))
+    raw_l = str(raw_strategy or "").strip().lower()
+
+    is_exit = any(word in raw_l for word in QFOS_EXIT_WORDS)
+
+    d["raw_strategy"] = raw_strategy
+    d["is_exit"] = bool(is_exit)
+
+    if is_exit:
+        d["exit_reason"] = d.get("exit_reason") or raw_strategy
+        d["entry_strategy"] = d.get("entry_strategy")
+        d["display_strategy"] = d.get("display_strategy") or d["exit_reason"]
+    else:
+        d["exit_reason"] = None
+        d["entry_strategy"] = d.get("entry_strategy") or raw_strategy
+        d["display_strategy"] = d.get("display_strategy") or d["entry_strategy"]
+
+    return d
+
+def qfos_normalize_trade_list(rows):
+    return [qfos_normalize_trade_row(r) for r in (rows or [])]
+
+def qfos_normalize_payload(payload):
+    if isinstance(payload, list):
+        return qfos_normalize_trade_list(payload)
+
+    if not isinstance(payload, dict):
+        return payload
+
+    if isinstance(payload.get("value"), list):
+        payload["value"] = qfos_normalize_trade_list(payload["value"])
+
+    if isinstance(payload.get("trades"), list):
+        payload["trades"] = qfos_normalize_trade_list(payload["trades"])
+
+    if isinstance(payload.get("latest_trades"), list):
+        payload["latest_trades"] = qfos_normalize_trade_list(payload["latest_trades"])
+
+    trading = payload.get("trading")
+    if isinstance(trading, dict) and isinstance(trading.get("latest_trades"), list):
+        trading["latest_trades"] = qfos_normalize_trade_list(trading["latest_trades"])
+
+    if payload.get("paused") is True:
+        payload["bot_state"] = "PAUSED"
+        payload["status_label"] = "PAUSED"
+
+        if isinstance(trading, dict):
+            trading["bot_state"] = "PAUSED"
+            trading["status_label"] = "PAUSED"
+
+    return payload
+
+print("QFOS final helper override loaded.")
+# === QFOS_FINAL_HELPER_OVERRIDE_END ===
+

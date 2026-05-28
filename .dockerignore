@@ -1,11 +1,22 @@
-.env
-.venv/
+﻿.git
+.gitignore
 __pycache__/
 *.pyc
-*.sqlite
-*.db
-quant.db
-logs/
-.DS_Store
+.pytest_cache/
+.venv/
+venv/
+node_modules/
+
+# Local patch/debug artifacts
+qfos_*.py
+*qfos*.ps1
+_qfos_*/
+*_backup_*.py
+main_backup_*.py
+main_before_safe_patch_*.py
+services/api_backup_*.py
+
+# Local logs/temp
 *.log
-.git/
+*.tmp
+.DS_Store

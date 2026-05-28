@@ -1,43 +1,54 @@
-.env
+﻿.env
+.env.*
+!.env.example
+
+# Python/cache
 __pycache__/
 *.pyc
+.pytest_cache/
 .venv/
-logs/
-*.sqlite
-*.db
-*.log
-.DS_Store
+venv/
 
-# Local runtime / secrets
-.env
-*.db
-*.sqlite
-*.sqlite3
-
-# Bot runtime output
-logs/
-execution_logs/
-__pycache__/
-*.pyc
-
-# Local patch/backups
-main_backup_*.py
-auto_fix_main.py
-refine_fallback.py
-safe_refine_fallback.py
-patch_*.py
-reset_*.py
-inspect_db.py
-unblock_fallback_test.py
-repair_quant_main.ps1
-
-# Local secrets and runtime files
-.env
-*.log
-*.db
-*.sqlite
-*.sqlite3
+# Runtime data and databases
+data/
 db_backups/
+logs/
 old_logs/
-__pycache__/
-*.pyc
+monitoring_logs/
+*.log
+*.db
+*.db-wal
+*.db-shm
+quant.db
+quant.db-*
+quant.db-shm
+quant.db-wal
+
+# Local patch/debug/temporary scripts
+qfos_*.py
+*qfos*.ps1
+_qfos_*/
+patch_*.py
+inspect_*.py
+reset_*.py
+repair_*.py
+refine_fallback.py
+safe_*.py
+surgical_*.py
+unblock_*.py
+auto_fix_main.py
+block_raw_momentum_fallback.py
+disable_fallback_trading.py
+fix_entry_signal_alignment.py
+test_telegram_*.py
+*_backup_*.py
+*.bak*
+*.backup*
+*.txt
+
+# Local OS/editor
+.DS_Store
+Thumbs.db
+
+# Accidental broken filenames
+ervicesapi.py*
