@@ -1,6 +1,3 @@
-
-# Live dashboard/status cache.
-# Keeps /status aligned with the running loop instead of stale DB reads.
 LIVE_STATUS_CACHE = {}
 
 def update_live_status_cache(payload: dict):
@@ -12,7 +9,6 @@ def update_live_status_cache(payload: dict):
 
 def get_live_status_cache() -> dict:
     return dict(LIVE_STATUS_CACHE)
-
 import time
 import math
 import statistics
@@ -33,113 +29,525 @@ from ai.autonomous_agent import AutonomousFundAgent
 from services.metrics import trades_total, equity_gauge, drawdown_gauge
 from core.control import is_paused, pause_bot, pause_reason
 from services.telegram import send_telegram_alert
+from fastapi import FastAPI
 
-# QFOS_RISK_STATUS_DEFAULT
-risk_status = "SAFE"
+app = FastAPI(title="Quant Fund OS")
+
+def _winning_strategy_get(obj, key, default=None):
+    if obj is None:
+        return default
+    if isinstance(obj, dict):
+        return obj.get(key, default)
+    return getattr(obj, key, default)
+
+def _winning_strategy_pnl_pct(position):
+    try:
+        entry = float(_winning_strategy_get(position, "entry_price", 0) or 0)
+        mark = float(
+            _winning_strategy_get(position, "mark_price", None)
+            or _winning_strategy_get(position, "price", 0)
+            or 0
+        )
+        if entry <= 0:
+            return 0.0
+        return (mark - entry) / entry
+    except Exception:
+        return 0.0
+
+def _winning_strategy_log(action, reason, symbol, pnl_pct):
+    try:
+        import json
+        with open("winning_strategy_decisions.jsonl", "a", encoding="utf-8") as f:
+            f.write(json.dumps({
+                "action": action,
+                "reason": reason,
+                "symbol": str(symbol),
+                "pnl_pct": float(pnl_pct),
+            }) + "\n")
+    except Exception:
+        pass
+
+def allow_risk_off_exit(position, global_state=None, portfolio=None, reason=""):
+    """
+    Winning Strategy Guard.
+    True  = allow old risk_off_exit sell.
+    False = suppress premature panic sell.
+    """
+    regime = str(_winning_strategy_get(global_state, "regime", "") or "").upper()
+    symbol = _winning_strategy_get(position, "symbol", "UNKNOWN")
+    pnl_pct = _winning_strategy_pnl_pct(position)
+
+    # Never block real emergency exits.
+    if "HARD" in regime or "EMERGENCY" in str(reason).upper():
+        return True
+
+    # During soft RISK_OFF, do not panic-sell winners or flat positions.
+    if "RISK_OFF" in regime and pnl_pct >= 0:
+        _winning_strategy_log(
+            "HOLD",
+            "profit_shield_suppressed_risk_off_exit",
+            symbol,
+            pnl_pct,
+        )
+        return False
+
+    # If only slightly down, let local stop-loss handle it instead of global panic sell.
+    if "RISK_OFF" in regime and pnl_pct > -0.003:
+        _winning_strategy_log(
+            "TIGHT_TRAIL",
+            "minor_loss_suppressed_risk_off_exit",
+            symbol,
+            pnl_pct,
+        )
+        return False
+
+    return True
 
 
-# === ONE-PATCH EXIT ORDER NORMALIZATION ===
-EXIT_REASON_STRATEGIES = {
-    "stop_loss",
-    "stop_loss_exit",
-    "adaptive_stop_loss",
-    "take_profit",
-    "adaptive_take_profit",
-    "risk_off_exit",
-    "emergency_exposure_reduction",
-    "breakeven_protection_exit",
-    "time_stop_exit",
+
+
+# ============================================================
+# QFOS CLEAN INTEGRATED STRATEGY LAYER
+#
+# Design:
+# - No external qfos_winning_strategy import.
+# - Risk-off sells are gated by allow_risk_off_exit.
+# - Scout fallback creates a NORMAL fill dictionary only.
+# - The main loop still applies entry_policy_allows -> can_buy -> apply_buy.
+# - Scout fallback is blocked during corrupted market-data cycles.
+# ============================================================
+
+QFOS_SCOUT_FALLBACK_ENABLED = True
+QFOS_SCOUT_MAX_VALUE_USD = float(getattr(settings, "qfos_scout_max_value_usd", 2.00))
+QFOS_SCOUT_MIN_VALUE_USD = float(getattr(settings, "qfos_scout_min_value_usd", 1.00))
+QFOS_SCOUT_MAX_EXPOSURE_PCT = float(getattr(settings, "qfos_scout_max_exposure_pct", 0.08))
+QFOS_SCOUT_MIN_SIGNAL = float(getattr(settings, "qfos_scout_min_signal", 0.0010))
+QFOS_SCOUT_CONFIDENCE = float(getattr(settings, "qfos_scout_confidence", 0.78))
+QFOS_SCOUT_ALLOW_RISK_OFF = str(getattr(settings, "qfos_scout_allow_risk_off", "true")).lower() in ("1", "true", "yes", "on")
+QFOS_SCOUT_MIN_PRICE = float(getattr(settings, "qfos_scout_min_price", 0.001))
+QFOS_SCOUT_MAX_VOLATILITY = float(getattr(settings, "qfos_scout_max_volatility", 0.012))
+QFOS_SCOUT_MIN_SIDEWAYS_SIGNAL = float(getattr(settings, "qfos_scout_min_sideways_signal", 0.0060))
+QFOS_SCOUT_MIN_TREND_QUALITY = float(getattr(settings, "qfos_scout_min_trend_quality", 0.0030))
+QFOS_SCOUT_RECENT_STOP_LOSS_HOURS = float(getattr(settings, "qfos_scout_recent_stop_loss_hours", 2))
+
+LAST_MARKET_DATA_HEALTH = {
+    "sane_for_entries": False,
+    "reject_count": 0,
+    "large_tick_count": 0,
+    "trusted_count": 0,
+    "total_count": 0,
+    "reason": "not_initialized",
 }
+
+def _qfos_obj_get(obj, key, default=None):
+    try:
+        if obj is None:
+            return default
+        if isinstance(obj, dict):
+            return obj.get(key, default)
+        return getattr(obj, key, default)
+    except Exception:
+        return default
+
+def _qfos_float(value, default=0.0):
+    try:
+        return float(value)
+    except Exception:
+        return default
+
+def qfos_market_data_sane_for_entries(prices=None):
+    """
+    Block new fallback entries when the feed is suspicious.
+    Normal exits may still run using validated/last-good prices.
+    """
+    try:
+        h = globals().get("LAST_MARKET_DATA_HEALTH", {}) or {}
+        if not h.get("sane_for_entries", False):
+            print(f"[MARKET_SANITY] entries blocked: {h}")
+            return False
+        if not isinstance(prices, dict) or len(prices) < 20:
+            print("[MARKET_SANITY] entries blocked: insufficient validated prices")
+            return False
+        for stable in ("USDC/USDT", "USD1/USDT"):
+            if stable in prices:
+                px = _qfos_float(prices.get(stable), 1.0)
+                if px < 0.95 or px > 1.05:
+                    print(f"[MARKET_SANITY] entries blocked: bad stablecoin {stable}={px}")
+                    return False
+        return True
+    except Exception as e:
+        print(f"[MARKET_SANITY] entries blocked: sanity error {e}")
+        return False
+
+def _qfos_current_positions():
+    try:
+        pos = getattr(portfolio, "positions", {})
+        return pos if isinstance(pos, dict) else {}
+    except Exception:
+        return {}
+
+def _qfos_cash():
+    try:
+        return float(getattr(portfolio, "cash", 0.0) or 0.0)
+    except Exception:
+        return 0.0
+
+def _qfos_equity_from_prices(prices):
+    try:
+        eq = float(portfolio.mark_to_market(prices or {}) or 0.0)
+        return eq if eq > 0 else _qfos_cash()
+    except Exception:
+        return _qfos_cash()
+
+def _qfos_exposure_pct(prices):
+    try:
+        equity = _qfos_equity_from_prices(prices or {})
+        if equity <= 0:
+            return 0.0
+        exposure = 0.0
+        for sym, qty in _qfos_current_positions().items():
+            exposure += abs(_qfos_float(qty)) * _qfos_float((prices or {}).get(sym))
+        return exposure / equity
+    except Exception:
+        return 0.0
+
+def _qfos_is_excluded_entry_symbol(symbol):
+    s = str(symbol or "").upper()
+    return s in {"USDC/USDT", "USD1/USDT", "EUR/USDT", "GOLD(PAXG)/USDT"}
+
+def _qfos_symbol_db_quarantined(symbol):
+    try:
+        with engine.begin() as conn:
+            row = conn.execute(
+                text("""
+                    SELECT symbol
+                    FROM symbol_quarantine
+                    WHERE symbol = :symbol
+                      AND blocked_until IS NOT NULL
+                      AND blocked_until > DATETIME('now', '+3 hours')
+                    LIMIT 1
+                """),
+                {"symbol": symbol},
+            ).first()
+        return row is not None
+    except Exception as e:
+        print(f"[SCOUT_FALLBACK] quarantine check error {symbol}: {e}")
+        return True
+
+def _qfos_symbol_recent_stop_loss(symbol):
+    try:
+        with engine.begin() as conn:
+            row = conn.execute(
+                text("""
+                    SELECT COUNT(*) AS count
+                    FROM trades
+                    WHERE symbol = :symbol
+                      AND side = 'sell'
+                      AND (
+                            strategy IN ('stop_loss', 'adaptive_stop_loss')
+                         OR strategy LIKE '%stop_loss%'
+                      )
+                      AND created_at >= DATETIME('now', '+3 hours', '-' || :hours || ' hours')
+                """),
+                {"symbol": symbol, "hours": QFOS_SCOUT_RECENT_STOP_LOSS_HOURS},
+            ).mappings().first()
+        return int(row["count"] or 0) > 0 if row else False
+    except Exception as e:
+        print(f"[SCOUT_FALLBACK] recent SL check error {symbol}: {e}")
+        return True
+
+
+def _qfos_recent_scout_stop_loss_count(hours=1.5):
+    try:
+        with engine.begin() as conn:
+            row = conn.execute(
+                text("""
+                    SELECT COUNT(*) AS count
+                    FROM trades
+                    WHERE side = 'sell'
+                      AND (
+                            strategy IN ('stop_loss', 'adaptive_stop_loss')
+                         OR strategy LIKE '%stop_loss%'
+                      )
+                      AND created_at >= DATETIME('now', '+3 hours', '-' || :hours || ' hours')
+                """),
+                {"hours": hours},
+            ).mappings().first()
+        return int(row["count"] or 0) if row else 0
+    except Exception as e:
+        print(f"[SCOUT_FALLBACK] recent global SL check error: {e}")
+        return 99
+
+def _qfos_scout_global_cooldown_active():
+    recent_sl = _qfos_recent_scout_stop_loss_count(hours=1.5)
+    if recent_sl >= 3:
+        print(f"[SCOUT_FALLBACK] skipped: global stop-loss cooldown recent_sl={recent_sl}")
+        return True
+    return False
+
+
+def _qfos_symbol_blocked_for_scout(symbol):
+    if _qfos_symbol_db_quarantined(symbol):
+        print(f"[SCOUT_FALLBACK] skip {symbol}: db_quarantined")
+        return True
+    if _qfos_symbol_recent_stop_loss(symbol):
+        print(f"[SCOUT_FALLBACK] skip {symbol}: recent_stop_loss")
+        return True
+    return False
+
+
+def _qfos_scout_score(feature):
+    signal = _qfos_float(feature.get("signal_strength"))
+    trend_quality = _qfos_float(feature.get("trend_quality"))
+    breakout = _qfos_float(feature.get("breakout_score"))
+    momentum = _qfos_float(feature.get("momentum"))
+    one_tick = _qfos_float(feature.get("one_tick_momentum"))
+    trend = _qfos_float(feature.get("trend"))
+    volatility = abs(_qfos_float(feature.get("volatility")))
+
+    # Reward strong trend/breakout and positive momentum; lightly penalize extreme volatility.
+    return (
+        signal * 100.0
+        + trend_quality * 150.0
+        + breakout * 100.0
+        + max(momentum, 0.0) * 40.0
+        + max(one_tick, 0.0) * 20.0
+        + max(trend, 0.0) * 25.0
+        - max(volatility - 0.02, 0.0) * 10.0
+    )
+
+def _qfos_feature_clean_uptrend(feature, regime=None):
+    """
+    Higher-quality scout filter.
+
+    Goal:
+    - Do not buy quarantined/recent-stop-loss symbols.
+    - Avoid fake breakouts caused by noisy/corrupted history.
+    - Avoid ultra-micro-price symbols.
+    - Require actual trend quality, not only one noisy tick.
+    """
+    if not isinstance(feature, dict):
+        return False
+    if not bool(feature.get("ready", True)):
+        return False
+    if str(feature.get("source", "NORMAL")).upper() == "RAW_MOMENTUM_FALLBACK":
+        return False
+
+    symbol_regime = str(feature.get("symbol_regime", "") or "").upper()
+    is_up = bool(feature.get("is_symbol_uptrend", False))
+    is_down = bool(feature.get("is_symbol_downtrend", False))
+    is_choppy = bool(feature.get("is_choppy", False))
+
+    signal = _qfos_float(feature.get("signal_strength"))
+    trend = _qfos_float(feature.get("trend"))
+    long_trend = _qfos_float(feature.get("long_trend"))
+    momentum = _qfos_float(feature.get("momentum"))
+    one_tick = _qfos_float(feature.get("one_tick_momentum"))
+    volatility = abs(_qfos_float(feature.get("volatility")))
+    trend_quality = _qfos_float(feature.get("trend_quality"))
+    breakout_score = _qfos_float(feature.get("breakout_score"))
+
+    if is_down or is_choppy:
+        return False
+
+    if symbol_regime not in {"SYMBOL_BREAKOUT_UP", "SYMBOL_TREND_UP"} and not is_up:
+        return False
+
+    min_signal = QFOS_SCOUT_MIN_SIGNAL
+    if str(regime or "").upper() == "SIDEWAYS":
+        min_signal = max(min_signal, QFOS_SCOUT_MIN_SIDEWAYS_SIGNAL)
+
+    if signal < min_signal:
+        return False
+
+    if volatility > QFOS_SCOUT_MAX_VOLATILITY and signal < 0.02:
+        return False
+
+    if max(trend_quality, breakout_score) < QFOS_SCOUT_MIN_TREND_QUALITY:
+        return False
+
+    # In SIDEWAYS, demand cleaner agreement.
+    r = str(regime or "").upper()
+
+    if r == "SIDEWAYS":
+        if long_trend <= 0:
+            return False
+        if trend <= 0:
+            return False
+        if momentum <= 0:
+            return False
+        if one_tick < -0.0002:
+            return False
+    else:
+        confirmations = 0
+        confirmations += 1 if trend > 0 else 0
+        confirmations += 1 if momentum > 0 else 0
+        confirmations += 1 if one_tick >= -0.0005 else 0
+        confirmations += 1 if long_trend >= 0 else 0
+
+        if confirmations < 2:
+            return False
+
+    return True
+
+def qfos_select_scout_candidate(feature_map, prices, regime=None):
+    candidates = []
+    current_positions = _qfos_current_positions()
+
+    for symbol, feature in (feature_map or {}).items():
+        try:
+            if _qfos_is_excluded_entry_symbol(symbol):
+                continue
+
+            if _qfos_symbol_blocked_for_scout(symbol):
+                continue
+
+            if _qfos_float(current_positions.get(symbol)) > 0:
+                continue
+
+            price = _qfos_float((prices or {}).get(symbol) or (feature or {}).get("price"))
+            if price <= 0:
+                continue
+
+            if price < QFOS_SCOUT_MIN_PRICE:
+                print(f"[SCOUT_FALLBACK] skip {symbol}: price_too_low {price}")
+                continue
+
+            if not _qfos_feature_clean_uptrend(feature, regime=regime):
+                continue
+
+            score = _qfos_scout_score(feature)
+            candidates.append((score, symbol, price, feature))
+        except Exception as e:
+            print(f"[SCOUT_FALLBACK] candidate error {symbol}: {e}")
+            continue
+
+    candidates.sort(key=lambda x: x[0], reverse=True)
+    return candidates[0] if candidates else None
+
+def qfos_build_scout_fallback_order(feature_map, prices, regime, equity, cash):
+    """
+    Return one properly-shaped buy fill dict, or None.
+    This function does NOT mutate the portfolio and does NOT call apply_buy.
+    """
+    try:
+        if not QFOS_SCOUT_FALLBACK_ENABLED:
+            return None
+        if not qfos_market_data_sane_for_entries(prices):
+            return None
+
+        r = str(regime or "").upper()
+        if r in {"RISK_OFF_HARD", "BLOCKED"}:
+            print("[SCOUT_FALLBACK] skipped: hard risk regime")
+            return None
+        if r == "RISK_OFF" and not QFOS_SCOUT_ALLOW_RISK_OFF:
+            print("[SCOUT_FALLBACK] skipped: risk_off entries disabled")
+            return None
+
+        exposure_pct = _qfos_exposure_pct(prices or {})
+        if exposure_pct >= QFOS_SCOUT_MAX_EXPOSURE_PCT:
+            print(f"[SCOUT_FALLBACK] skipped: exposure cap reached {exposure_pct:.4f}")
+            return None
+
+        candidate = qfos_select_scout_candidate(feature_map or {}, prices or {}, regime=regime)
+        if not candidate:
+            print("[SCOUT_FALLBACK] skipped: no clean uptrend/breakout candidate")
+            return None
+
+        score, symbol, price, feature = candidate
+        cash = _qfos_float(cash)
+        equity = _qfos_float(equity)
+        if cash < QFOS_SCOUT_MIN_VALUE_USD:
+            print(f"[SCOUT_FALLBACK] skipped: insufficient cash {cash:.2f}")
+            return None
+
+        value = min(QFOS_SCOUT_MAX_VALUE_USD, max(QFOS_SCOUT_MIN_VALUE_USD, equity * 0.015))
+        value = min(value, cash * 0.50)
+        qty = value / price if price > 0 else 0.0
+        if qty <= 0:
+            return None
+
+        signal = _qfos_float(feature.get("signal_strength"))
+        confidence = max(QFOS_SCOUT_CONFIDENCE, min(0.95, signal))
+        order = {
+            "symbol": symbol,
+            "side": "buy",
+            "quantity": qty,
+            "expected_price": price,
+            "fill_price": price,
+            "slippage_bps": 0,
+            "strategy": "fallback_scout_breakout",
+            "confidence": confidence,
+            "signal_strength": signal,
+            "feature": feature,
+        }
+        print(
+            f"[SCOUT_FALLBACK] SELECTED {symbol} qty={qty:.8f} "
+            f"value=${value:.2f} price={price} score={score:.4f} "
+            f"regime={feature.get('symbol_regime')} signal={signal:.5f}"
+        )
+        return order
+    except Exception as e:
+        print(f"[SCOUT_FALLBACK] error: {e}")
+        return None
+
+
+EXIT_REASON_STRATEGIES = {'stop_loss', 'stop_loss_exit', 'adaptive_stop_loss', 'take_profit', 'adaptive_take_profit', 'risk_off_exit', 'emergency_exposure_reduction', 'breakeven_protection_exit', 'time_stop_exit', 'trailing_profit_exit'}
 
 def normalize_exit_order(order):
     if not isinstance(order, dict):
         return order
-    side = str(order.get("side") or "").lower()
-    strategy = str(order.get("strategy") or "").strip()
-    if side == "sell" and strategy.lower() in EXIT_REASON_STRATEGIES:
-        order.setdefault("exit_reason", strategy.lower())
-        order.setdefault("raw_strategy", strategy)
-        order.setdefault("display_strategy", strategy.lower())
+    side = str(order.get('side') or '').lower()
+    strategy = str(order.get('strategy') or '').strip()
+    if side == 'sell' and strategy.lower() in EXIT_REASON_STRATEGIES:
+        order.setdefault('exit_reason', strategy.lower())
+        order.setdefault('raw_strategy', strategy)
+        order.setdefault('display_strategy', strategy.lower())
     else:
-        order.setdefault("entry_strategy", strategy)
-        order.setdefault("display_strategy", strategy)
+        order.setdefault('entry_strategy', strategy)
+        order.setdefault('display_strategy', strategy)
     return order
-# === END ONE-PATCH EXIT ORDER NORMALIZATION ===
-
-
 INITIAL_EQUITY = float(settings.starting_equity)
-
 MAX_TOTAL_EXPOSURE_PCT = float(settings.max_total_exposure_pct)
 MAX_SYMBOL_EXPOSURE_PCT = float(settings.max_symbol_exposure_pct)
 MAX_TRADES_PER_SYMBOL = int(settings.max_trades_per_symbol)
-
-# ============================================================
-# ENTRY QUALITY LOCKDOWN
-# Normal MEXC/FeatureStore features only. No raw fallback trading.
-# Designed for small account + limited trade slots.
-# ============================================================
 ENTRY_QUALITY_LOCKDOWN_ENABLED = True
-ENTRY_QUALITY_TOP_N = int(getattr(settings, "entry_quality_top_n", 2))
-ENTRY_MIN_SIGNAL_SIDEWAYS = float(getattr(settings, "entry_min_signal_sideways", 0.025))
-ENTRY_MIN_SIGNAL_TRENDING = float(getattr(settings, "entry_min_signal_trending", 0.018))
-ENTRY_MAX_VOLATILITY = float(getattr(settings, "entry_max_volatility", 0.008))
-ENTRY_MIN_EXPECTED_MOVE_PCT = float(getattr(settings, "entry_min_expected_move_pct", 0.012))
-ENTRY_STOP_LOSS_QUARANTINE_HOURS = float(getattr(settings, "entry_stop_loss_quarantine_hours", 4))
-ENTRY_REQUIRE_TRIPLE_AGREEMENT = str(getattr(settings, "entry_require_triple_agreement", "true")).lower() in ("1", "true", "yes", "on")
+ENTRY_QUALITY_TOP_N = int(getattr(settings, 'entry_quality_top_n', 2))
+ENTRY_MIN_SIGNAL_SIDEWAYS = float(getattr(settings, 'entry_min_signal_sideways', 0.025))
+ENTRY_MIN_SIGNAL_TRENDING = float(getattr(settings, 'entry_min_signal_trending', 0.018))
+ENTRY_MAX_VOLATILITY = float(getattr(settings, 'entry_max_volatility', 0.008))
+ENTRY_MIN_EXPECTED_MOVE_PCT = float(getattr(settings, 'entry_min_expected_move_pct', 0.012))
+ENTRY_STOP_LOSS_QUARANTINE_HOURS = float(getattr(settings, 'entry_stop_loss_quarantine_hours', 4))
+ENTRY_REQUIRE_TRIPLE_AGREEMENT = str(getattr(settings, 'entry_require_triple_agreement', 'true')).lower() in ('1', 'true', 'yes', 'on')
 ENTRY_BLOCK_SIDEWAYS_IF_NO_TOP_CANDIDATE = True
-
-
-# ============================================================
-# SIDEWAYS ENTRY PACING + EXCEPTIONAL SIGNAL LADDER
-# Normal SIDEWAYS entries are paced.
-# Exceptional entries can bypass time quota, but not risk/quality.
-# ============================================================
-
-# ============================================================
-# ENTRY CLEANUP / ANTI-CLUSTERING
-# Prevent repeated same-symbol buys from consuming slots.
-# ============================================================
-SAME_SYMBOL_ENTRY_COOLDOWN_MINUTES = float(getattr(settings, "same_symbol_entry_cooldown_minutes", 30))
-SAME_SYMBOL_EXCEPTIONAL_COOLDOWN_MINUTES = float(getattr(settings, "same_symbol_exceptional_cooldown_minutes", 10))
-ENTRY_QUALITY_LOG_REJECTION_LIMIT = int(getattr(settings, "entry_quality_log_rejection_limit", 12))
-
-SIDEWAYS_ENTRY_MIN_GAP_MINUTES = float(getattr(settings, "sideways_entry_min_gap_minutes", 15))
-SIDEWAYS_RESERVE_FINAL_SLOT_UNTIL_MINUTE = int(getattr(settings, "sideways_reserve_final_slot_until_minute", 35))
-SIDEWAYS_EXCEPTIONAL_SIGNAL = float(getattr(settings, "sideways_exceptional_signal", 0.045))
-SIDEWAYS_EXCEPTIONAL_LADDER = [
-    float(x.strip())
-    for x in str(getattr(settings, "sideways_exceptional_ladder", "0.045,0.050,0.055,0.060,0.065,0.070")).split(",")
-    if x.strip()
-]
-SIDEWAYS_EXCEPTIONAL_BYPASS_HOURLY_CAP = str(getattr(settings, "sideways_exceptional_bypass_hourly_cap", "true")).lower() in ("1", "true", "yes", "on")
-SIDEWAYS_EXCEPTIONAL_BYPASS_PACING = str(getattr(settings, "sideways_exceptional_bypass_pacing", "true")).lower() in ("1", "true", "yes", "on")
-ENTRY_REQUIRE_LONG_TREND = str(getattr(settings, "entry_require_long_trend", "true")).lower() in ("1", "true", "yes", "on")
-
-EXCLUDED_ENTRY_SYMBOLS = {
-    "USDC/USDT",
-    "USD1/USDT",
-    "EUR/USDT",
-    "GOLD(PAXG)/USDT",
-}
-
-# Count max_trades_per_symbol over a rolling window, not lifetime.
-# This prevents old experiment trades from permanently blocking symbols.
-TRADE_COUNT_WINDOW_HOURS = float(getattr(settings, "trade_count_window_hours", 4))
+SAME_SYMBOL_ENTRY_COOLDOWN_MINUTES = float(getattr(settings, 'same_symbol_entry_cooldown_minutes', 30))
+SAME_SYMBOL_EXCEPTIONAL_COOLDOWN_MINUTES = float(getattr(settings, 'same_symbol_exceptional_cooldown_minutes', 10))
+ENTRY_QUALITY_LOG_REJECTION_LIMIT = int(getattr(settings, 'entry_quality_log_rejection_limit', 12))
+SIDEWAYS_ENTRY_MIN_GAP_MINUTES = float(getattr(settings, 'sideways_entry_min_gap_minutes', 15))
+SIDEWAYS_RESERVE_FINAL_SLOT_UNTIL_MINUTE = int(getattr(settings, 'sideways_reserve_final_slot_until_minute', 35))
+SIDEWAYS_EXCEPTIONAL_SIGNAL = float(getattr(settings, 'sideways_exceptional_signal', 0.045))
+SIDEWAYS_EXCEPTIONAL_LADDER = [float(x.strip()) for x in str(getattr(settings, 'sideways_exceptional_ladder', '0.045,0.050,0.055,0.060,0.065,0.070')).split(',') if x.strip()]
+SIDEWAYS_EXCEPTIONAL_BYPASS_HOURLY_CAP = str(getattr(settings, 'sideways_exceptional_bypass_hourly_cap', 'true')).lower() in ('1', 'true', 'yes', 'on')
+SIDEWAYS_EXCEPTIONAL_BYPASS_PACING = str(getattr(settings, 'sideways_exceptional_bypass_pacing', 'true')).lower() in ('1', 'true', 'yes', 'on')
+ENTRY_REQUIRE_LONG_TREND = str(getattr(settings, 'entry_require_long_trend', 'true')).lower() in ('1', 'true', 'yes', 'on')
+EXCLUDED_ENTRY_SYMBOLS = {'USDC/USDT', 'USD1/USDT', 'EUR/USDT', 'GOLD(PAXG)/USDT', 'MOGU/USDT', 'SHIB/USDT', 'AIXDROP/USDT'}
+TRADE_COUNT_WINDOW_HOURS = float(getattr(settings, 'trade_count_window_hours', 4))
 STOP_LOSS_PCT = float(settings.stop_loss_pct)
 TAKE_PROFIT_PCT = float(settings.take_profit_pct)
+FULL_TAKE_PROFIT_PCT = float(getattr(settings, 'full_take_profit_pct', 0.008))
+BREAKEVEN_TRIGGER_PCT = float(getattr(settings, 'breakeven_trigger_pct', 0.004))
+BREAKEVEN_EXIT_PCT = float(getattr(settings, 'breakeven_exit_pct', 0.0008))
+TIME_STOP_MINUTES = float(getattr(settings, 'position_time_stop_minutes', 40))
+TIME_STOP_EXIT_BELOW_PCT = float(getattr(settings, 'time_stop_exit_below_pct', 0.0015))
+WIN_RATE_TRAIL_TRIGGER_PCT = float(getattr(settings, 'win_rate_trail_trigger_pct', 0.007))
+WIN_RATE_TRAIL_GIVEBACK_PCT = float(getattr(settings, 'win_rate_trail_giveback_pct', 0.0035))
+WIN_RATE_SIDEWAYS_FULL_TP_PCT = float(getattr(settings, 'win_rate_sideways_full_tp_pct', 0.0075))
+WIN_RATE_MIN_HOLD_BEFORE_BREAKEVEN_MIN = float(getattr(settings, 'win_rate_min_hold_before_breakeven_min', 8))
 
-# Single-exit profit system for small account / limited trade slots.
-# No staged partial sells. Exit full position when the trade has done enough.
-FULL_TAKE_PROFIT_PCT = float(getattr(settings, "full_take_profit_pct", 0.012))
-BREAKEVEN_TRIGGER_PCT = float(getattr(settings, "breakeven_trigger_pct", 0.006))
-BREAKEVEN_EXIT_PCT = float(getattr(settings, "breakeven_exit_pct", 0.001))
-TIME_STOP_MINUTES = float(getattr(settings, "position_time_stop_minutes", 45))
-TIME_STOP_EXIT_BELOW_PCT = float(getattr(settings, "time_stop_exit_below_pct", 0.003))
 TAKE_PROFIT_SELL_FRACTION = float(settings.take_profit_sell_fraction)
 DAILY_LOSS_LIMIT_PCT = float(settings.max_daily_loss)
 COOLDOWN_SECONDS = int(settings.cooldown_seconds)
 FEE_RATE = float(settings.trading_fee_rate)
-
 MAX_DAILY_LOSS_PCT = float(settings.max_daily_loss)
 SIDEWAYS_MAX_ENTRIES_PER_HOUR = int(settings.sideways_max_entries_per_hour)
 SIDEWAYS_MIN_CONFIDENCE = float(settings.sideways_min_confidence)
@@ -147,30 +555,21 @@ TRENDING_MAX_ENTRIES_PER_HOUR = int(settings.trending_max_entries_per_hour)
 TRENDING_MIN_CONFIDENCE = float(settings.trending_min_confidence)
 LIQUIDITY_ERROR_LIMIT = 3
 LIQUIDITY_ERROR_WINDOW_SECONDS = 600
-
 liquidity_error_times = []
 last_auto_pause_reason = None
 last_known_equity = INITIAL_EQUITY
 last_known_exposure = 0.0
-last_known_regime = "UNKNOWN"
+last_known_regime = 'UNKNOWN'
 last_seen_paused_state = None
-
 ALLOW_BUYS = True
 ALLOW_SELLS = True
 
-# Do not open new speculative trades on stable/quote-like symbols.
-# These produced bad noise trades during the aggressive test.
-EXCLUDED_TRADING_SYMBOLS = {
-    "USDC/USDT",
-    "USD1/USDT",
-    "EUR/USDT",
-    "GOLD(PAXG)/USDT",
-}
+# Runtime risk status fallback used by the bot loop.
+risk_status = 'SAFE'
 
+EXCLUDED_TRADING_SYMBOLS = {'USDC/USDT', 'USD1/USDT', 'EUR/USDT', 'GOLD(PAXG)/USDT', 'MOGU/USDT', 'SHIB/USDT', 'AIXDROP/USDT'}
 quarantined_symbols = {}
 quarantined_strategies = {}
-
-
 portfolio = Portfolio(cash=INITIAL_EQUITY)
 market = build_market_data(settings.symbol_list)
 features = FeatureStore()
@@ -180,107 +579,71 @@ if settings.live_trading:
 else:
     executor = PaperExecutor()
 agent = AutonomousFundAgent(risk, executor)
-
 entry_prices = {}
 trade_counts = {}
 last_trade_time = {}
 position_open_time = {}
 position_peak_change = {}
-
 shadow_positions = {}
 shadow_entry_prices = {}
 shadow_trade_counts = {}
 
 def load_state_from_db():
-    print("Recovering state from database...")
+    print('Recovering state from database...')
     try:
         with engine.begin() as conn:
-            # 1. Recover portfolio cash and peak
-            snap = conn.execute(text("""
-                SELECT cash, equity FROM portfolio_snapshots ORDER BY id DESC LIMIT 1
-            """)).mappings().first()
+            snap = conn.execute(text('\n                SELECT cash, equity FROM portfolio_snapshots ORDER BY id DESC LIMIT 1\n            ')).mappings().first()
             if snap:
-                recovered_cash = float(snap["cash"])
-                recovered_equity = float(snap["equity"] or INITIAL_EQUITY)
+                recovered_cash = float(snap['cash'])
+                recovered_equity = float(snap['equity'] or INITIAL_EQUITY)
                 if recovered_cash < -0.01 or recovered_equity > INITIAL_EQUITY * 5:
-                    msg = (
-                        f"state_corruption_detected cash={recovered_cash:.2f} "
-                        f"equity={recovered_equity:.2f}; reset quant.db before continuing"
-                    )
-                    print("WARNING:", msg)
+                    msg = f'state_corruption_detected cash={recovered_cash:.2f} equity={recovered_equity:.2f}; reset quant.db before continuing'
+                    print('WARNING:', msg)
                     pause_bot(msg)
                     portfolio.cash = max(0.0, min(recovered_cash, INITIAL_EQUITY))
                     portfolio.peak = INITIAL_EQUITY
                 else:
                     portfolio.cash = recovered_cash
                     portfolio.peak = max(portfolio.peak, recovered_equity)
-                print(f"Recovered cash: ${portfolio.cash:.2f}")
-
-            # 2. Recover open positions
-            rows = conn.execute(text("""
-                SELECT symbol, quantity, avg_entry FROM positions WHERE quantity > 0
-            """)).mappings().all()
+                print(f'Recovered cash: ${portfolio.cash:.2f}')
+            rows = conn.execute(text('\n                SELECT symbol, quantity, avg_entry FROM positions WHERE quantity > 0\n            ')).mappings().all()
             for r in rows:
-                portfolio.positions[r["symbol"]] = float(r["quantity"])
-                entry_prices[r["symbol"]] = float(r["avg_entry"])
+                portfolio.positions[r['symbol']] = float(r['quantity'])
+                entry_prices[r['symbol']] = float(r['avg_entry'])
             if rows:
-                print(f"Recovered {len(rows)} open positions.")
-
-            # 3. Recover recent trade metadata only.
-            # Do not let old test trades permanently block a symbol.
-            trades = conn.execute(text("""
-                SELECT symbol, created_at
-                FROM trades
-                WHERE side = 'buy'
-                  AND created_at >= datetime('now', '+3 hours', '-' || :hours || ' hours')
-            """), {"hours": TRADE_COUNT_WINDOW_HOURS}).mappings().all()
-
+                print(f'Recovered {len(rows)} open positions.')
+            trades = conn.execute(text("\n                SELECT symbol, created_at\n                FROM trades\n                WHERE side = 'buy'\n                  AND created_at >= datetime('now', '+3 hours', '-' || :hours || ' hours')\n            "), {'hours': TRADE_COUNT_WINDOW_HOURS}).mappings().all()
             for t in trades:
-                sym = t["symbol"]
+                sym = t['symbol']
                 trade_counts[sym] = trade_counts.get(sym, 0) + 1
-
                 try:
-                    dt = datetime.fromisoformat(str(t["created_at"]))
+                    dt = datetime.fromisoformat(str(t['created_at']))
                     ts = dt.timestamp()
                     last_trade_time[sym] = max(last_trade_time.get(sym, 0), ts)
                 except:
                     pass
     except Exception as e:
-        print(f"State recovery failed: {e}")
-
-print("Quant Fund OS starting. LIVE_TRADING=", settings.live_trading)
-print("Safety mode enabled. Paper trading only.")
+        print(f'State recovery failed: {e}')
+print('Quant Fund OS starting. LIVE_TRADING=', settings.live_trading)
+print('Safety mode enabled. Paper trading only.')
 try:
     send_startup_alert()
 except Exception as e:
     print('Startup Telegram alert failed:', e)
-send_telegram_alert("Quant Fund OS started. Paper mode active. Live trading is OFF.")
+send_telegram_alert('Quant Fund OS started. Paper mode active. Live trading is OFF.')
 last_risk_status = None
 
 def wait_for_database(max_attempts=30):
     for attempt in range(1, max_attempts + 1):
         try:
             with engine.begin() as conn:
-                conn.execute(text("SELECT 1"))
-            print("Database connected.")
+                conn.execute(text('SELECT 1'))
+            print('Database connected.')
             return
         except OperationalError:
-            print(f"Waiting for database... attempt {attempt}/{max_attempts}")
+            print(f'Waiting for database... attempt {attempt}/{max_attempts}')
             time.sleep(2)
-
-    raise RuntimeError("Database was not ready after waiting.")
-
-
-
-# ============================================================
-# MARKET DATA INTEGRITY LAYER
-# Real platform rule:
-# - Never feed raw unchecked exchange ticks into strategy/PnL.
-# - Validate per-symbol price continuity.
-# - Keep last known good price.
-# - Reject obvious bad ticks before features, orders, exits, equity.
-# ============================================================
-
+    raise RuntimeError('Database was not ready after waiting.')
 LAST_GOOD_PRICES = {}
 PENDING_PRICES = {}
 BAD_PRICE_TICKS = {}
@@ -289,15 +652,31 @@ def validate_market_prices(raw_prices):
     """
     Market data integrity layer.
 
-    Important:
-    - Never let the first tick become trusted blindly.
-    - Some startup/paper fallback ticks produce fake ~$100 prices for many symbols.
-    - A symbol becomes trusted only after two consecutive ticks are reasonably close.
-    - After trust is established, reject impossible discontinuities.
+    Rules:
+    - First tick is pending, not trusted.
+    - A symbol becomes trusted after two reasonably close ticks.
+    - Extreme discontinuities are rejected and last_good is reused.
+    - Large discontinuities are NOT accepted immediately; last_good is reused and
+      the cycle is marked unhealthy for new entries.
+    - New buys/scout fallback are blocked when the cycle has too many bad ticks.
     """
+    global LAST_MARKET_DATA_HEALTH
+
     clean = {}
+    reject_count = 0
+    large_tick_count = 0
+    trusted_count = 0
+    total_count = len(raw_prices) if isinstance(raw_prices, dict) else 0
 
     if not isinstance(raw_prices, dict):
+        LAST_MARKET_DATA_HEALTH = {
+            "sane_for_entries": False,
+            "reject_count": 0,
+            "large_tick_count": 0,
+            "trusted_count": 0,
+            "total_count": 0,
+            "reason": "raw_prices_not_dict",
+        }
         print("PRICE VALIDATION BLOCK: raw_prices_not_dict")
         return clean
 
@@ -305,30 +684,29 @@ def validate_market_prices(raw_prices):
         try:
             price = float(raw_price or 0)
         except Exception:
+            reject_count += 1
             BAD_PRICE_TICKS[symbol] = BAD_PRICE_TICKS.get(symbol, 0) + 1
             print(f"PRICE VALIDATION REJECT {symbol}: non_numeric price={raw_price}")
             continue
 
         if price <= 0:
+            reject_count += 1
             BAD_PRICE_TICKS[symbol] = BAD_PRICE_TICKS.get(symbol, 0) + 1
             print(f"PRICE VALIDATION REJECT {symbol}: non_positive price={price}")
             continue
 
         last_good = LAST_GOOD_PRICES.get(symbol)
 
-        # Bootstrap rule: do not trust the first tick blindly.
         if not last_good:
             pending = PENDING_PRICES.get(symbol)
-
             if not pending:
                 PENDING_PRICES[symbol] = price
                 print(f"PRICE VALIDATION PENDING {symbol}: first_seen price={price:.12f}")
                 continue
 
             ratio = price / pending if pending else 0
-
             if ratio > 3.0 or ratio < 0.333:
-                # First tick was probably synthetic/stale. Replace pending and wait.
+                reject_count += 1
                 print(
                     f"PRICE VALIDATION RESET_PENDING {symbol}: "
                     f"new_price={price:.12f} old_pending={pending:.12f} ratio={ratio:.6f}"
@@ -338,109 +716,77 @@ def validate_market_prices(raw_prices):
 
             LAST_GOOD_PRICES[symbol] = price
             clean[symbol] = price
+            trusted_count += 1
             print(f"PRICE VALIDATION TRUSTED {symbol}: price={price:.12f}")
             continue
 
         ratio = price / last_good if last_good else 0
 
         if ratio > 3.0 or ratio < 0.333:
+            reject_count += 1
             BAD_PRICE_TICKS[symbol] = BAD_PRICE_TICKS.get(symbol, 0) + 1
             print(
                 f"PRICE VALIDATION REJECT {symbol}: extreme_tick "
-                f"price={price:.12f} last_good={last_good:.12f} ratio={ratio:.6f} "
-                f"bad_count={BAD_PRICE_TICKS[symbol]}"
+                f"price={price:.12f} last_good={last_good:.12f} "
+                f"ratio={ratio:.6f} bad_count={BAD_PRICE_TICKS[symbol]}"
             )
             clean[symbol] = last_good
             continue
 
         if ratio > 1.35 or ratio < 0.65:
+            large_tick_count += 1
+            BAD_PRICE_TICKS[symbol] = BAD_PRICE_TICKS.get(symbol, 0) + 1
             print(
-                f"PRICE VALIDATION WARN {symbol}: large_tick "
-                f"price={price:.12f} last_good={last_good:.12f} ratio={ratio:.6f}"
+                f"PRICE VALIDATION HOLD_LAST_GOOD {symbol}: large_tick "
+                f"price={price:.12f} last_good={last_good:.12f} "
+                f"ratio={ratio:.6f} bad_count={BAD_PRICE_TICKS[symbol]}"
             )
+            clean[symbol] = last_good
+            continue
 
         LAST_GOOD_PRICES[symbol] = price
         clean[symbol] = price
+        trusted_count += 1
+        if BAD_PRICE_TICKS.get(symbol, 0) > 0:
+            BAD_PRICE_TICKS[symbol] = max(0, BAD_PRICE_TICKS.get(symbol, 0) - 1)
 
-    return clean
+    bad_total = reject_count + large_tick_count
+    sane_for_entries = (
+        len(clean) >= 20
+        and bad_total <= max(3, int(total_count * 0.10))
+        and _qfos_float(clean.get("USDC/USDT", 1.0), 1.0) <= 1.05
+        and _qfos_float(clean.get("USDC/USDT", 1.0), 1.0) >= 0.95
+        and _qfos_float(clean.get("USD1/USDT", 1.0), 1.0) <= 1.05
+        and _qfos_float(clean.get("USD1/USDT", 1.0), 1.0) >= 0.95
+    )
+    reason = "ok" if sane_for_entries else f"bad_ticks_{bad_total}_of_{total_count}"
 
-    for symbol, raw_price in raw_prices.items():
-        try:
-            price = float(raw_price or 0)
-        except Exception:
-            BAD_PRICE_TICKS[symbol] = BAD_PRICE_TICKS.get(symbol, 0) + 1
-            print(f"PRICE VALIDATION REJECT {symbol}: non_numeric price={raw_price}")
-            continue
+    LAST_MARKET_DATA_HEALTH = {
+        "sane_for_entries": sane_for_entries,
+        "reject_count": reject_count,
+        "large_tick_count": large_tick_count,
+        "trusted_count": trusted_count,
+        "total_count": total_count,
+        "reason": reason,
+    }
 
-        if price <= 0:
-            BAD_PRICE_TICKS[symbol] = BAD_PRICE_TICKS.get(symbol, 0) + 1
-            print(f"PRICE VALIDATION REJECT {symbol}: non_positive price={price}")
-            continue
-
-        last_good = LAST_GOOD_PRICES.get(symbol)
-
-        if last_good and last_good > 0:
-            ratio = price / last_good
-
-            # Exchange symbols should not jump 10x or crash 90% in one tick.
-            # This catches symbol mapping bugs like BOB/USDT 0.0002 -> 100.
-            if ratio > 3.0 or ratio < 0.333:
-                BAD_PRICE_TICKS[symbol] = BAD_PRICE_TICKS.get(symbol, 0) + 1
-                print(
-                    f"PRICE VALIDATION REJECT {symbol}: extreme_tick "
-                    f"price={price:.12f} last_good={last_good:.12f} ratio={ratio:.6f} "
-                    f"bad_count={BAD_PRICE_TICKS[symbol]}"
-                )
-                clean[symbol] = last_good
-                continue
-
-            # Softer warning for very large moves. Still accept because crypto can move fast.
-            if ratio > 1.35 or ratio < 0.65:
-                print(
-                    f"PRICE VALIDATION WARN {symbol}: large_tick "
-                    f"price={price:.12f} last_good={last_good:.12f} ratio={ratio:.6f}"
-                )
-
-        LAST_GOOD_PRICES[symbol] = price
-        clean[symbol] = price
+    if not sane_for_entries:
+        print("PRICE VALIDATION ENTRY BLOCK:", LAST_MARKET_DATA_HEALTH)
 
     return clean
 
 def total_exposure(prices):
-    return sum(
-        qty * prices.get(symbol, 0.0)
-        for symbol, qty in portfolio.positions.items()
-    )
-
+    return sum((qty * prices.get(symbol, 0.0) for symbol, qty in portfolio.positions.items()))
 
 def symbol_exposure(symbol, prices):
     return portfolio.positions.get(symbol, 0.0) * prices.get(symbol, 0.0)
 
-
 def cleanup_expired_quarantines():
     try:
         with engine.begin() as conn:
-            conn.execute(text("""
-                DELETE FROM symbol_quarantine
-                WHERE blocked_until IS NOT NULL
-                  AND blocked_until <= DATETIME('now', '+3 hours')
-            """))
+            conn.execute(text("\n                DELETE FROM symbol_quarantine\n                WHERE blocked_until IS NOT NULL\n                  AND blocked_until <= DATETIME('now', '+3 hours')\n            "))
     except Exception:
         pass
-
-
-
-
-# ============================================================
-# FINAL ENTRY PACING FIREWALL
-# Prevents clustered buys inside a few minutes.
-#
-# Global regime = market weather.
-# Symbol regime = each coin's own behavior.
-#
-# This does not create trades. It only spaces accepted buys.
-# ============================================================
-
 LAST_GLOBAL_BUY_TS = 0.0
 LAST_BUY_BY_SYMBOL_TS = {}
 
@@ -449,145 +795,96 @@ def _now_ts():
     return time.time()
 
 def _entry_pacing_seconds(regime: str) -> int:
-    r = str(regime or "").upper()
-
-    # RISK_OFF should be defensive and slow.
-    if r == "RISK_OFF":
-        return int(float(getattr(settings, "risk_off_min_seconds_between_buys", 1200)))
-
-    # SIDEWAYS is choppy, so still avoid clustered entries.
-    if r == "SIDEWAYS":
-        return int(float(getattr(settings, "sideways_min_seconds_between_buys", 900)))
-
-    # TREND can be slightly faster, but still not clustered.
-    return int(float(getattr(settings, "trend_min_seconds_between_buys", 600)))
+    r = str(regime or '').upper()
+    if r == 'RISK_OFF':
+        return int(float(getattr(settings, 'risk_off_min_seconds_between_buys', 1200)))
+    if r == 'SIDEWAYS':
+        return int(float(getattr(settings, 'sideways_min_seconds_between_buys', 900)))
+    return int(float(getattr(settings, 'trend_min_seconds_between_buys', 600)))
 
 def _same_symbol_pacing_seconds(regime: str) -> int:
-    r = str(regime or "").upper()
-    if r == "RISK_OFF":
-        return int(float(getattr(settings, "risk_off_same_symbol_cooldown_seconds", 3600)))
-    if r == "SIDEWAYS":
-        return int(float(getattr(settings, "sideways_same_symbol_cooldown_seconds", 2400)))
-    return int(float(getattr(settings, "trend_same_symbol_cooldown_seconds", 1800)))
+    r = str(regime or '').upper()
+    if r == 'RISK_OFF':
+        return int(float(getattr(settings, 'risk_off_same_symbol_cooldown_seconds', 3600)))
+    if r == 'SIDEWAYS':
+        return int(float(getattr(settings, 'sideways_same_symbol_cooldown_seconds', 2400)))
+    return int(float(getattr(settings, 'trend_same_symbol_cooldown_seconds', 1800)))
 
 def _strong_symbol_trend_for_risk_off(fill_or_feature: dict) -> bool:
     try:
         f = fill_or_feature or {}
-
-        # Candidate fills may carry feature fields directly or under feature/data.
-        if isinstance(f.get("feature"), dict):
-            f = f["feature"]
-        elif isinstance(f.get("features"), dict):
-            f = f["features"]
-
-        source = str(f.get("source", "NORMAL")).upper()
-        if source == "RAW_MOMENTUM_FALLBACK":
+        if isinstance(f.get('feature'), dict):
+            f = f['feature']
+        elif isinstance(f.get('features'), dict):
+            f = f['features']
+        source = str(f.get('source', 'NORMAL')).upper()
+        if source == 'RAW_MOMENTUM_FALLBACK':
             return False
-
-        symbol_regime = str(f.get("symbol_regime", "")).upper()
-        trend = float(f.get("trend", 0.0) or 0.0)
-        momentum = float(f.get("momentum", 0.0) or 0.0)
-        one_tick = float(f.get("one_tick_momentum", 0.0) or 0.0)
-        signal = float(f.get("signal_strength", f.get("confidence", 0.0)) or 0.0)
-        quality = float(f.get("trend_quality", 0.0) or 0.0)
-
-        if symbol_regime not in ("SYMBOL_TREND_UP", "SYMBOL_BREAKOUT_UP"):
+        symbol_regime = str(f.get('symbol_regime', '')).upper()
+        trend = float(f.get('trend', 0.0) or 0.0)
+        momentum = float(f.get('momentum', 0.0) or 0.0)
+        one_tick = float(f.get('one_tick_momentum', 0.0) or 0.0)
+        signal = float(f.get('signal_strength', f.get('confidence', 0.0)) or 0.0)
+        quality = float(f.get('trend_quality', 0.0) or 0.0)
+        if symbol_regime not in ('SYMBOL_TREND_UP', 'SYMBOL_BREAKOUT_UP'):
             return False
-
         if trend <= 0 or momentum <= 0 or one_tick < -0.0015:
             return False
-
         return signal >= 0.004 or quality >= 0.004 or (trend > 0.002 and momentum > 0.002)
-
     except Exception:
         return False
-
-
-
-# ============================================================
-# SYMBOL BUY EXCLUSION LADDER
-#
-# After 3 buys on the same symbol, do not keep buying it unless
-# the signal becomes exceptional.
-#
-# Ladder:
-# 4th buy  requires >= 0.045
-# 5th buy  requires >= 0.050
-# 6th buy  requires >= 0.055
-# 7th buy  requires >= 0.060
-# 8th buy  requires >= 0.065
-# 9th buy  requires >= 0.070
-# 10th+    requires >= 0.075
-# ============================================================
-
 SYMBOL_BUY_COUNTS = {}
-SYMBOL_EXCEPTIONAL_LADDER = [0.045, 0.050, 0.055, 0.060, 0.065, 0.070, 0.075]
+SYMBOL_EXCEPTIONAL_LADDER = [0.045, 0.05, 0.055, 0.06, 0.065, 0.07, 0.075]
 
 def _fill_signal_strength(fill: dict) -> float:
     try:
         if not isinstance(fill, dict):
             return 0.0
-
-        for key in ("signal_strength", "confidence", "score"):
+        for key in ('signal_strength', 'confidence', 'score'):
             if key in fill:
                 return float(fill.get(key) or 0.0)
-
-        f = fill.get("feature") or fill.get("features") or {}
+        f = fill.get('feature') or fill.get('features') or {}
         if isinstance(f, dict):
-            for key in ("signal_strength", "confidence", "trend_quality", "breakout_score"):
+            for key in ('signal_strength', 'confidence', 'trend_quality', 'breakout_score'):
                 if key in f:
                     return float(f.get(key) or 0.0)
-
         return 0.0
     except Exception:
         return 0.0
 
 def symbol_exclusion_ladder_allows(symbol: str, fill: dict) -> tuple[bool, str]:
     count = int(SYMBOL_BUY_COUNTS.get(symbol, 0) or 0)
-
-    # First 3 buys are controlled by normal entry rules.
     if count < 3:
-        return True, f"normal_symbol_buy_count_{count}"
-
+        return (True, f'normal_symbol_buy_count_{count}')
     ladder_index = min(count - 3, len(SYMBOL_EXCEPTIONAL_LADDER) - 1)
     required = float(SYMBOL_EXCEPTIONAL_LADDER[ladder_index])
     signal = _fill_signal_strength(fill)
-
     if signal >= required:
-        return True, f"exceptional_symbol_ladder_pass count={count} signal={signal:.5f} required={required:.5f}"
-
-    return False, f"symbol_excluded_after_3_buys count={count} signal={signal:.5f} required={required:.5f}"
+        return (True, f'exceptional_symbol_ladder_pass count={count} signal={signal:.5f} required={required:.5f}')
+    return (False, f'symbol_excluded_after_3_buys count={count} signal={signal:.5f} required={required:.5f}')
 
 def symbol_exclusion_ladder_mark_buy(symbol: str):
     SYMBOL_BUY_COUNTS[symbol] = int(SYMBOL_BUY_COUNTS.get(symbol, 0) or 0) + 1
 
-
-
 def final_entry_pacing_allows(symbol: str, fill: dict, regime: str) -> tuple[bool, str]:
     global LAST_GLOBAL_BUY_TS, LAST_BUY_BY_SYMBOL_TS
-
     now = _now_ts()
     global_gap = _entry_pacing_seconds(regime)
     symbol_gap = _same_symbol_pacing_seconds(regime)
-
     since_global = now - float(LAST_GLOBAL_BUY_TS or 0.0)
     if LAST_GLOBAL_BUY_TS and since_global < global_gap:
-        return False, f"global_buy_pacing_wait {int(global_gap - since_global)}s"
-
+        return (False, f'global_buy_pacing_wait {int(global_gap - since_global)}s')
     last_sym = float(LAST_BUY_BY_SYMBOL_TS.get(symbol, 0.0) or 0.0)
     since_sym = now - last_sym
     if last_sym and since_sym < symbol_gap:
-        return False, f"same_symbol_buy_pacing_wait {int(symbol_gap - since_sym)}s"
-
-    if str(regime or "").upper() == "RISK_OFF":
+        return (False, f'same_symbol_buy_pacing_wait {int(symbol_gap - since_sym)}s')
+    if str(regime or '').upper() == 'RISK_OFF':
         if not _strong_symbol_trend_for_risk_off(fill):
-            return False, "risk_off_requires_strong_symbol_trend"
-
+            return (False, 'risk_off_requires_strong_symbol_trend')
     ladder_ok, ladder_reason = symbol_exclusion_ladder_allows(symbol, fill)
     if not ladder_ok:
-        return False, ladder_reason
-
-    return True, "allowed"
+        return (False, ladder_reason)
+    return (True, 'allowed')
 
 def final_entry_pacing_mark_buy(symbol: str):
     global LAST_GLOBAL_BUY_TS, LAST_BUY_BY_SYMBOL_TS
@@ -595,185 +892,135 @@ def final_entry_pacing_mark_buy(symbol: str):
     LAST_GLOBAL_BUY_TS = now
     LAST_BUY_BY_SYMBOL_TS[symbol] = now
 
-
-
 def can_buy(symbol, fill, prices, equity):
     cleanup_expired_quarantines()
     if not ALLOW_BUYS:
-        return False, "buys_disabled"
-
+        return (False, 'buys_disabled')
     if symbol in EXCLUDED_TRADING_SYMBOLS:
-        return False, "excluded_quote_or_stable_symbol"
+        return (False, 'excluded_quote_or_stable_symbol')
 
-    # SIDEWAYS governor:
-    # During chop, do not allow too many simultaneous small positions.
     try:
-        open_positions_count = sum(
-            1 for _, q in portfolio.positions.items()
-            if float(q or 0) > 0.00000001
-        )
-
+        fill_price_for_gate = float(fill.get('fill_price') or fill.get('expected_price') or 0.0)
+        if fill_price_for_gate < 0.001:
+            return (False, f'price_too_low_for_entry_{fill_price_for_gate}')
+    except Exception:
+        return (False, 'invalid_fill_price_for_entry')
+    try:
+        open_positions_count = sum((1 for _, q in portfolio.positions.items() if float(q or 0) > 1e-08))
         current_total_exposure = total_exposure(prices)
-        current_exposure_pct = current_total_exposure / max(float(equity or 0), 0.000001)
-
-        if str(last_known_regime or "").upper() == "SIDEWAYS":
+        current_exposure_pct = current_total_exposure / max(float(equity or 0), 1e-06)
+        if str(last_known_regime or '').upper() == 'SIDEWAYS':
             if open_positions_count >= 8:
-                return False, f"sideways_max_open_positions_{open_positions_count}"
+                return (False, f'sideways_max_open_positions_{open_positions_count}')
             if current_exposure_pct >= 0.15:
-                return False, f"sideways_max_exposure_{current_exposure_pct:.4f}"
+                return (False, f'sideways_max_exposure_{current_exposure_pct:.4f}')
     except Exception:
         pass
-
-    # Reduce trading while account is in CAUTION/drawdown.
     try:
-        current_drawdown = float(getattr(portfolio, "drawdown", 0.0) or 0.0)
-        caution_drawdown = float(getattr(settings, "caution_drawdown", -0.02))
-        blocked_drawdown = float(getattr(settings, "blocked_drawdown", -0.05))
-
-        if current_drawdown <= blocked_drawdown * 0.90:
-            return False, f"near_blocked_drawdown_{current_drawdown:.4f}"
-
+        current_drawdown = float(getattr(portfolio, 'drawdown', 0.0) or 0.0)
+        caution_drawdown = float(getattr(settings, 'caution_drawdown', -0.02))
+        blocked_drawdown = float(getattr(settings, 'blocked_drawdown', -0.05))
+        if current_drawdown <= blocked_drawdown * 0.9:
+            return (False, f'near_blocked_drawdown_{current_drawdown:.4f}')
         if current_drawdown <= caution_drawdown:
-            open_positions_count = sum(
-                1 for _, q in portfolio.positions.items()
-                if float(q or 0) > 0.00000001
-            )
-
+            open_positions_count = sum((1 for _, q in portfolio.positions.items() if float(q or 0) > 1e-08))
             try:
-                current_exposure = float(getattr(portfolio, "exposure", 0.0) or 0.0)
-                current_exposure_pct = current_exposure / max(float(equity or 0.0), 0.000001)
+                current_exposure = float(getattr(portfolio, 'exposure', 0.0) or 0.0)
+                current_exposure_pct = current_exposure / max(float(equity or 0.0), 1e-06)
             except Exception:
                 current_exposure_pct = 0.0
-
-            # In CAUTION, do not freeze tiny positions.
-            # Block only when exposure is already meaningful or too many symbols are open.
-            if current_exposure_pct >= 0.20:
-                return False, f"caution_mode_exposure_{current_exposure_pct:.4f}"
-
+            if current_exposure_pct >= 0.2:
+                return (False, f'caution_mode_exposure_{current_exposure_pct:.4f}')
             if open_positions_count >= 10:
-                return False, f"caution_mode_max_positions_{open_positions_count}"
+                return (False, f'caution_mode_max_positions_{open_positions_count}')
     except Exception:
         pass
-
-    # Avoid symbols where historical stop-loss exits exceed take-profit exits.
     try:
         with engine.begin() as conn:
-            row = conn.execute(text("""
-                SELECT
-                    SUM(CASE WHEN strategy='stop_loss' THEN 1 ELSE 0 END) AS stop_losses,
-                    SUM(CASE WHEN strategy='take_profit' THEN 1 ELSE 0 END) AS take_profits
-                FROM trades
-                WHERE symbol = :symbol
-                  AND side = 'sell'
-                  AND created_at >= DATETIME('now', '+3 hours', '-3 hours')
-            """), {"symbol": symbol}).mappings().first()
-
+            row = conn.execute(text("\n                SELECT\n                    SUM(CASE WHEN strategy='stop_loss' THEN 1 ELSE 0 END) AS stop_losses,\n                    SUM(CASE WHEN strategy='take_profit' THEN 1 ELSE 0 END) AS take_profits\n                FROM trades\n                WHERE symbol = :symbol\n                  AND side = 'sell'\n                  AND created_at >= DATETIME('now', '+3 hours', '-3 hours')\n            "), {'symbol': symbol}).mappings().first()
             if row:
-                stop_losses = int(row["stop_losses"] or 0)
-                take_profits = int(row["take_profits"] or 0)
-
-                if stop_losses >= 3 and stop_losses >= (take_profits + 2):
-                    return False, f"symbol_bad_history_sl{stop_losses}_tp{take_profits}"
+                stop_losses = int(row['stop_losses'] or 0)
+                take_profits = int(row['take_profits'] or 0)
+                if stop_losses >= 3 and stop_losses >= take_profits + 2:
+                    return (False, f'symbol_bad_history_sl{stop_losses}_tp{take_profits}')
     except Exception:
         pass
-
-    if portfolio.positions.get(symbol, 0.0) > 0.00000001:
-        return False, "already_holding_symbol"
-
+    if portfolio.positions.get(symbol, 0.0) > 1e-08:
+        return (False, 'already_holding_symbol')
     if symbol in quarantined_symbols and time.time() < quarantined_symbols[symbol]:
-        return False, "symbol_quarantined"
-
+        return (False, 'symbol_quarantined')
     if equity <= INITIAL_EQUITY * (1 - DAILY_LOSS_LIMIT_PCT):
-        return False, "daily_loss_limit"
-
+        return (False, 'daily_loss_limit')
     now = time.time()
-
     if now - last_trade_time.get(symbol, 0) < COOLDOWN_SECONDS:
-        return False, "cooldown"
-
+        return (False, 'cooldown')
     recent_symbol_trades = recent_symbol_buy_count(symbol)
     trade_counts[symbol] = recent_symbol_trades
-
     if recent_symbol_trades >= MAX_TRADES_PER_SYMBOL:
-        return False, f"max_trades_per_symbol_recent_{recent_symbol_trades}_in_{TRADE_COUNT_WINDOW_HOURS:g}h"
-
-    fill_value = float(fill["quantity"]) * float(fill["fill_price"])
-
+        return (False, f'max_trades_per_symbol_recent_{recent_symbol_trades}_in_{TRADE_COUNT_WINDOW_HOURS:g}h')
+    fill_value = float(fill['quantity']) * float(fill['fill_price'])
     current_total_exposure = total_exposure(prices)
     if current_total_exposure + fill_value > equity * MAX_TOTAL_EXPOSURE_PCT:
-        return False, "max_total_exposure"
-
+        return (False, 'max_total_exposure')
     current_symbol_exposure = symbol_exposure(symbol, prices)
     if current_symbol_exposure + fill_value > equity * MAX_SYMBOL_EXPOSURE_PCT:
-        return False, "max_symbol_exposure"
-
-    return True, "approved"
-
+        return (False, 'max_symbol_exposure')
+    return (True, 'approved')
 
 def apply_buy(fill):
-    symbol = fill["symbol"]
-    qty = float(fill["quantity"])
-    price = float(fill["fill_price"])
-    fee = (qty * price) * FEE_RATE # fee model from settings
-    cost = (qty * price) + fee
-
+    symbol = fill['symbol']
+    qty = float(fill['quantity'])
+    price = float(fill['fill_price'])
+    fee = qty * price * FEE_RATE
+    cost = qty * price + fee
     if portfolio.cash < cost:
         return False
-
     old_qty = portfolio.positions.get(symbol, 0.0)
     old_avg = entry_prices.get(symbol, price)
-
     new_qty = old_qty + qty
-    new_avg = ((old_qty * old_avg) + (qty * price)) / new_qty
-
+    new_avg = (old_qty * old_avg + qty * price) / new_qty
     portfolio.cash -= cost
     portfolio.positions[symbol] = new_qty
     entry_prices[symbol] = new_avg
     trade_counts[symbol] = trade_counts.get(symbol, 0) + 1
     last_trade_time[symbol] = time.time()
-
     return True
-
 
 def apply_sell(symbol, qty, price, reason):
     held = portfolio.positions.get(symbol, 0.0)
+    avg_entry = entry_prices.get(symbol)
+    if avg_entry:
+        try:
+            px = float(price)
+            avg = float(avg_entry)
+            deviation = abs(px - avg) / avg if avg > 0 else 0.0
+            if deviation > 0.2:
+                print(f'EXIT PRICE HARD BLOCK {symbol}: reason={reason} price={px} avg_entry={avg} deviation={deviation:.2%}')
+                return None
+        except Exception as e:
+            print(f'EXIT PRICE HARD BLOCK ERROR {symbol}: {e}')
+            return None
     sell_qty = min(qty, held)
-
     if sell_qty <= 0:
         return None
-
-    fee = (sell_qty * price) * FEE_RATE
-    portfolio.cash += (sell_qty * price) - fee
+    fee = sell_qty * price * FEE_RATE
+    portfolio.cash += sell_qty * price - fee
     portfolio.positions[symbol] = held - sell_qty
-
-    if portfolio.positions[symbol] <= 0.00000001:
+    if portfolio.positions[symbol] <= 1e-08:
         portfolio.positions[symbol] = 0.0
         entry_prices.pop(symbol, None)
         trade_counts[symbol] = 0
-
-    return {
-        "symbol": symbol,
-        "side": "sell",
-        "quantity": sell_qty,
-        "expected_price": price,
-        "fill_price": price,
-        "slippage_bps": 0,
-        "strategy": reason,
-        "confidence": 1.0,
-    }
+    return {'symbol': symbol, 'side': 'sell', 'quantity': sell_qty, 'expected_price': price, 'fill_price': price, 'slippage_bps': 0, 'strategy': reason, 'confidence': 1.0}
 
 def apply_shadow_buy(fill):
-    symbol = fill["symbol"]
-    qty = float(fill["quantity"])
-    price = float(fill["fill_price"])
-    strategy = fill.get("strategy", "unknown")
-
+    symbol = fill['symbol']
+    qty = float(fill['quantity'])
+    price = float(fill['fill_price'])
+    strategy = fill.get('strategy', 'unknown')
     old_qty = shadow_positions.get(symbol, 0.0)
     old_avg = shadow_entry_prices.get(symbol, price)
-
     new_qty = old_qty + qty
-    new_avg = ((old_qty * old_avg) + (qty * price)) / new_qty
-
+    new_avg = (old_qty * old_avg + qty * price) / new_qty
     shadow_positions[symbol] = new_qty
     shadow_entry_prices[symbol] = new_avg
     shadow_trade_counts[symbol] = shadow_trade_counts.get(symbol, 0) + 1
@@ -781,29 +1028,26 @@ def apply_shadow_buy(fill):
 
 def apply_shadow_sell(symbol, qty, price, reason):
     held = shadow_positions.get(symbol, 0.0)
+    avg_entry = shadow_entry_prices.get(symbol)
+    if avg_entry:
+        try:
+            px = float(price)
+            avg = float(avg_entry)
+            deviation = abs(px - avg) / avg if avg > 0 else 0.0
+            if deviation > 0.2:
+                print(f'SHADOW EXIT PRICE HARD BLOCK {symbol}: reason={reason} price={px} avg_entry={avg} deviation={deviation:.2%}')
+                return None
+        except Exception as e:
+            print(f'SHADOW EXIT PRICE HARD BLOCK ERROR {symbol}: {e}')
+            return None
     sell_qty = min(qty, held)
-
     if sell_qty <= 0:
         return None
-
     shadow_positions[symbol] = held - sell_qty
-    if shadow_positions[symbol] <= 0.00000001:
+    if shadow_positions[symbol] <= 1e-08:
         shadow_positions[symbol] = 0.0
         shadow_entry_prices.pop(symbol, None)
-
-    return {
-        "symbol": symbol,
-        "side": "sell",
-        "quantity": sell_qty,
-        "expected_price": price,
-        "fill_price": price,
-        "slippage_bps": 0,
-        "strategy": reason,
-        "confidence": 1.0,
-        "shadow_mode": True
-    }
-
-
+    return {'symbol': symbol, 'side': 'sell', 'quantity': sell_qty, 'expected_price': price, 'fill_price': price, 'slippage_bps': 0, 'strategy': reason, 'confidence': 1.0, 'shadow_mode': True}
 
 def adaptive_exit_thresholds(symbol, regime):
     """
@@ -818,75 +1062,56 @@ def adaptive_exit_thresholds(symbol, regime):
     Uses PRICE_HISTORY if available; otherwise falls back to settings.
     """
     try:
-        history = globals().get("PRICE_HISTORY", {}).get(symbol, [])
+        history = globals().get('PRICE_HISTORY', {}).get(symbol, [])
         returns = []
-
         for i in range(1, len(history)):
             prev = float(history[i - 1])
             now = float(history[i])
             if prev > 0:
                 returns.append((now - prev) / prev)
-
         if len(returns) >= 5:
             vol = statistics.pstdev(returns)
         else:
             vol = float(STOP_LOSS_PCT) / 2
     except Exception:
         vol = float(STOP_LOSS_PCT) / 2
-
-    r = str(regime or "").upper()
-
+    r = str(regime or '').upper()
     base_stop = float(STOP_LOSS_PCT)
     base_take = float(TAKE_PROFIT_PCT)
-
-    if r == "SIDEWAYS":
-        # Wider than fixed stop to avoid chop, but not reckless.
+    if r == 'SIDEWAYS':
         stop = max(base_stop, vol * 2.5, 0.012)
-        take = max(base_take, stop * 1.8, 0.020)
-    elif r == "RISK_OFF":
+        take = max(base_take, stop * 1.8, 0.02)
+    elif r == 'RISK_OFF':
         stop = max(base_stop * 0.75, vol * 1.8, 0.008)
         take = max(base_take, stop * 1.5)
     else:
-        stop = max(base_stop, vol * 2.2, 0.010)
+        stop = max(base_stop, vol * 2.2, 0.01)
         take = max(base_take, stop * 2.0, 0.022)
-
-    # Hard bounds for a small $100 paper account.
     stop = min(stop, 0.035)
-    take = min(take, 0.080)
-
-    return stop, take
-
-
+    take = min(take, 0.08)
+    return (stop, take)
 
 def get_position_age_minutes(symbol):
     now = time.time()
-
     if symbol not in position_open_time:
         position_open_time[symbol] = now
-
     return (now - position_open_time[symbol]) / 60.0
-
 
 def update_position_peak_change(symbol, change):
     old_peak = position_peak_change.get(symbol)
-
     if old_peak is None:
         position_peak_change[symbol] = change
     else:
         position_peak_change[symbol] = max(float(old_peak), float(change))
-
     return float(position_peak_change.get(symbol, change))
-
 
 def clear_position_exit_trackers(symbol):
     position_open_time.pop(symbol, None)
     position_peak_change.pop(symbol, None)
-    position_open_time.pop("shadow_" + symbol, None)
-    position_peak_change.pop("shadow_" + symbol, None)
+    position_open_time.pop('shadow_' + symbol, None)
+    position_peak_change.pop('shadow_' + symbol, None)
 
-
-
-def valid_exit_price(symbol, price, avg_entry, reason="exit"):
+def valid_exit_price(symbol, price, avg_entry, reason='exit'):
     """
     Prevent corrupted market ticks from creating fake paper PnL.
     A normal crypto exit should not be hundreds/thousands of percent away
@@ -895,35 +1120,96 @@ def valid_exit_price(symbol, price, avg_entry, reason="exit"):
     try:
         p = float(price or 0)
         a = float(avg_entry or 0)
-
         if p <= 0 or a <= 0:
-            print(f"EXIT PRICE BLOCK {symbol}: invalid price={p} avg_entry={a} reason={reason}")
+            print(f'EXIT PRICE BLOCK {symbol}: invalid price={p} avg_entry={a} reason={reason}')
             return False
-
         ratio = p / a
-
-        # Hard sanity guard only. Normal validation happens before prices enter strategy.
         if ratio > 3.0 or ratio < 0.333:
-            print(
-                f"EXIT PRICE BLOCK {symbol}: suspicious_exit_price "
-                f"price={p:.8f} avg_entry={a:.8f} ratio={ratio:.4f} reason={reason}"
-            )
+            print(f'EXIT PRICE BLOCK {symbol}: suspicious_exit_price price={p:.8f} avg_entry={a:.8f} ratio={ratio:.4f} reason={reason}')
             return False
-
         return True
-
     except Exception as e:
-        print(f"EXIT PRICE BLOCK {symbol}: validation_error {e}")
+        print(f'EXIT PRICE BLOCK {symbol}: validation_error {e}')
         return False
+
+
+def _qfos_position_age_minutes(symbol):
+    try:
+        opened = position_open_time.get(symbol)
+        if opened is None:
+            return 0.0
+        if isinstance(opened, (int, float)):
+            return max(0.0, (time.time() - float(opened)) / 60.0)
+        if isinstance(opened, datetime):
+            return max(0.0, (datetime.utcnow() - opened.replace(tzinfo=None)).total_seconds() / 60.0)
+    except Exception:
+        pass
+    return 0.0
+
+def _qfos_record_peak_change(symbol, change):
+    try:
+        prev = float(position_peak_change.get(symbol, change) or change)
+        peak = max(prev, float(change))
+        position_peak_change[symbol] = peak
+        return peak
+    except Exception:
+        return float(change or 0.0)
+
+def _qfos_take_profit_target(regime):
+    try:
+        if str(regime or "").upper() == "SIDEWAYS":
+            return min(float(FULL_TAKE_PROFIT_PCT), float(WIN_RATE_SIDEWAYS_FULL_TP_PCT))
+        return float(FULL_TAKE_PROFIT_PCT)
+    except Exception:
+        return 0.008
+
+def _qfos_exit_decision(symbol, change, peak_change, age_minutes, regime):
+    """
+    Returns an exit reason or None.
+
+    This is designed to improve win rate safely:
+    - hard stop remains first priority
+    - quick full TP in sideways
+    - breakeven protection after a favorable move
+    - trailing profit after a stronger favorable move
+    - time stop before stale trades decay into stop loss
+    """
+    dynamic_stop_pct, dynamic_take_pct = adaptive_exit_thresholds(symbol, regime)
+    tp_target = min(float(dynamic_take_pct), _qfos_take_profit_target(regime))
+
+    # 1. Hard stop: keep capital protection.
+    if change <= -float(dynamic_stop_pct):
+        return "adaptive_stop_loss"
+
+    # 2. Full TP earlier, especially in SIDEWAYS.
+    if change >= tp_target:
+        return "adaptive_take_profit"
+
+    # 3. Trailing profit lock: if trade was nicely positive and gives back gains, exit while still green.
+    if peak_change >= WIN_RATE_TRAIL_TRIGGER_PCT:
+        if change >= BREAKEVEN_EXIT_PCT and change <= (peak_change - WIN_RATE_TRAIL_GIVEBACK_PCT):
+            return "trailing_profit_exit"
+
+    # 4. Breakeven protection: once it has been sufficiently positive, do not let it become a loser.
+    if age_minutes >= WIN_RATE_MIN_HOLD_BEFORE_BREAKEVEN_MIN:
+        if peak_change >= BREAKEVEN_TRIGGER_PCT and change <= BREAKEVEN_EXIT_PCT:
+            return "breakeven_protection_exit"
+
+    # 5. Time stop: stale SIDEWAYS trades should not be allowed to drift into stop loss.
+    if age_minutes >= TIME_STOP_MINUTES and change <= TIME_STOP_EXIT_BELOW_PCT:
+        return "time_stop_exit"
+
+    return None
+
 
 def generate_sells(prices, regime):
     sells = []
-
     if not ALLOW_SELLS:
         return sells
 
+    # Real positions.
     for symbol, qty in list(portfolio.positions.items()):
-        if qty <= 0.0001:
+        if qty <= 0:
             continue
 
         price = prices.get(symbol)
@@ -932,30 +1218,48 @@ def generate_sells(prices, regime):
         if not price or not avg_entry:
             continue
 
-        if not valid_exit_price(symbol, price, avg_entry, "real_position_exit"):
+        if not valid_exit_price(symbol, price, avg_entry, 'position_exit'):
             continue
 
-        change = (price - avg_entry) / avg_entry
-        dynamic_stop_pct, dynamic_take_pct = adaptive_exit_thresholds(symbol, regime)
+        try:
+            change = (float(price) - float(avg_entry)) / float(avg_entry)
+        except Exception:
+            continue
 
-        if change <= -dynamic_stop_pct:
-            sell = normalize_exit_order(apply_sell(symbol, qty, price, "adaptive_stop_loss"))
+        peak_change = _qfos_record_peak_change(symbol, change)
+        age_minutes = _qfos_position_age_minutes(symbol)
+
+        reason = _qfos_exit_decision(symbol, change, peak_change, age_minutes, regime)
+
+        if reason:
+            # trailing_profit_exit is a true winning exit, but apply_sell can store any reason.
+            sell = normalize_exit_order(apply_sell(symbol, qty, price, reason))
             if sell:
+                print(
+                    f"[WIN_RATE_EXIT] {reason} {symbol} "
+                    f"change={change:.4f} peak={peak_change:.4f} age_min={age_minutes:.1f}"
+                )
                 sells.append(sell)
-                quarantined_symbols[symbol] = time.time() + 86400 # Block for 24h
-                quarantine_symbol(symbol, "stop_loss_exit", hours=1)
+            continue
 
-        elif change >= dynamic_take_pct:
-            sell = normalize_exit_order(apply_sell(symbol, qty * TAKE_PROFIT_SELL_FRACTION, price, "adaptive_take_profit"))
-            if sell:
-                sells.append(sell)
+        # Risk-off remains guarded by the winning-strategy logic.
+        if regime == 'RISK_OFF':
+            risk_position = {
+                'symbol': symbol,
+                'quantity': qty,
+                'entry_price': avg_entry,
+                'mark_price': price,
+                'price': price,
+                'side': 'long',
+            }
+            if allow_risk_off_exit(risk_position, {'regime': regime}, portfolio, reason='risk_off_exit'):
+                sell = normalize_exit_order(apply_sell(symbol, qty, price, 'risk_off_exit'))
+                if sell:
+                    sells.append(sell)
+            else:
+                print(f"[WINNING_STRATEGY] Suppressed false risk_off_exit for {symbol} at price={price}")
 
-        elif regime == "RISK_OFF":
-            sell = normalize_exit_order(apply_sell(symbol, qty, price, "risk_off_exit"))
-            if sell:
-                sells.append(sell)
-
-    # Shadow sells
+    # Shadow positions.
     for symbol, qty in list(shadow_positions.items()):
         if qty <= 0:
             continue
@@ -966,307 +1270,179 @@ def generate_sells(prices, regime):
         if not price or not avg_entry:
             continue
 
-        if not valid_exit_price(symbol, price, avg_entry, "shadow_position_exit"):
+        if not valid_exit_price(symbol, price, avg_entry, 'shadow_position_exit'):
             continue
 
-        change = (price - avg_entry) / avg_entry
-        dynamic_stop_pct, dynamic_take_pct = adaptive_exit_thresholds(symbol, regime)
+        try:
+            change = (float(price) - float(avg_entry)) / float(avg_entry)
+        except Exception:
+            continue
 
-        if change <= -dynamic_stop_pct:
-            sell = normalize_exit_order(apply_shadow_sell(symbol, qty, price, "adaptive_stop_loss"))
+        # Use separate shadow peak key to avoid mixing real and shadow state.
+        shadow_peak_key = f"SHADOW::{symbol}"
+        peak_change = _qfos_record_peak_change(shadow_peak_key, change)
+        age_minutes = _qfos_position_age_minutes(symbol)
+
+        reason = _qfos_exit_decision(symbol, change, peak_change, age_minutes, regime)
+
+        if reason:
+            sell = normalize_exit_order(apply_shadow_sell(symbol, qty, price, reason))
             if sell:
+                print(
+                    f"[WIN_RATE_EXIT][SHADOW] {reason} {symbol} "
+                    f"change={change:.4f} peak={peak_change:.4f} age_min={age_minutes:.1f}"
+                )
                 sells.append(sell)
-        elif change >= dynamic_take_pct:
-            sell = normalize_exit_order(apply_shadow_sell(symbol, qty * TAKE_PROFIT_SELL_FRACTION, price, "adaptive_take_profit"))
-            if sell:
-                sells.append(sell)
-        elif regime == "RISK_OFF":
-            sell = normalize_exit_order(apply_shadow_sell(symbol, qty, price, "risk_off_exit"))
-            if sell:
-                sells.append(sell)
+            continue
+
+        if regime == 'RISK_OFF':
+            risk_position = {
+                'symbol': symbol,
+                'quantity': qty,
+                'entry_price': avg_entry,
+                'mark_price': price,
+                'price': price,
+                'side': 'long',
+            }
+            if allow_risk_off_exit(risk_position, {'regime': regime}, portfolio, reason='risk_off_exit'):
+                sell = normalize_exit_order(apply_shadow_sell(symbol, qty, price, 'risk_off_exit'))
+                if sell:
+                    sells.append(sell)
+            else:
+                print(f"[WINNING_STRATEGY] Suppressed false shadow risk_off_exit for {symbol} at price={price}")
 
     return sells
 
 
 def emergency_reduce_exposure(prices):
     sells = []
-
     equity_before_rebalance = portfolio.mark_to_market(prices)
     current_exposure = total_exposure(prices)
     max_allowed_exposure = equity_before_rebalance * MAX_TOTAL_EXPOSURE_PCT
-
     if current_exposure <= max_allowed_exposure:
         return sells
-
     excess = current_exposure - max_allowed_exposure
-
     for symbol, qty in list(portfolio.positions.items()):
         if excess <= 0:
             break
-
         price = prices.get(symbol)
         if not price or qty <= 0:
             continue
-
         position_value = qty * price
         value_to_sell = min(position_value, excess)
         qty_to_sell = value_to_sell / price
-
-        sell = apply_sell(symbol, qty_to_sell, price, "emergency_exposure_reduction")
+        sell = apply_sell(symbol, qty_to_sell, price, 'emergency_exposure_reduction')
         if sell:
             sells.append(sell)
-
         excess -= value_to_sell
-
     return sells
 
-
 def save_trade(conn, fill):
-    conn.execute(text("""
-        INSERT INTO trades(
-            symbol, side, quantity, expected_price, fill_price,
-            slippage_bps, pnl, strategy, confidence, live, shadow_mode, created_at
-        )
-        VALUES(
-            :symbol, :side, :quantity, :expected_price, :fill_price,
-            :slippage_bps, 0, :strategy, :confidence, :live, :shadow_mode, DATETIME('now', '+3 hours')
-        )
-    """), fill | {"live": settings.live_trading, "shadow_mode": fill.get("shadow_mode", False)})
+    conn.execute(text("\n        INSERT INTO trades(\n            symbol, side, quantity, expected_price, fill_price,\n            slippage_bps, pnl, strategy, confidence, live, shadow_mode, created_at\n        )\n        VALUES(\n            :symbol, :side, :quantity, :expected_price, :fill_price,\n            :slippage_bps, 0, :strategy, :confidence, :live, :shadow_mode, DATETIME('now', '+3 hours')\n        )\n    "), fill | {'live': settings.live_trading, 'shadow_mode': fill.get('shadow_mode', False)})
 
 def ensure_positions_table():
     with engine.begin() as conn:
-        conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS positions (
-                symbol TEXT PRIMARY KEY,
-                quantity REAL NOT NULL DEFAULT 0,
-                avg_entry REAL NOT NULL DEFAULT 0,
-                realized_pnl REAL NOT NULL DEFAULT 0,
-                unrealized_pnl REAL NOT NULL DEFAULT 0,
-                last_price REAL NOT NULL DEFAULT 0,
-                exposure REAL NOT NULL DEFAULT 0,
-                strategy TEXT,
-                updated_at DATETIME DEFAULT (DATETIME('now', '+3 hours'))
-            )
-        """))
-        cols = [r[1] for r in conn.execute(text("PRAGMA table_info(positions)"))]
-        if "strategy" not in cols:
-            conn.execute(text("ALTER TABLE positions ADD COLUMN strategy TEXT"))
-        conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS symbol_quarantine (
-                symbol TEXT PRIMARY KEY,
-                reason TEXT NOT NULL,
-                blocked_until DATETIME,
-                created_at DATETIME DEFAULT (DATETIME('now', '+3 hours'))
-            )
-        """))
+        conn.execute(text("\n            CREATE TABLE IF NOT EXISTS positions (\n                symbol TEXT PRIMARY KEY,\n                quantity REAL NOT NULL DEFAULT 0,\n                avg_entry REAL NOT NULL DEFAULT 0,\n                realized_pnl REAL NOT NULL DEFAULT 0,\n                unrealized_pnl REAL NOT NULL DEFAULT 0,\n                last_price REAL NOT NULL DEFAULT 0,\n                exposure REAL NOT NULL DEFAULT 0,\n                strategy TEXT,\n                updated_at DATETIME DEFAULT (DATETIME('now', '+3 hours'))\n            )\n        "))
+        cols = [r[1] for r in conn.execute(text('PRAGMA table_info(positions)'))]
+        if 'strategy' not in cols:
+            conn.execute(text('ALTER TABLE positions ADD COLUMN strategy TEXT'))
+        conn.execute(text("\n            CREATE TABLE IF NOT EXISTS symbol_quarantine (\n                symbol TEXT PRIMARY KEY,\n                reason TEXT NOT NULL,\n                blocked_until DATETIME,\n                created_at DATETIME DEFAULT (DATETIME('now', '+3 hours'))\n            )\n        "))
 
-def quarantine_symbol(symbol: str, reason: str, hours: int = 24):
+def quarantine_symbol(symbol: str, reason: str, hours: int=24):
     with engine.begin() as conn:
-        conn.execute(text("""
-            INSERT INTO symbol_quarantine (symbol, reason, blocked_until, created_at)
-            VALUES (:symbol, :reason, datetime('now', '+' || :hours || ' hours', '+3 hours'), datetime('now', '+3 hours'))
-            ON CONFLICT (symbol) DO UPDATE SET
-            reason = EXCLUDED.reason,
-            blocked_until = EXCLUDED.blocked_until,
-            created_at = EXCLUDED.created_at
-        """), {"symbol": symbol, "reason": reason, "hours": hours})
-    send_telegram_alert(f"<b>Symbol Quarantined</b>\nSymbol: {symbol}\nReason: {reason}")
-
+        conn.execute(text("\n            INSERT INTO symbol_quarantine (symbol, reason, blocked_until, created_at)\n            VALUES (:symbol, :reason, datetime('now', '+' || :hours || ' hours', '+3 hours'), datetime('now', '+3 hours'))\n            ON CONFLICT (symbol) DO UPDATE SET\n            reason = EXCLUDED.reason,\n            blocked_until = EXCLUDED.blocked_until,\n            created_at = EXCLUDED.created_at\n        "), {'symbol': symbol, 'reason': reason, 'hours': hours})
+    send_telegram_alert(f'<b>Symbol Quarantined</b>\nSymbol: {symbol}\nReason: {reason}')
 
 def update_position_from_fill(conn, fill):
-    symbol = fill["symbol"]
-    side = fill["side"]
-    qty = float(fill["quantity"])
-    price = float(fill["fill_price"])
-
-    existing = conn.execute(text("""
-        SELECT symbol, quantity, avg_entry, realized_pnl, strategy
-        FROM positions
-        WHERE symbol = :symbol
-    """), {"symbol": symbol}).mappings().first()
-
+    symbol = fill['symbol']
+    side = fill['side']
+    qty = float(fill['quantity'])
+    price = float(fill['fill_price'])
+    existing = conn.execute(text('\n        SELECT symbol, quantity, avg_entry, realized_pnl, strategy\n        FROM positions\n        WHERE symbol = :symbol\n    '), {'symbol': symbol}).mappings().first()
     if not existing:
         existing_qty = 0.0
         avg_entry = 0.0
         realized_pnl = 0.0
     else:
-        existing_qty = float(existing["quantity"] or 0)
-        avg_entry = float(existing["avg_entry"] or 0)
-        realized_pnl = float(existing["realized_pnl"] or 0)
-        existing_strategy = existing["strategy"] or "unknown"
-
-    if side == "buy":
+        existing_qty = float(existing['quantity'] or 0)
+        avg_entry = float(existing['avg_entry'] or 0)
+        realized_pnl = float(existing['realized_pnl'] or 0)
+        existing_strategy = existing['strategy'] or 'unknown'
+    if side == 'buy':
         new_qty = existing_qty + qty
-        new_strategy = fill.get("strategy", existing_strategy if existing else "unknown")
+        new_strategy = fill.get('strategy', existing_strategy if existing else 'unknown')
         fee_adjusted_price = price * (1 + FEE_RATE)
         if new_qty > 0:
-            new_avg_entry = ((existing_qty * avg_entry) + (qty * fee_adjusted_price)) / new_qty
+            new_avg_entry = (existing_qty * avg_entry + qty * fee_adjusted_price) / new_qty
         else:
             new_avg_entry = 0.0
-
         new_realized_pnl = realized_pnl
         fill_pnl = 0.0
         applied_strategy = new_strategy
-
-    elif side == "sell":
+    elif side == 'sell':
         sell_qty = min(qty, existing_qty)
         net_sell_price = price * (1 - FEE_RATE)
         fill_pnl = sell_qty * (net_sell_price - avg_entry)
-
         new_qty = max(existing_qty - sell_qty, 0.0)
         new_avg_entry = avg_entry if new_qty > 0 else 0.0
         new_realized_pnl = realized_pnl + fill_pnl
         new_strategy = existing_strategy
         applied_strategy = existing_strategy
-
         if new_realized_pnl <= -2.0:
-            quarantine_symbol(symbol, f"realized_pnl_exceeded_limit_{new_realized_pnl:.2f}")
-
+            quarantine_symbol(symbol, f'realized_pnl_exceeded_limit_{new_realized_pnl:.2f}')
     else:
         return 0.0
-
     exposure = new_qty * price
     unrealized_pnl = new_qty * (price - new_avg_entry) if new_qty > 0 else 0.0
-
-    conn.execute(text("""
-        INSERT INTO positions(
-            symbol, quantity, avg_entry, realized_pnl,
-            unrealized_pnl, last_price, exposure, strategy, updated_at
-        )
-        VALUES(
-            :symbol, :quantity, :avg_entry, :realized_pnl,
-            :unrealized_pnl, :last_price, :exposure, :strategy, DATETIME('now', '+3 hours')
-        )
-        ON CONFLICT (symbol)
-        DO UPDATE SET
-            quantity = EXCLUDED.quantity,
-            avg_entry = EXCLUDED.avg_entry,
-            realized_pnl = EXCLUDED.realized_pnl,
-            unrealized_pnl = EXCLUDED.unrealized_pnl,
-            last_price = EXCLUDED.last_price,
-            exposure = EXCLUDED.exposure,
-            strategy = EXCLUDED.strategy,
-            updated_at = DATETIME('now', '+3 hours')
-    """), {
-        "symbol": symbol,
-        "quantity": new_qty,
-        "avg_entry": new_avg_entry,
-        "realized_pnl": new_realized_pnl,
-        "unrealized_pnl": unrealized_pnl,
-        "last_price": price,
-        "exposure": exposure,
-        "strategy": new_strategy
-    })
-
-    return fill_pnl, applied_strategy
-
+    conn.execute(text("\n        INSERT INTO positions(\n            symbol, quantity, avg_entry, realized_pnl,\n            unrealized_pnl, last_price, exposure, strategy, updated_at\n        )\n        VALUES(\n            :symbol, :quantity, :avg_entry, :realized_pnl,\n            :unrealized_pnl, :last_price, :exposure, :strategy, DATETIME('now', '+3 hours')\n        )\n        ON CONFLICT (symbol)\n        DO UPDATE SET\n            quantity = EXCLUDED.quantity,\n            avg_entry = EXCLUDED.avg_entry,\n            realized_pnl = EXCLUDED.realized_pnl,\n            unrealized_pnl = EXCLUDED.unrealized_pnl,\n            last_price = EXCLUDED.last_price,\n            exposure = EXCLUDED.exposure,\n            strategy = EXCLUDED.strategy,\n            updated_at = DATETIME('now', '+3 hours')\n    "), {'symbol': symbol, 'quantity': new_qty, 'avg_entry': new_avg_entry, 'realized_pnl': new_realized_pnl, 'unrealized_pnl': unrealized_pnl, 'last_price': price, 'exposure': exposure, 'strategy': new_strategy})
+    return (fill_pnl, applied_strategy)
 
 def mark_positions_to_market(conn, prices):
     for symbol, price in prices.items():
-        row = conn.execute(text("""
-            SELECT quantity, avg_entry, realized_pnl
-            FROM positions
-            WHERE symbol = :symbol
-        """), {"symbol": symbol}).mappings().first()
-
+        row = conn.execute(text('\n            SELECT quantity, avg_entry, realized_pnl\n            FROM positions\n            WHERE symbol = :symbol\n        '), {'symbol': symbol}).mappings().first()
         if not row:
             continue
-
-        qty = float(row["quantity"] or 0)
-        avg_entry = float(row["avg_entry"] or 0)
-
+        qty = float(row['quantity'] or 0)
+        avg_entry = float(row['avg_entry'] or 0)
         exposure = qty * float(price)
         unrealized_pnl = qty * (float(price) - avg_entry) if qty > 0 else 0.0
-
-        conn.execute(text("""
-            UPDATE positions
-            SET last_price = :last_price,
-                exposure = :exposure,
-                unrealized_pnl = :unrealized_pnl,
-                updated_at = DATETIME('now', '+3 hours')
-            WHERE symbol = :symbol
-        """), {
-            "symbol": symbol,
-            "last_price": float(price),
-            "exposure": exposure,
-            "unrealized_pnl": unrealized_pnl,
-        })
-
+        conn.execute(text("\n            UPDATE positions\n            SET last_price = :last_price,\n                exposure = :exposure,\n                unrealized_pnl = :unrealized_pnl,\n                updated_at = DATETIME('now', '+3 hours')\n            WHERE symbol = :symbol\n        "), {'symbol': symbol, 'last_price': float(price), 'exposure': exposure, 'unrealized_pnl': unrealized_pnl})
 wait_for_database()
 ensure_positions_table()
 
 def send_auto_pause(reason: str, equity: float, exposure: float, regime: str):
     global last_auto_pause_reason
-
     if last_auto_pause_reason == reason:
         return
-
     last_auto_pause_reason = reason
     pause_bot(reason)
-
-    send_telegram_alert(
-        f"<b>Quant Fund OS AUTO-PAUSED</b>\n"
-        f"Reason: {reason}\n"
-        f"Equity: {equity:.2f}\n"
-        f"Exposure: {exposure:.2f}\n"
-        f"Regime: {regime}\n"
-        f"Live trading: {settings.live_trading}"
-    )
-
+    send_telegram_alert(f'<b>Quant Fund OS AUTO-PAUSED</b>\nReason: {reason}\nEquity: {equity:.2f}\nExposure: {exposure:.2f}\nRegime: {regime}\nLive trading: {settings.live_trading}')
     try:
         send_telegram_alert(msg)
     except Exception as e:
         print('Auto-pause Telegram alert failed:', e)
 
-
-def get_day_start_equity(default_equity: float = 100.0):
+def get_day_start_equity(default_equity: float=100.0):
     with engine.begin() as conn:
-        row = conn.execute(text("""
-            SELECT equity
-            FROM portfolio_snapshots
-            WHERE created_at >= date('now')
-            ORDER BY id ASC
-            LIMIT 1
-        """)).mappings().first()
-
+        row = conn.execute(text("\n            SELECT equity\n            FROM portfolio_snapshots\n            WHERE created_at >= date('now')\n            ORDER BY id ASC\n            LIMIT 1\n        ")).mappings().first()
     if not row:
         return default_equity
-
-    return float(row["equity"] or default_equity)
-
+    return float(row['equity'] or default_equity)
 
 def check_daily_loss_guard(equity: float, exposure: float, regime: str):
     day_start_equity = get_day_start_equity(INITIAL_EQUITY)
-
     if day_start_equity <= 0:
         return False
-
     daily_pnl_pct = (equity - day_start_equity) / day_start_equity
-
     if daily_pnl_pct <= -MAX_DAILY_LOSS_PCT:
-        send_auto_pause(
-            f"max_daily_loss_hit_{daily_pnl_pct:.2%}",
-            equity,
-            exposure,
-            regime,
-        )
+        send_auto_pause(f'max_daily_loss_hit_{daily_pnl_pct:.2%}', equity, exposure, regime)
         return True
-
     return False
-
 
 def recent_buy_count():
     with engine.begin() as conn:
-        row = conn.execute(text("""
-            SELECT COUNT(*) AS count
-            FROM trades
-            WHERE side = 'buy'
-              AND created_at >= datetime('now', '+3 hours', '-1 hour')
-        """)).mappings().first()
-
-    return int(row["count"] or 0) if row else 0
-
-
+        row = conn.execute(text("\n            SELECT COUNT(*) AS count\n            FROM trades\n            WHERE side = 'buy'\n              AND created_at >= datetime('now', '+3 hours', '-1 hour')\n        ")).mappings().first()
+    return int(row['count'] or 0) if row else 0
 
 def recent_symbol_buy_count(symbol: str):
     """
@@ -1275,21 +1451,10 @@ def recent_symbol_buy_count(symbol: str):
     """
     try:
         with engine.begin() as conn:
-            row = conn.execute(text("""
-                SELECT COUNT(*) AS count
-                FROM trades
-                WHERE symbol = :symbol
-                  AND side = 'buy'
-                  AND created_at >= datetime('now', '+3 hours', '-' || :hours || ' hours')
-            """), {
-                "symbol": symbol,
-                "hours": TRADE_COUNT_WINDOW_HOURS,
-            }).mappings().first()
-
-        return int(row["count"] or 0) if row else 0
+            row = conn.execute(text("\n                SELECT COUNT(*) AS count\n                FROM trades\n                WHERE symbol = :symbol\n                  AND side = 'buy'\n                  AND created_at >= datetime('now', '+3 hours', '-' || :hours || ' hours')\n            "), {'symbol': symbol, 'hours': TRADE_COUNT_WINDOW_HOURS}).mappings().first()
+        return int(row['count'] or 0) if row else 0
     except Exception:
         return int(trade_counts.get(symbol, 0) or 0)
-
 
 def refresh_recent_trade_counts():
     """
@@ -1298,70 +1463,52 @@ def refresh_recent_trade_counts():
     """
     global trade_counts
     trade_counts = {}
-
     try:
         with engine.begin() as conn:
-            rows = conn.execute(text("""
-                SELECT symbol, COUNT(*) AS count
-                FROM trades
-                WHERE side = 'buy'
-                  AND created_at >= datetime('now', '+3 hours', '-' || :hours || ' hours')
-                GROUP BY symbol
-            """), {
-                "hours": TRADE_COUNT_WINDOW_HOURS,
-            }).mappings().all()
-
+            rows = conn.execute(text("\n                SELECT symbol, COUNT(*) AS count\n                FROM trades\n                WHERE side = 'buy'\n                  AND created_at >= datetime('now', '+3 hours', '-' || :hours || ' hours')\n                GROUP BY symbol\n            "), {'hours': TRADE_COUNT_WINDOW_HOURS}).mappings().all()
         for r in rows:
-            trade_counts[r["symbol"]] = int(r["count"] or 0)
-
+            trade_counts[r['symbol']] = int(r['count'] or 0)
     except Exception as e:
-        print("TRADE_COUNT_REFRESH_ERROR:", e)
-
+        print('TRADE_COUNT_REFRESH_ERROR:', e)
 
 def is_trending_regime(regime: str):
-    r = str(regime or "").upper()
-    return r in {"BULL", "BULLISH", "TRENDING", "UPTREND", "TREND"}
+    r = str(regime or '').upper()
+    return r in {'BULL', 'BULLISH', 'TRENDING', 'UPTREND', 'TREND'}
 
-
-def entry_policy_allows(symbol: str, regime: str, confidence: float, entries_this_cycle: int, strategy: str = None):
+def entry_policy_allows(symbol: str, regime: str, confidence: float, entries_this_cycle: int, strategy: str=None):
     with engine.begin() as conn:
-        q = conn.execute(text("SELECT symbol FROM symbol_quarantine WHERE symbol = :sym AND blocked_until IS NOT NULL AND blocked_until > DATETIME('now', '+3 hours')"), {"sym": symbol}).first()
+        q = conn.execute(text("SELECT symbol FROM symbol_quarantine WHERE symbol = :sym AND blocked_until IS NOT NULL AND blocked_until > DATETIME('now', '+3 hours')"), {'sym': symbol}).first()
         if q:
-            return False, "symbol_quarantined"
-
-        if strategy:
-            s_score = conn.execute(text("SELECT status FROM strategy_scores WHERE strategy = :s"), {"s": strategy}).mappings().first()
-            if s_score and s_score["status"] == "blocked":
-                return False, f"strategy_{strategy}_blocked"
-
-    r = str(regime or "").upper()
-
-    if r == "RISK_OFF":
-        return False, "risk_off_blocks_new_buys"
-
+            return (False, 'symbol_quarantined')
+        if strategy and strategy != 'fallback_scout_breakout':
+            s_score = conn.execute(text('SELECT status FROM strategy_scores WHERE strategy = :s'), {'s': strategy}).mappings().first()
+            if s_score and s_score['status'] == 'blocked':
+                return (False, f'strategy_{strategy}_blocked')
+    r = str(regime or '').upper()
+    if r == 'RISK_OFF':
+        if strategy == 'fallback_scout_breakout':
+            if confidence >= QFOS_SCOUT_CONFIDENCE:
+                return (True, 'risk_off_scout_fallback_allowed')
+            return (False, f'risk_off_scout_confidence_too_low_{confidence:.2f}')
+        return (False, 'risk_off_blocks_new_buys')
     recent_entries = recent_buy_count() + entries_this_cycle
-
-    if r == "SIDEWAYS":
+    if r == 'SIDEWAYS':
         if confidence < SIDEWAYS_MIN_CONFIDENCE:
-            return False, f"sideways_confidence_too_low_{confidence:.2f}"
+            return (False, f'sideways_confidence_too_low_{confidence:.2f}')
         if recent_entries >= SIDEWAYS_MAX_ENTRIES_PER_HOUR:
-            return False, "sideways_max_entries_per_hour_hit"
-        return True, "ok"
-
+            return (False, 'sideways_max_entries_per_hour_hit')
+        return (True, 'ok')
     if is_trending_regime(r):
         if confidence < TRENDING_MIN_CONFIDENCE:
-            return False, f"trending_confidence_too_low_{confidence:.2f}"
+            return (False, f'trending_confidence_too_low_{confidence:.2f}')
         if recent_entries >= TRENDING_MAX_ENTRIES_PER_HOUR:
-            return False, "trending_max_entries_per_hour_hit"
-        return True, "ok"
-
+            return (False, 'trending_max_entries_per_hour_hit')
+        return (True, 'ok')
     if confidence < SIDEWAYS_MIN_CONFIDENCE:
-        return False, f"default_confidence_too_low_{confidence:.2f}"
-
+        return (False, f'default_confidence_too_low_{confidence:.2f}')
     if recent_entries >= SIDEWAYS_MAX_ENTRIES_PER_HOUR:
-        return False, "default_max_entries_per_hour_hit"
-
-    return True, "ok"
+        return (False, 'default_max_entries_per_hour_hit')
+    return (True, 'ok')
 
 def reset_liquidity_errors():
     global liquidity_error_times
@@ -1369,71 +1516,40 @@ def reset_liquidity_errors():
 
 def register_liquidity_error(error_message: str):
     global liquidity_error_times
-
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(seconds=LIQUIDITY_ERROR_WINDOW_SECONDS)
-
-    liquidity_error_times = [
-        t for t in liquidity_error_times
-        if t >= cutoff
-    ]
-
+    liquidity_error_times = [t for t in liquidity_error_times if t >= cutoff]
     liquidity_error_times.append(now)
-
     if len(liquidity_error_times) >= LIQUIDITY_ERROR_LIMIT:
-        send_auto_pause(
-            "liquidity_error_circuit_breaker",
-            0.0,
-            0.0,
-            "UNKNOWN",
-        )
+        send_auto_pause('liquidity_error_circuit_breaker', 0.0, 0.0, 'UNKNOWN')
 
 def final_trade_firewall(fill, regime):
-    side = str(fill.get("side", "")).lower()
-    strategy = str(fill.get("strategy", ""))
-    confidence = float(fill.get("confidence", 0))
-
-    # Sells are always allowed for safety exits.
-    if side == "sell":
-        return True, "sell_allowed"
-
-    # Only buys need strict gating.
-    if side != "buy":
-        return False, "unknown_side_blocked"
-
-    r = str(regime or "").upper()
-
-    if r == "RISK_OFF":
-        return False, "risk_off_blocks_buy"
-
-    if r == "SIDEWAYS" and confidence < SIDEWAYS_MIN_CONFIDENCE:
-        return False, f"sideways_confidence_too_low_{confidence:.2f}"
-    
+    side = str(fill.get('side', '')).lower()
+    strategy = str(fill.get('strategy', ''))
+    confidence = float(fill.get('confidence', 0))
+    if side == 'sell':
+        return (True, 'sell_allowed')
+    if side != 'buy':
+        return (False, 'unknown_side_blocked')
+    r = str(regime or '').upper()
+    if r == 'RISK_OFF':
+        if strategy == 'fallback_scout_breakout' and confidence >= QFOS_SCOUT_CONFIDENCE and _strong_symbol_trend_for_risk_off(fill):
+            return (True, 'risk_off_scout_fallback_allowed')
+        return (False, 'risk_off_blocks_buy')
+    if r == 'SIDEWAYS' and confidence < SIDEWAYS_MIN_CONFIDENCE:
+        return (False, f'sideways_confidence_too_low_{confidence:.2f}')
     if is_trending_regime(r) and confidence < TRENDING_MIN_CONFIDENCE:
-        return False, f"trending_confidence_too_low_{confidence:.2f}"
-
-    # Unknown regimes should be conservative.
-    if r not in {"SIDEWAYS", "BULL", "BULLISH", "TRENDING", "UPTREND", "TREND"}:
-        return False, f"unknown_regime_blocks_buy_{r}"
-
-    return True, "buy_allowed"
-
-
-
-# ============================================================
-# QUANT FUND OS — DIAGNOSTIC + FALLBACK SIGNAL PATCH
-# ============================================================
-
+        return (False, f'trending_confidence_too_low_{confidence:.2f}')
+    if r not in {'SIDEWAYS', 'BULL', 'BULLISH', 'TRENDING', 'UPTREND', 'TREND'}:
+        return (False, f'unknown_regime_blocks_buy_{r}')
+    return (True, 'buy_allowed')
 PRICE_HISTORY = {}
 EMPTY_FEATURE_CYCLES = 0
 
-
 def remember_prices(prices, max_len=30):
     global PRICE_HISTORY
-
     if not isinstance(prices, dict):
         return
-
     for symbol, price in prices.items():
         try:
             price = float(price)
@@ -1443,200 +1559,124 @@ def remember_prices(prices, max_len=30):
         except Exception:
             continue
 
-
 def build_raw_momentum_fallback(prices, min_history=5):
     fallback_features = {}
-
     if not isinstance(prices, dict):
         return fallback_features
-
     for symbol, history in PRICE_HISTORY.items():
         try:
             if len(history) < min_history:
                 continue
-
             current_price = float(history[-1])
             old_price = float(history[-min_history])
-
             if old_price <= 0:
                 continue
-
             momentum = (current_price - old_price) / old_price
-
             returns = []
             for i in range(1, len(history)):
                 prev = float(history[i - 1])
                 now = float(history[i])
                 if prev > 0:
                     returns.append((now - prev) / prev)
-
             volatility = statistics.pstdev(returns) if len(returns) >= 2 else 0.0
             abs_momentum = abs(momentum)
-
-            # Ignore completely flat/noisy symbols.
             if abs_momentum < 0.0015:
                 continue
-
-            direction = "BUY" if momentum > 0 else "SELL"
+            direction = 'BUY' if momentum > 0 else 'SELL'
             signal_strength = min(1.0, abs_momentum * 80 + volatility * 20)
-
-            fallback_features[symbol] = {
-                "ready": True,
-                "source": "RAW_MOMENTUM_FALLBACK",
-                "direction": direction,
-                "price": current_price,
-                "trend": momentum,
-                "long_trend": momentum,
-                "momentum": momentum,
-                "one_tick_momentum": momentum,
-                "volatility": volatility,
-                "signal_strength": signal_strength,
-                "confidence": signal_strength,
-                "reason": "normal_features_empty"
-            }
-
+            fallback_features[symbol] = {'ready': True, 'source': 'RAW_MOMENTUM_FALLBACK', 'direction': direction, 'price': current_price, 'trend': momentum, 'long_trend': momentum, 'momentum': momentum, 'one_tick_momentum': momentum, 'volatility': volatility, 'signal_strength': signal_strength, 'confidence': signal_strength, 'reason': 'normal_features_empty'}
         except Exception:
             continue
-
-    ranked = sorted(
-        fallback_features.items(),
-        key=lambda item: item[1].get("signal_strength", 0),
-        reverse=True
-    )
-
+    ranked = sorted(fallback_features.items(), key=lambda item: item[1].get('signal_strength', 0), reverse=True)
     return dict(ranked[:5])
-
 
 def build_fallback_orders(fallback_features, prices, equity, cash, regime, max_orders=2):
     orders = []
-
     if not isinstance(fallback_features, dict):
         return orders
-
-    ranked = sorted(
-        fallback_features.items(),
-        key=lambda item: item[1].get("signal_strength", 0),
-        reverse=True
-    )
-
+    ranked = sorted(fallback_features.items(), key=lambda item: item[1].get('signal_strength', 0), reverse=True)
     for symbol, data in ranked:
         if len(orders) >= max_orders:
             break
-
         if not isinstance(data, dict):
             continue
-
-        # For now, fallback only opens BUY entries.
-        # Sells are still handled by generate_sells().
-        if data.get("direction") != "BUY":
+        if data.get('direction') != 'BUY':
             continue
-
-        price = float(prices.get(symbol, 0) or data.get("price", 0) or 0)
+        price = float(prices.get(symbol, 0) or data.get('price', 0) or 0)
         if price <= 0:
             continue
-
-        confidence = float(data.get("confidence", data.get("signal_strength", 0)) or 0)
-
-        # Make fallback compatible with current entry policy thresholds,
-        # while still allowing weak signals to be rejected later.
-        r = str(regime or "").upper()
-        if r == "SIDEWAYS":
+        confidence = float(data.get('confidence', data.get('signal_strength', 0)) or 0)
+        r = str(regime or '').upper()
+        if r == 'SIDEWAYS':
             confidence = max(confidence, float(SIDEWAYS_MIN_CONFIDENCE) + 0.01)
         elif is_trending_regime(r):
             confidence = max(confidence, float(TRENDING_MIN_CONFIDENCE) + 0.01)
-
         confidence = min(confidence, 0.95)
-
-        # Small but real starter position for a $100 account.
-        # can_buy() and final_trade_firewall() will still enforce exposure/risk rules.
-        position_value = min(
-            max(float(equity or 0) * 0.025, 1.0),
-            float(cash or 0) * 0.05
-        )
-
+        position_value = min(max(float(equity or 0) * 0.025, 1.0), float(cash or 0) * 0.05)
         if position_value <= 0:
             continue
-
         qty = position_value / price
-
-        orders.append({
-            "symbol": symbol,
-            "side": "buy",
-            "quantity": qty,
-            "expected_price": price,
-            "fill_price": price,
-            "slippage_bps": 0,
-            "strategy": "raw_momentum_fallback",
-            "confidence": confidence,
-        })
-
+        orders.append({'symbol': symbol, 'side': 'buy', 'quantity': qty, 'expected_price': price, 'fill_price': price, 'slippage_bps': 0, 'strategy': 'raw_momentum_fallback', 'confidence': confidence})
     return orders
 
+def log_cycle_diagnostic(market_data=None, features=None, orders=None, portfolio=None, rejected=None, note=''):
 
-def log_cycle_diagnostic(market_data=None, features=None, orders=None, portfolio=None, rejected=None, note=""):
+    # QFOS_SAFE_DIAGNOSTIC_PORTFOLIO_DICT_FIX
+    # log_cycle_diagnostic may receive portfolio as a dict payload.
+    # Convert it to an object-like wrapper so existing diagnostic code can use .positions/.cash safely.
+    if isinstance(portfolio, dict):
+        class _QFOSDiagnosticPortfolio:
+            pass
+
+        _qfos_p = _QFOSDiagnosticPortfolio()
+        _qfos_p.positions = portfolio.get("positions", {}) or {}
+        _qfos_p.cash = float(portfolio.get("cash", 0) or 0)
+        _qfos_p.equity = float(portfolio.get("equity", 0) or 0)
+        _qfos_p.drawdown = float(portfolio.get("drawdown", 0) or 0)
+        portfolio = _qfos_p
     global EMPTY_FEATURE_CYCLES
-
     market_count = len(market_data) if isinstance(market_data, dict) else 0
     feature_count = len(features) if isinstance(features, dict) else 0
     order_count = len(orders) if isinstance(orders, list) else 0
-
     if feature_count == 0:
         EMPTY_FEATURE_CYCLES += 1
     else:
         EMPTY_FEATURE_CYCLES = 0
-
     if market_count == 0:
-        no_trade_reason = "no_market_data"
+        no_trade_reason = 'no_market_data'
     elif feature_count == 0:
-        no_trade_reason = "features_empty"
+        no_trade_reason = 'features_empty'
     elif order_count == 0:
-        no_trade_reason = "features_exist_but_no_orders"
+        no_trade_reason = 'features_exist_but_no_orders'
     else:
-        no_trade_reason = "orders_created_or_applied"
-
-    print("\n" + "=" * 72)
-    print("QUANT FUND OS — CYCLE DIAGNOSTIC")
-    print(f"Time: {datetime.utcnow().isoformat()}Z")
-    print(f"Market symbols: {market_count}")
-    print(f"Feature symbols: {feature_count}")
-    print(f"Orders/applied fills: {order_count}")
-    print(f"Empty feature cycles: {EMPTY_FEATURE_CYCLES}")
-    print(f"No-trade reason: {no_trade_reason}")
-
+        no_trade_reason = 'orders_created_or_applied'
+    print('\n' + '=' * 72)
+    print('QUANT FUND OS — CYCLE DIAGNOSTIC')
+    print(f'Time: {datetime.utcnow().isoformat()}Z')
+    print(f'Market symbols: {market_count}')
+    print(f'Feature symbols: {feature_count}')
+    print(f'Orders/applied fills: {order_count}')
+    print(f'Empty feature cycles: {EMPTY_FEATURE_CYCLES}')
+    print(f'No-trade reason: {no_trade_reason}')
     if isinstance(portfolio, dict):
         print(f"Regime: {portfolio.get('regime')}")
         print(f"Risk: {portfolio.get('risk_status')}")
         print(f"Equity: {portfolio.get('equity')}")
         print(f"Cash: {portfolio.get('cash')}")
         print(f"Exposure pct: {portfolio.get('exposure_pct')}")
-        positions = portfolio.get("positions") or {}
-        print(f"Open positions: {len(positions) if isinstance(positions, dict) else 0}")
-
+        positions = portfolio.get('positions') or {}
+        print(f'Open positions: {(len(portfolio.positions) if isinstance(portfolio.positions, dict) else 0)}')
     if note:
-        print(f"Note: {note}")
-
+        print(f'Note: {note}')
     if isinstance(features, dict) and features:
-        ranked = sorted(
-            features.items(),
-            key=lambda item: item[1].get("signal_strength", item[1].get("confidence", 0))
-            if isinstance(item[1], dict) else 0,
-            reverse=True
-        )
-        print("Top features/signals:")
+        ranked = sorted(features.items(), key=lambda item: item[1].get('signal_strength', item[1].get('confidence', 0)) if isinstance(item[1], dict) else 0, reverse=True)
+        print('Top features/signals:')
         for symbol, data in ranked[:5]:
             if isinstance(data, dict):
-                print(
-                    f"  {symbol} | source={data.get('source', 'NORMAL')} "
-                    f"direction={data.get('direction')} "
-                    f"strength={round(float(data.get('signal_strength', 0)), 4)} "
-                    f"momentum={round(float(data.get('momentum', 0)), 5)}"
-                )
-
+                print(f"  {symbol} | source={data.get('source', 'NORMAL')} direction={data.get('direction')} strength={round(float(data.get('signal_strength', 0)), 4)} momentum={round(float(data.get('momentum', 0)), 5)}")
     if rejected:
-        print(f"Rejected sample: {rejected[:5]}")
-
-    print("=" * 72 + "\n")
-
+        print(f'Rejected sample: {rejected[:5]}')
+    print('=' * 72 + '\n')
 
 def _feature_value(data, key, default=0.0):
     try:
@@ -1646,13 +1686,11 @@ def _feature_value(data, key, default=0.0):
         pass
     return float(default or 0.0)
 
-
 def _entry_signal_threshold(regime):
-    r = str(regime or "").upper()
-    if r == "SIDEWAYS":
+    r = str(regime or '').upper()
+    if r == 'SIDEWAYS':
         return ENTRY_MIN_SIGNAL_SIDEWAYS
     return ENTRY_MIN_SIGNAL_TRENDING
-
 
 def _is_normal_feature(data):
     """
@@ -1662,21 +1700,16 @@ def _is_normal_feature(data):
     """
     if not isinstance(data, dict):
         return False
-    source = str(data.get("source", "NORMAL")).upper()
-    return source != "RAW_MOMENTUM_FALLBACK"
-
+    source = str(data.get('source', 'NORMAL')).upper()
+    return source != 'RAW_MOMENTUM_FALLBACK'
 
 def _bullish_triple_agreement(data):
-    trend = _feature_value(data, "trend")
-    momentum = _feature_value(data, "momentum")
-    one_tick = _feature_value(data, "one_tick_momentum")
-
+    trend = _feature_value(data, 'trend')
+    momentum = _feature_value(data, 'momentum')
+    one_tick = _feature_value(data, 'one_tick_momentum')
     if ENTRY_REQUIRE_TRIPLE_AGREEMENT:
-        return trend > 0 and momentum > 0 and one_tick > 0
-
-    # fallback: require at least two bullish components
+        return trend > 0 and momentum > 0 and (one_tick > 0)
     return sum([trend > 0, momentum > 0, one_tick > 0]) >= 2
-
 
 def _recent_stop_loss_blocked(symbol):
     """
@@ -1686,72 +1719,44 @@ def _recent_stop_loss_blocked(symbol):
     """
     try:
         with engine.begin() as conn:
-            row = conn.execute(text("""
-                SELECT COUNT(*) AS count
-                FROM trades
-                WHERE symbol = :symbol
-                  AND (
-                        strategy IN ('stop_loss', 'adaptive_stop_loss')
-                     OR side = 'sell' AND strategy LIKE '%stop_loss%'
-                  )
-                  AND created_at >= datetime('now', '+3 hours', '-' || :hours || ' hours')
-            """), {
-                "symbol": symbol,
-                "hours": ENTRY_STOP_LOSS_QUARANTINE_HOURS,
-            }).mappings().first()
-
-        return int(row["count"] or 0) > 0
+            row = conn.execute(text("\n                SELECT COUNT(*) AS count\n                FROM trades\n                WHERE symbol = :symbol\n                  AND (\n                        strategy IN ('stop_loss', 'adaptive_stop_loss')\n                     OR side = 'sell' AND strategy LIKE '%stop_loss%'\n                  )\n                  AND created_at >= datetime('now', '+3 hours', '-' || :hours || ' hours')\n            "), {'symbol': symbol, 'hours': ENTRY_STOP_LOSS_QUARANTINE_HOURS}).mappings().first()
+        return int(row['count'] or 0) > 0
     except Exception as e:
-        print(f"ENTRY QUALITY quarantine check error for {symbol}: {e}")
+        print(f'ENTRY QUALITY quarantine check error for {symbol}: {e}')
         return False
-
 
 def _entry_quality_reason(symbol, data, regime):
     """
     Returns None if allowed by quality gate, otherwise a rejection reason.
     """
     if symbol in EXCLUDED_ENTRY_SYMBOLS:
-        return "excluded_quote_or_stable_symbol"
-
-    if not isinstance(data, dict) or not data.get("ready"):
-        return "feature_not_ready"
-
+        return 'excluded_quote_or_stable_symbol'
+    if not isinstance(data, dict) or not data.get('ready'):
+        return 'feature_not_ready'
     if not _is_normal_feature(data):
-        return "raw_momentum_fallback_disabled"
-
+        return 'raw_momentum_fallback_disabled'
     if _recent_stop_loss_blocked(symbol):
-        return f"recent_stop_loss_quarantine_{ENTRY_STOP_LOSS_QUARANTINE_HOURS:g}h"
-
-    signal_strength = _feature_value(data, "signal_strength")
+        return f'recent_stop_loss_quarantine_{ENTRY_STOP_LOSS_QUARANTINE_HOURS:g}h'
+    signal_strength = _feature_value(data, 'signal_strength')
     min_signal = _entry_signal_threshold(regime)
-
     if signal_strength < min_signal:
-        return f"signal_too_weak_{signal_strength:.4f}_lt_{min_signal:.4f}"
-
+        return f'signal_too_weak_{signal_strength:.4f}_lt_{min_signal:.4f}'
     if ENTRY_REQUIRE_LONG_TREND:
-        long_trend = _feature_value(data, "long_trend")
+        long_trend = _feature_value(data, 'long_trend')
         if long_trend <= 0:
-            return f"long_trend_not_positive_{long_trend:.4f}"
-
+            return f'long_trend_not_positive_{long_trend:.4f}'
     if not _bullish_triple_agreement(data):
-        trend = _feature_value(data, "trend")
-        momentum = _feature_value(data, "momentum")
-        one_tick = _feature_value(data, "one_tick_momentum")
-        return f"triple_agreement_failed_t={trend:.4f}_m={momentum:.4f}_ot={one_tick:.4f}"
-
-    volatility = abs(_feature_value(data, "volatility"))
+        trend = _feature_value(data, 'trend')
+        momentum = _feature_value(data, 'momentum')
+        one_tick = _feature_value(data, 'one_tick_momentum')
+        return f'triple_agreement_failed_t={trend:.4f}_m={momentum:.4f}_ot={one_tick:.4f}'
+    volatility = abs(_feature_value(data, 'volatility'))
     if volatility > ENTRY_MAX_VOLATILITY:
-        return f"volatility_too_high_{volatility:.4f}_gt_{ENTRY_MAX_VOLATILITY:.4f}"
-
-    expected_move = max(
-        float(globals().get("FULL_TAKE_PROFIT_PCT", 0.0) or 0.0),
-        float(globals().get("TAKE_PROFIT_PCT", 0.0) or 0.0),
-    )
+        return f'volatility_too_high_{volatility:.4f}_gt_{ENTRY_MAX_VOLATILITY:.4f}'
+    expected_move = max(float(globals().get('FULL_TAKE_PROFIT_PCT', 0.0) or 0.0), float(globals().get('TAKE_PROFIT_PCT', 0.0) or 0.0))
     if expected_move < ENTRY_MIN_EXPECTED_MOVE_PCT:
-        return f"expected_move_too_small_{expected_move:.4f}_lt_{ENTRY_MIN_EXPECTED_MOVE_PCT:.4f}"
-
+        return f'expected_move_too_small_{expected_move:.4f}_lt_{ENTRY_MIN_EXPECTED_MOVE_PCT:.4f}'
     return None
-
 
 def entry_quality_ranked_symbols(feature_map, regime):
     """
@@ -1760,33 +1765,18 @@ def entry_quality_ranked_symbols(feature_map, regime):
     """
     eligible = []
     rejected_preview = []
-
     if not isinstance(feature_map, dict):
-        return set(), [], []
-
+        return (set(), [], [])
     for symbol, data in feature_map.items():
         reason = _entry_quality_reason(symbol, data, regime)
         if reason:
-            rejected_preview.append({
-                "symbol": symbol,
-                "reason": f"entry_quality_{reason}",
-            })
+            rejected_preview.append({'symbol': symbol, 'reason': f'entry_quality_{reason}'})
             continue
-
-        eligible.append((
-            symbol,
-            _feature_value(data, "signal_strength"),
-            _feature_value(data, "momentum"),
-        ))
-
+        eligible.append((symbol, _feature_value(data, 'signal_strength'), _feature_value(data, 'momentum')))
     eligible.sort(key=lambda x: (x[1], x[2]), reverse=True)
-
     top = eligible[:ENTRY_QUALITY_TOP_N]
     top_symbols = {s for s, _, _ in top}
-
-    return top_symbols, top, rejected_preview
-
-
+    return (top_symbols, top, rejected_preview)
 
 def _sideways_exceptional_level(signal_strength):
     """
@@ -1797,28 +1787,22 @@ def _sideways_exceptional_level(signal_strength):
         s = float(signal_strength or 0.0)
     except Exception:
         s = 0.0
-
     level = 0
     for threshold in sorted(SIDEWAYS_EXCEPTIONAL_LADDER):
         if s >= threshold:
             level += 1
-
     return level
-
 
 def _is_exceptional_sideways_signal(data):
     if not isinstance(data, dict):
         return False
-
-    return _sideways_exceptional_level(_feature_value(data, "signal_strength")) > 0
-
+    return _sideways_exceptional_level(_feature_value(data, 'signal_strength')) > 0
 
 def _current_hour_minute_utc():
     try:
         return datetime.utcnow().minute
     except Exception:
         return 0
-
 
 def _recent_buy_rows_for_sideways():
     """
@@ -1828,49 +1812,34 @@ def _recent_buy_rows_for_sideways():
     rows = []
     try:
         with engine.begin() as conn:
-            rows = conn.execute(text("""
-                SELECT symbol, strategy, created_at
-                FROM trades
-                WHERE side = 'buy'
-                  AND created_at >= datetime('now', '+3 hours', '-1 hours')
-                ORDER BY created_at DESC
-            """)).mappings().all()
+            rows = conn.execute(text("\n                SELECT symbol, strategy, created_at\n                FROM trades\n                WHERE side = 'buy'\n                  AND created_at >= datetime('now', '+3 hours', '-1 hours')\n                ORDER BY created_at DESC\n            ")).mappings().all()
     except Exception as e:
-        print("SIDEWAYS PACING recent buy query error:", e)
-
+        print('SIDEWAYS PACING recent buy query error:', e)
     return list(rows or [])
-
 
 def _minutes_since_last_sideways_entry():
     try:
         rows = _recent_buy_rows_for_sideways()
         if not rows:
             return 9999.0
-
-        latest = rows[0].get("created_at")
+        latest = rows[0].get('created_at')
         if not latest:
             return 9999.0
-
-        latest_s = str(latest).replace("T", " ").split(".")[0]
+        latest_s = str(latest).replace('T', ' ').split('.')[0]
         dt = datetime.fromisoformat(latest_s)
         age = (datetime.utcnow() - dt).total_seconds() / 60.0
-
-        # If DB timestamps are local while datetime.utcnow is UTC, avoid negative lockups.
         if age < 0:
             age = abs(age)
-
         return age
     except Exception as e:
-        print("SIDEWAYS PACING age error:", e)
+        print('SIDEWAYS PACING age error:', e)
         return 9999.0
-
 
 def _sideways_recent_entry_count():
     try:
         return len(_recent_buy_rows_for_sideways())
     except Exception:
         return 0
-
 
 def _sideways_pacing_reason(symbol, data, regime):
     """
@@ -1880,43 +1849,27 @@ def _sideways_pacing_reason(symbol, data, regime):
     Exceptional signals can bypass hourly cap and pacing, but only after
     all normal entry-quality gates have already passed.
     """
-    if str(regime or "").upper() != "SIDEWAYS":
+    if str(regime or '').upper() != 'SIDEWAYS':
         return None
-
-    signal_strength = _feature_value(data, "signal_strength")
+    signal_strength = _feature_value(data, 'signal_strength')
     exceptional_level = _sideways_exceptional_level(signal_strength)
     is_exceptional = exceptional_level > 0
-
     recent_count = _sideways_recent_entry_count()
     minutes_since_last = _minutes_since_last_sideways_entry()
     current_minute = _current_hour_minute_utc()
-
     if is_exceptional:
-        print(
-            f"SIDEWAYS EXCEPTIONAL SIGNAL: {symbol} "
-            f"strength={signal_strength:.4f} level={exceptional_level} "
-            f"recent_count={recent_count} minutes_since_last={minutes_since_last:.1f}"
-        )
-
-    # Normal entries obey hourly cap.
+        print(f'SIDEWAYS EXCEPTIONAL SIGNAL: {symbol} strength={signal_strength:.4f} level={exceptional_level} recent_count={recent_count} minutes_since_last={minutes_since_last:.1f}')
     if recent_count >= SIDEWAYS_MAX_ENTRIES_PER_HOUR:
         if not (is_exceptional and SIDEWAYS_EXCEPTIONAL_BYPASS_HOURLY_CAP):
-            return f"sideways_hourly_cap_hit_{recent_count}_of_{SIDEWAYS_MAX_ENTRIES_PER_HOUR}"
-
-    # Normal entries obey pacing.
+            return f'sideways_hourly_cap_hit_{recent_count}_of_{SIDEWAYS_MAX_ENTRIES_PER_HOUR}'
     if minutes_since_last < SIDEWAYS_ENTRY_MIN_GAP_MINUTES:
         if not (is_exceptional and SIDEWAYS_EXCEPTIONAL_BYPASS_PACING):
-            return f"sideways_pacing_wait_{minutes_since_last:.1f}_lt_{SIDEWAYS_ENTRY_MIN_GAP_MINUTES:g}_minutes"
-
-    # Reserve last normal slot until later in hour.
-    # Example: if max=3, do not use 3rd normal slot before minute 35.
+            return f'sideways_pacing_wait_{minutes_since_last:.1f}_lt_{SIDEWAYS_ENTRY_MIN_GAP_MINUTES:g}_minutes'
     if recent_count >= max(0, SIDEWAYS_MAX_ENTRIES_PER_HOUR - 1):
         if current_minute < SIDEWAYS_RESERVE_FINAL_SLOT_UNTIL_MINUTE:
             if not is_exceptional:
-                return f"sideways_final_slot_reserved_until_minute_{SIDEWAYS_RESERVE_FINAL_SLOT_UNTIL_MINUTE}"
-
+                return f'sideways_final_slot_reserved_until_minute_{SIDEWAYS_RESERVE_FINAL_SLOT_UNTIL_MINUTE}'
     return None
-
 
 def _minutes_since_symbol_buy(symbol):
     """
@@ -1925,31 +1878,18 @@ def _minutes_since_symbol_buy(symbol):
     """
     try:
         with engine.begin() as conn:
-            row = conn.execute(text("""
-                SELECT created_at
-                FROM trades
-                WHERE LOWER(side) = 'buy'
-                  AND symbol = :symbol
-                ORDER BY created_at DESC
-                LIMIT 1
-            """), {"symbol": symbol}).mappings().first()
-
-        if not row or not row.get("created_at"):
+            row = conn.execute(text("\n                SELECT created_at\n                FROM trades\n                WHERE LOWER(side) = 'buy'\n                  AND symbol = :symbol\n                ORDER BY created_at DESC\n                LIMIT 1\n            "), {'symbol': symbol}).mappings().first()
+        if not row or not row.get('created_at'):
             return 9999.0
-
-        latest_s = str(row.get("created_at")).replace("T", " ").split(".")[0]
+        latest_s = str(row.get('created_at')).replace('T', ' ').split('.')[0]
         dt = datetime.fromisoformat(latest_s)
         age = (datetime.utcnow() - dt).total_seconds() / 60.0
-
         if age < 0:
             age = abs(age)
-
         return age
-
     except Exception as e:
-        print(f"SAME SYMBOL COOLDOWN check error for {symbol}: {e}")
+        print(f'SAME SYMBOL COOLDOWN check error for {symbol}: {e}')
         return 9999.0
-
 
 def _same_symbol_cooldown_reason(symbol, data):
     """
@@ -1957,78 +1897,51 @@ def _same_symbol_cooldown_reason(symbol, data):
     Exceptional signals get a shorter cooldown but are not unlimited.
     """
     if not symbol:
-        return "missing_symbol"
-
-    signal_strength = _feature_value(data, "signal_strength") if isinstance(data, dict) else 0.0
-    is_exceptional = _sideways_exceptional_level(signal_strength) > 0 if "_sideways_exceptional_level" in globals() else False
-
+        return 'missing_symbol'
+    signal_strength = _feature_value(data, 'signal_strength') if isinstance(data, dict) else 0.0
+    is_exceptional = _sideways_exceptional_level(signal_strength) > 0 if '_sideways_exceptional_level' in globals() else False
     cooldown = SAME_SYMBOL_EXCEPTIONAL_COOLDOWN_MINUTES if is_exceptional else SAME_SYMBOL_ENTRY_COOLDOWN_MINUTES
     age = _minutes_since_symbol_buy(symbol)
-
     if age < cooldown:
-        return f"same_symbol_cooldown_{age:.1f}_lt_{cooldown:g}_minutes"
-
+        return f'same_symbol_cooldown_{age:.1f}_lt_{cooldown:g}_minutes'
     return None
 
-
-
-
-def build_entry_quality_top_symbols(features: dict, top_n: int = 10):
+def build_entry_quality_top_symbols(features: dict, top_n: int=10):
     """
     Rank normal FeatureStore symbols for entry quality.
     This fixes cases where allocator sees good symbols but ENTRY QUALITY TOP 10 is [].
     """
     ranked = []
-
     if not isinstance(features, dict):
         return []
-
     for symbol, f in features.items():
         try:
             if not isinstance(f, dict):
                 continue
-
-            if not f.get("ready"):
+            if not f.get('ready'):
                 continue
-
-            source = str(f.get("source", "NORMAL")).upper()
-            if source == "RAW_MOMENTUM_FALLBACK":
+            source = str(f.get('source', 'NORMAL')).upper()
+            if source == 'RAW_MOMENTUM_FALLBACK':
                 continue
-
-            symbol_regime = str(f.get("symbol_regime", "")).upper()
-            if symbol_regime not in ("SYMBOL_TREND_UP", "SYMBOL_BREAKOUT_UP"):
+            symbol_regime = str(f.get('symbol_regime', '')).upper()
+            if symbol_regime not in ('SYMBOL_TREND_UP', 'SYMBOL_BREAKOUT_UP'):
                 continue
-
-            trend = float(f.get("trend", 0.0) or 0.0)
-            momentum = float(f.get("momentum", 0.0) or 0.0)
-            one_tick = float(f.get("one_tick_momentum", 0.0) or 0.0)
-            signal = float(f.get("signal_strength", 0.0) or 0.0)
-            quality = float(f.get("trend_quality", 0.0) or 0.0)
-            breakout = float(f.get("breakout_score", 0.0) or 0.0)
-
+            trend = float(f.get('trend', 0.0) or 0.0)
+            momentum = float(f.get('momentum', 0.0) or 0.0)
+            one_tick = float(f.get('one_tick_momentum', 0.0) or 0.0)
+            signal = float(f.get('signal_strength', 0.0) or 0.0)
+            quality = float(f.get('trend_quality', 0.0) or 0.0)
+            breakout = float(f.get('breakout_score', 0.0) or 0.0)
             if trend <= 0 or momentum <= 0 or signal <= 0:
                 continue
-
             if one_tick < -0.0015:
                 continue
-
             score = signal + quality + breakout
-
-            ranked.append({
-                "symbol": symbol,
-                "score": score,
-                "symbol_regime": symbol_regime,
-                "signal_strength": signal,
-                "trend_quality": quality,
-                "breakout_score": breakout,
-            })
-
+            ranked.append({'symbol': symbol, 'score': score, 'symbol_regime': symbol_regime, 'signal_strength': signal, 'trend_quality': quality, 'breakout_score': breakout})
         except Exception:
             continue
-
-    ranked = sorted(ranked, key=lambda x: x["score"], reverse=True)
+    ranked = sorted(ranked, key=lambda x: x['score'], reverse=True)
     return ranked[:int(top_n)]
-
 
 def enforce_entry_quality_lockdown(result, feature_map, regime):
     """
@@ -2036,133 +1949,101 @@ def enforce_entry_quality_lockdown(result, feature_map, regime):
     It ensures only top-ranked, high-confluence NORMAL features can trade.
     """
     if not ENTRY_QUALITY_LOCKDOWN_ENABLED:
-        return result.get("orders", []), []
-
-    orders = result.get("orders", []) if isinstance(result, dict) else []
+        return (result.get('orders', []), [])
+    orders = result.get('orders', []) if isinstance(result, dict) else []
     if not orders:
-        return [], []
-
+        try:
+            top_symbols, top_ranked, rejected_preview = entry_quality_ranked_symbols(feature_map, regime)
+            print(f'ENTRY QUALITY TOP {ENTRY_QUALITY_TOP_N}:', top_ranked)
+        except Exception:
+            pass
+        return ([], [])
     top_symbols, top_ranked, rejected_preview = entry_quality_ranked_symbols(feature_map, regime)
-
-    print(f"ENTRY QUALITY TOP {ENTRY_QUALITY_TOP_N}:", top_ranked)
-
+    print(f'ENTRY QUALITY TOP {ENTRY_QUALITY_TOP_N}:', top_ranked)
     filtered = []
     rejected = []
-
     for order in orders:
-        symbol = order.get("symbol")
-        side = str(order.get("side", "")).lower()
-        strategy = str(order.get("strategy", ""))
-
-        # Sells/exits should not be blocked by entry filters.
-        if side == "sell":
+        symbol = order.get('symbol')
+        side = str(order.get('side', '')).lower()
+        strategy = str(order.get('strategy', ''))
+        if side == 'sell':
             filtered.append(order)
             continue
-
-        if strategy == "raw_momentum_fallback":
-            rejected.append({
-                "symbol": symbol,
-                "reason": "entry_quality_raw_momentum_fallback_disabled",
-            })
+        if strategy == 'raw_momentum_fallback':
+            rejected.append({'symbol': symbol, 'reason': 'entry_quality_raw_momentum_fallback_disabled'})
             continue
-
         if symbol not in top_symbols:
-            rejected.append({
-                "symbol": symbol,
-                "reason": f"entry_quality_not_top_{ENTRY_QUALITY_TOP_N}",
-            })
+            rejected.append({'symbol': symbol, 'reason': f'entry_quality_not_top_{ENTRY_QUALITY_TOP_N}'})
             continue
-
         data = feature_map.get(symbol, {})
         reason = _entry_quality_reason(symbol, data, regime)
         if reason:
-            rejected.append({
-                "symbol": symbol,
-                "reason": f"entry_quality_{reason}",
-            })
+            rejected.append({'symbol': symbol, 'reason': f'entry_quality_{reason}'})
             continue
-
         filtered.append(order)
-
     if rejected:
-        print("ENTRY QUALITY REJECTED:", rejected[:ENTRY_QUALITY_LOG_REJECTION_LIMIT])
-
-    return filtered, rejected
+        print('ENTRY QUALITY REJECTED:', rejected[:ENTRY_QUALITY_LOG_REJECTION_LIMIT])
+    return (filtered, rejected)
 
 def main():
+    positions = globals().get('positions', [])
     load_state_from_db()
     while True:
         try:
             tick = market.tick()
-            raw_prices = tick["prices"]
-            print("MARKET TICK DATA RAW:", raw_prices)
-
+            raw_prices = tick['prices']
+            print('MARKET TICK DATA RAW:', raw_prices)
             prices = validate_market_prices(raw_prices)
-            print("MARKET TICK DATA VALIDATED:", prices)
-
+            print('MARKET TICK DATA VALIDATED:', prices)
             if not prices:
-                print("MARKET DATA BLOCK: no_valid_prices_this_cycle")
+                print('MARKET DATA BLOCK: no_valid_prices_this_cycle')
                 time.sleep(settings.trade_interval_seconds)
                 continue
-
             remember_prices(prices)
             refresh_recent_trade_counts()
-
             features.update(prices)
-
             f_by_symbol = {s: features.features(s) for s in settings.symbol_list}
-            ready = [f for f in f_by_symbol.values() if isinstance(f, dict) and f.get("ready")]
+            ready = [f for f in f_by_symbol.values() if isinstance(f, dict) and f.get('ready')]
             fallback_features = {}
-
             if not ready:
-                print("WARNING: Normal FEATURES is empty. Trying RAW_MOMENTUM_FALLBACK...")
+                print('WARNING: Normal FEATURES is empty. Trying RAW_MOMENTUM_FALLBACK...')
                 fallback_features = build_raw_momentum_fallback(prices)
-
                 if fallback_features:
-                    print("FALLBACK FEATURES DIAGNOSTIC ONLY:", fallback_features)
+                    print('FALLBACK FEATURES DIAGNOSTIC ONLY:', fallback_features)
                 else:
-                    print("FALLBACK FEATURES: {}")
-
-            avg_vol = sum(f["volatility"] for f in ready) / len(ready) if ready else 0
-            avg_trend = sum(abs(f["trend"]) for f in ready) / len(ready) if ready else 0
-
+                    print('FALLBACK FEATURES: {}')
+            avg_vol = sum((f['volatility'] for f in ready)) / len(ready) if ready else 0
+            avg_trend = sum((abs(f['trend']) for f in ready)) / len(ready) if ready else 0
             regime = detect_regime(avg_vol, avg_trend)
             risk.tune(regime)
-
             equity = portfolio.mark_to_market(prices)
-
-            state = {
-                "prices": prices,
-                "features": f_by_symbol,
-                "equity": equity,
-                "cash": portfolio.cash,
-                "regime": regime,
-            }
-
+            state = {'prices': prices, 'features': f_by_symbol, 'equity': equity, 'cash': portfolio.cash, 'regime': regime}
             result = agent.run_cycle(state)
-
             if not isinstance(result, dict):
-                result = {"orders": [], "status": "agent_returned_non_dict"}
-
-            proposed_agent_orders = result.get("orders", [])
-
-            if (not proposed_agent_orders) and fallback_features:
-                print("FALLBACK TRADING DISABLED: diagnostic fallback ignored; waiting for normal MEXC ranked signals")
-
+                result = {'orders': [], 'status': 'agent_returned_non_dict'}
+            proposed_agent_orders = result.get('orders', [])
+            if not proposed_agent_orders and fallback_features:
+                print('FALLBACK TRADING DISABLED: diagnostic fallback ignored; waiting for normal MEXC ranked signals')
             entry_quality_rejections = []
             try:
-                result["orders"], entry_quality_rejections = enforce_entry_quality_lockdown(
-                    result=result,
-                    feature_map=state["features"],
-                    regime=regime,
-                )
+                result['orders'], entry_quality_rejections = enforce_entry_quality_lockdown(result=result, feature_map=state['features'], regime=regime)
             except Exception as entry_quality_error:
-                print("ENTRY QUALITY LOCKDOWN ERROR:", entry_quality_error)
-
-            print("FEATURES:", {k: v for k, v in state["features"].items() if isinstance(v, dict) and v.get("ready")})
-            print("ORDERS:", result.get("orders", []))
-            proposed_fills = result.get("orders", [])
-
+                print('ENTRY QUALITY LOCKDOWN ERROR:', entry_quality_error)
+            if not result.get('orders'):
+                scout_order = qfos_build_scout_fallback_order(
+                    feature_map=state['features'],
+                    prices=prices,
+                    regime=regime,
+                    equity=equity,
+                    cash=portfolio.cash,
+                )
+                if scout_order:
+                    result['orders'] = [scout_order]
+                    entry_quality_rejections = []
+                    print('[SCOUT_FALLBACK] injected into proposed_fills:', scout_order)
+            print('FEATURES:', {k: v for k, v in state['features'].items() if isinstance(v, dict) and v.get('ready')})
+            print('ORDERS:', result.get('orders', []))
+            proposed_fills = result.get('orders', [])
             applied_fills = []
             rejected = []
             try:
@@ -2171,310 +2052,121 @@ def main():
             except NameError:
                 pass
             entries_this_cycle = 0
-
             paused = is_paused()
-
-            if globals().get("last_seen_paused_state") is True and paused is False:
+            if globals().get('last_seen_paused_state') is True and paused is False:
                 reset_liquidity_errors()
-            
-            globals()["last_seen_paused_state"] = paused
-
+            globals()['last_seen_paused_state'] = paused
             if not paused and pause_reason():
                 reset_liquidity_errors()
-
             if paused:
-                rejected.append({
-                    "symbol": "ALL",
-                    "reason": pause_reason() or "paused",
-                })
+                rejected.append({'symbol': 'ALL', 'reason': pause_reason() or 'paused'})
             else:
                 buys_this_cycle = 0
             for fill in proposed_fills:
-                    strategy = fill.get("strategy")
-                    is_shadow = fill.get("shadow_mode", False)
-                    symbol = fill["symbol"]
-                    side = fill["side"]
-                    confidence = float(fill.get("confidence", 0))
-
-                    if side == "buy":
-                        allowed, reason = entry_policy_allows(
-                            symbol,
-                            regime,
-                            confidence,
-                            entries_this_cycle,
-                            strategy=strategy
-                        )
-
-                        if not allowed:
-                            rejected.append({
-                                "symbol": symbol,
-                                "reason": reason,
-                            })
-                            continue
-
-                        # Shadow mode does not affect portfolio or cash
-                        if is_shadow:
-                            if apply_shadow_buy(fill):
-                                applied_fills.append(fill)
-                            continue
-
-                        approved, reason = can_buy(symbol, fill, prices, equity)
-
-                        if approved and apply_buy(fill):
+                strategy = fill.get('strategy')
+                is_shadow = fill.get('shadow_mode', False)
+                symbol = fill['symbol']
+                side = fill['side']
+                confidence = float(fill.get('confidence', 0))
+                if side == 'buy':
+                    allowed, reason = entry_policy_allows(symbol, regime, confidence, entries_this_cycle, strategy=strategy)
+                    if not allowed:
+                        rejected.append({'symbol': symbol, 'reason': reason})
+                        continue
+                    if is_shadow:
+                        if apply_shadow_buy(fill):
                             applied_fills.append(fill)
-                            entries_this_cycle += 1
-                        else:
-                            rejected.append({
-                                "symbol": symbol,
-                                "reason": reason,
-                            })
-
-                    elif side == "sell":
+                        continue
+                    approved, reason = can_buy(symbol, fill, prices, equity)
+                    if approved and apply_buy(fill):
                         applied_fills.append(fill)
-
+                        entries_this_cycle += 1
+                    else:
+                        rejected.append({'symbol': symbol, 'reason': reason})
+                elif side == 'sell':
+                    applied_fills.append(fill)
             applied_fills.extend(generate_sells(prices, regime))
             applied_fills.extend(emergency_reduce_exposure(prices))
-
             equity = portfolio.mark_to_market(prices)
             exposure = total_exposure(prices)
-
-            globals()["last_known_equity"] = equity
-            globals()["last_known_exposure"] = exposure
-            globals()["last_known_regime"] = regime
-
+            globals()['last_known_equity'] = equity
+            globals()['last_known_exposure'] = exposure
+            globals()['last_known_regime'] = regime
             if check_daily_loss_guard(equity, exposure, regime):
                 proposed_fills = []
                 applied_fills = []
-                rejected.append({
-                    "symbol": "ALL",
-                    "reason": "max_daily_loss_auto_pause",
-                })
-
+                rejected.append({'symbol': 'ALL', 'reason': 'max_daily_loss_auto_pause'})
             with engine.begin() as conn:
                 filtered_fills = []
-
                 for fill in applied_fills:
                     allowed, reason = final_trade_firewall(fill, regime)
-
                     if allowed:
                         filtered_fills.append(fill)
                     else:
-                        rejected.append({
-                            "symbol": fill.get("symbol", "UNKNOWN"),
-                            "reason": reason,
-                        })
-
+                        rejected.append({'symbol': fill.get('symbol', 'UNKNOWN'), 'reason': reason})
                 applied_fills = filtered_fills
-
                 for fill in applied_fills:
                     fill_pnl, original_strat = update_position_from_fill(conn, fill)
-                    fill["pnl"] = fill_pnl
-
+                    fill['pnl'] = fill_pnl
                     trades_total.inc()
-
-                    conn.execute(text("""
-                        INSERT INTO trades(
-                            symbol, side, quantity, expected_price, fill_price,
-            slippage_bps, pnl, strategy, confidence, live, shadow_mode, created_at
-                        )
-                        VALUES(
-                            :symbol, :side, :quantity, :expected_price, :fill_price,
-                            :slippage_bps, :pnl, :strategy, :confidence, :live, :shadow_mode, DATETIME('now', '+3 hours')
-                        )
-                    """), fill | {"live": settings.live_trading, "shadow_mode": fill.get("shadow_mode", False)})
-
-                    side = fill.get("side", "").upper()
-                    symbol = fill.get("symbol", "")
-                    qty = float(fill.get("quantity", 0))
-                    price = float(fill.get("fill_price", 0))
-                    strategy = fill.get("strategy", "unknown")
-                    confidence = float(fill.get("confidence", 0))
-                    is_shadow = fill.get("shadow_mode", False)
-
-                    # Sync in-memory Portfolio state from DB to ensure absolute consistency
+                    conn.execute(text("\n                        INSERT INTO trades(\n                            symbol, side, quantity, expected_price, fill_price,\n            slippage_bps, pnl, strategy, confidence, live, shadow_mode, created_at\n                        )\n                        VALUES(\n                            :symbol, :side, :quantity, :expected_price, :fill_price,\n                            :slippage_bps, :pnl, :strategy, :confidence, :live, :shadow_mode, DATETIME('now', '+3 hours')\n                        )\n                    "), fill | {'live': settings.live_trading, 'shadow_mode': fill.get('shadow_mode', False)})
+                    side = fill.get('side', '').upper()
+                    symbol = fill.get('symbol', '')
+                    qty = float(fill.get('quantity', 0))
+                    price = float(fill.get('fill_price', 0))
+                    strategy = fill.get('strategy', 'unknown')
+                    confidence = float(fill.get('confidence', 0))
+                    is_shadow = fill.get('shadow_mode', False)
                     if not is_shadow:
-                        pos_row = conn.execute(text("SELECT quantity FROM positions WHERE symbol = :s"), {"s": symbol}).mappings().first()
+                        pos_row = conn.execute(text('SELECT quantity FROM positions WHERE symbol = :s'), {'s': symbol}).mappings().first()
                         if pos_row:
-                            portfolio.positions[symbol] = float(pos_row["quantity"])
+                            portfolio.positions[symbol] = float(pos_row['quantity'])
                         else:
                             portfolio.positions[symbol] = 0.0
-
-                    send_telegram_alert(
-                        f"<b>{side} {'(SHADOW)' if is_shadow else ''}</b> {symbol}\n"
-                        f"Qty: {qty:.6f}\n"
-                        f"Price: {price:.4f}\n"
-                        f"PnL: {fill_pnl:.2f}\n"
-                        f"Strategy: {strategy}\n"
-                        f"Confidence: {confidence:.2f}\n"
-                        f"Live: {settings.live_trading}"
-                    )
-
-                    # Strategy scoring: accumulate PnL per strategy, block persistent losers
-                    score_strategy = original_strat if side == "SELL" else strategy
-                    if score_strategy and score_strategy not in ("take_profit", "single_full_take_profit", "breakeven_protection_exit", "time_stop_exit", "stop_loss", "adaptive_take_profit", "adaptive_stop_loss", "risk_off_exit", "emergency_exposure_reduction", "unknown"):
-                        conn.execute(text("""
-                            INSERT INTO strategy_scores (strategy, sharpe, drawdown, score, status)
-                            VALUES (:strategy, 0, 0, :pnl, 'active')
-                            ON CONFLICT DO NOTHING
-                        """), {"strategy": score_strategy, "pnl": fill_pnl})
-                        
-                        conn.execute(text("""
-                            UPDATE strategy_scores
-                            SET score = score + :pnl, status = CASE WHEN score + :pnl < 0 THEN 'blocked' ELSE 'active' END
-                            WHERE strategy = :strategy
-                        """), {"strategy": score_strategy, "pnl": fill_pnl})
-
+                    send_telegram_alert(f"<b>{side} {('(SHADOW)' if is_shadow else '')}</b> {symbol}\nQty: {qty:.6f}\nPrice: {price:.4f}\nPnL: {fill_pnl:.2f}\nStrategy: {strategy}\nConfidence: {confidence:.2f}\nLive: {settings.live_trading}")
+                    score_strategy = original_strat if side == 'SELL' else strategy
+                    if score_strategy and score_strategy not in ('take_profit', 'single_full_take_profit', 'breakeven_protection_exit', 'time_stop_exit', 'trailing_profit_exit', 'stop_loss', 'adaptive_take_profit', 'adaptive_stop_loss', 'risk_off_exit', 'emergency_exposure_reduction', 'unknown'):
+                        conn.execute(text("\n                            INSERT INTO strategy_scores (strategy, sharpe, drawdown, score, status)\n                            VALUES (:strategy, 0, 0, :pnl, 'active')\n                            ON CONFLICT DO NOTHING\n                        "), {'strategy': score_strategy, 'pnl': fill_pnl})
+                        conn.execute(text("\n                            UPDATE strategy_scores\n                            SET score = score + :pnl, status = CASE WHEN score + :pnl < 0 THEN 'blocked' ELSE 'active' END\n                            WHERE strategy = :strategy\n                        "), {'strategy': score_strategy, 'pnl': fill_pnl})
                 mark_positions_to_market(conn, prices)
-
-                conn.execute(text("""
-                    INSERT INTO portfolio_snapshots(
-                        equity, cash, exposure, drawdown, regime
-                    )
-                    VALUES(
-                        :equity, :cash, :exposure, :drawdown, :regime
-                    )
-                """), {
-                    "equity": equity,
-                    "cash": portfolio.cash,
-                    "exposure": exposure,
-                    "drawdown": portfolio.drawdown,
-                    "regime": regime,
-                })
-
+                conn.execute(text('\n                    INSERT INTO portfolio_snapshots(\n                        equity, cash, exposure, drawdown, regime\n                    )\n                    VALUES(\n                        :equity, :cash, :exposure, :drawdown, :regime\n                    )\n                '), {'equity': equity, 'cash': portfolio.cash, 'exposure': exposure, 'drawdown': portfolio.drawdown, 'regime': regime})
             equity_gauge.set(equity)
             drawdown_gauge.set(portfolio.drawdown)
-
-            current_risk_status = "SAFE"
+            current_risk_status = 'SAFE'
             exposure_pct = exposure / equity if equity else 0
-
-            if portfolio.drawdown <= -0.05 or exposure_pct >= 0.50:
-                current_risk_status = "BLOCKED"
+            if portfolio.drawdown <= -0.05 or exposure_pct >= 0.5:
+                current_risk_status = 'BLOCKED'
             elif portfolio.drawdown <= -0.02 or exposure_pct >= 0.35:
-                current_risk_status = "CAUTION"
-
-            global_last = globals().get("last_risk_status")
+                current_risk_status = 'CAUTION'
+            global_last = globals().get('last_risk_status')
             if current_risk_status != global_last:
-                send_telegram_alert(
-                    f"Risk status changed: <b>{current_risk_status}</b>\n"
-                    f"Equity: {equity:.2f}\n"
-                    f"Exposure: {exposure:.2f}\n"
-                    f"Exposure %: {exposure_pct * 100:.2f}%\n"
-                    f"Drawdown: {portfolio.drawdown:.4f}"
-                )
-                globals()["last_risk_status"] = current_risk_status
-
-            live_payload = {
-                "name": "Quant Fund OS",
-                "mode": getattr(settings, "mode", "paper"),
-                "live_trading": bool(getattr(settings, "live_trading", False)),
-                "exchange": getattr(settings, "exchange", "mexc"),
-                "exchange_type": getattr(settings, "exchange_type", "spot"),
-                "regime": regime,
-                "risk_status": risk_status,
-                "bot_state": "PAUSED" if paused else "RUNNING",
-                "paused": bool(paused),
-                "pause_reason": pause_reason,
-                "portfolio": {
-                    "equity": equity,
-                    "cash": portfolio.cash,
-                    "exposure": exposure,
-                    "exposure_pct": exposure_pct,
-                    "regime": regime,
-                },
-                "positions": positions,
-                "orders": len(result.get("orders", [])) if isinstance(result, dict) else 0,
-                "controls": {
-                    "pause": "/pause",
-                    "resume": "/resume",
-                    "kill_switch": "/kill-switch",
-                },
-            }
+                send_telegram_alert(f'Risk status changed: <b>{current_risk_status}</b>\nEquity: {equity:.2f}\nExposure: {exposure:.2f}\nExposure %: {exposure_pct * 100:.2f}%\nDrawdown: {portfolio.drawdown:.4f}')
+                globals()['last_risk_status'] = current_risk_status
+            live_payload = {'name': 'Quant Fund OS', 'mode': getattr(settings, 'mode', 'paper'), 'live_trading': bool(getattr(settings, 'live_trading', False)), 'exchange': getattr(settings, 'exchange', 'mexc'), 'exchange_type': getattr(settings, 'exchange_type', 'spot'), 'regime': regime, 'risk_status': current_risk_status, 'bot_state': 'PAUSED' if paused else 'RUNNING', 'paused': bool(paused), 'pause_reason': pause_reason, 'portfolio': {'equity': equity, 'cash': portfolio.cash, 'exposure': exposure, 'exposure_pct': exposure_pct, 'regime': regime}, 'positions': portfolio.positions, 'orders': len(result.get('orders', [])) if isinstance(result, dict) else 0, 'controls': {'pause': '/pause', 'resume': '/resume', 'kill_switch': '/kill-switch'}}
             update_live_status_cache(live_payload)
-            print({
-                "regime": regime,
-                "equity": round(equity, 2),
-                "cash": round(portfolio.cash, 2),
-                "exposure": round(exposure, 2),
-                "exposure_pct": round(exposure / equity, 4) if equity else 0,
-                "positions": {k: round(v, 6) for k, v in portfolio.positions.items() if v > 0},
-                "orders": len(applied_fills),
-                "rejected": rejected[:3],
-                "status": result["status"],
-                "paused": is_paused(),
-                "risk_status": current_risk_status,
-                "shadow_positions": {k: round(v, 6) for k, v in shadow_positions.items() if v > 0},
-            })
-
+            print({'regime': regime, 'equity': round(equity, 2), 'cash': round(portfolio.cash, 2), 'exposure': round(exposure, 2), 'exposure_pct': round(exposure / equity, 4) if equity else 0, 'positions': {k: round(v, 6) for k, v in portfolio.positions.items() if v > 0}, 'orders': len(applied_fills), 'rejected': rejected[:3], 'status': result['status'], 'paused': is_paused(), 'risk_status': current_risk_status, 'shadow_positions': {k: round(v, 6) for k, v in shadow_positions.items() if v > 0}})
             try:
-                diagnostic_snapshot = {
-                    "regime": regime,
-                    "equity": round(equity, 2),
-                    "cash": round(portfolio.cash, 2),
-                    "exposure": round(exposure, 2),
-                    "exposure_pct": round(exposure / equity, 4) if equity else 0,
-                    "positions": {k: round(v, 6) for k, v in portfolio.positions.items() if v > 0},
-                    "risk_status": current_risk_status,
-                }
-
-                log_cycle_diagnostic(
-                    market_data=prices,
-                    features={k: v for k, v in state["features"].items() if isinstance(v, dict) and v.get("ready")},
-                    orders=applied_fills,
-                    portfolio=diagnostic_snapshot,
-                    rejected=rejected,
-                    note="main_loop_after_execution",
-                )
+                diagnostic_snapshot = {'regime': regime, 'equity': round(equity, 2), 'cash': round(portfolio.cash, 2), 'exposure': round(exposure, 2), 'exposure_pct': round(exposure / equity, 4) if equity else 0, 'positions': {k: round(v, 6) for k, v in portfolio.positions.items() if v > 0}, 'risk_status': current_risk_status}
+                log_cycle_diagnostic(market_data=prices, features={k: v for k, v in state['features'].items() if isinstance(v, dict) and v.get('ready')}, orders=applied_fills, portfolio=diagnostic_snapshot, rejected=rejected, note='main_loop_after_execution')
             except Exception as diagnostic_error:
-                print("DIAGNOSTIC_LOG_ERROR:", diagnostic_error)
-
+                print('DIAGNOSTIC_LOG_ERROR:', diagnostic_error)
             time.sleep(settings.trade_interval_seconds)
-
         except Exception as e:
             error_message = str(e)
-            print("Bot loop error:", error_message)
-
-            if "insufficient synthetic liquidity" in error_message.lower():
-                if "for " in error_message:
-                    symbol = error_message.split("for")[-1].strip()
-                    quarantine_symbol(symbol, "liquidity_error_circuit_breaker")
+            print('Bot loop error:', error_message)
+            if 'insufficient synthetic liquidity' in error_message.lower():
+                if 'for ' in error_message:
+                    symbol = error_message.split('for')[-1].strip()
+                    quarantine_symbol(symbol, 'liquidity_error_circuit_breaker')
                 else:
                     register_liquidity_error(error_message)
-
             time.sleep(settings.trade_interval_seconds)
-
-if __name__ == "__main__":
-    main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-@app.get("/live-status")
+@app.get('/live-status')
 def live_status():
     live = get_live_status_cache()
     if live:
         return live
-    return {
-        "name": "Quant Fund OS",
-        "status": "warming_up_or_no_live_cache",
-        "note": "Live cache not populated yet. Use dashboard/logs until first loop update.",
-    }
+    return {'name': 'Quant Fund OS', 'status': 'warming_up_or_no_live_cache', 'note': 'Live cache not populated yet. Use dashboard/logs until first loop update.'}
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,38 @@
+{
+  "enabled": true,
+  "strategy_name": "Tiered Risk + Profit Shield v1",
+  "paper_first": true,
+  "risk_layers": {
+    "risk_caution": "No weak new entries; reduce size; do not panic-liquidate winners.",
+    "risk_off_soft": "No new entries; protect winners; exit only locally failing trades.",
+    "risk_off_hard": "Emergency liquidation only for confirmed systemic danger or hard drawdown."
+  },
+  "thresholds": {
+    "min_hold_minutes": 20,
+    "profit_shield_pct": 0.001,
+    "breakeven_lock_pct": 0.001,
+    "hard_stop_loss_pct": -0.018,
+    "portfolio_hard_drawdown_pct": -0.05,
+    "risk_off_persistence_bars": 3,
+    "max_deferred_positions": 2,
+    "high_conviction_threshold": 0.85,
+    "correlation_shock_threshold": 0.7,
+    "market_breadth_bearish_threshold": 0.7,
+    "soft_threat_score": 60,
+    "hard_threat_score": 82
+  },
+  "sizing": {
+    "SAFE": 1.0,
+    "SIDEWAYS": 1.0,
+    "TREND": 1.2,
+    "CAUTION": 0.5,
+    "RISK_CAUTION": 0.5,
+    "RISK_OFF_SOFT": 0.25,
+    "RISK_OFF": 0.0,
+    "RISK_OFF_HARD": 0.0
+  },
+  "logging": {
+    "decision_log": "winning_strategy_decisions.jsonl",
+    "record_interrupted_win_rate": true
+  }
+}
