@@ -1,54 +1,78 @@
-﻿.env
+﻿# Environment / secrets
+.env
 .env.*
 !.env.example
 
-# Python/cache
-__pycache__/
-*.pyc
-.pytest_cache/
-.venv/
-venv/
-
-# Runtime data and databases
-data/
-db_backups/
-logs/
-old_logs/
-monitoring_logs/
-*.log
+# Databases and runtime state
+data/*.db
+data/*.db-*
 *.db
-*.db-wal
-*.db-shm
+*.db-*
+*.sqlite
+*.sqlite3
 quant.db
 quant.db-*
 quant.db-shm
 quant.db-wal
+quant.db.backup*
+quant.db-shm.backup*
+quant.db-wal.backup*
 
-# Local patch/debug/temporary scripts
-qfos_*.py
-*qfos*.ps1
-_qfos_*/
-patch_*.py
-inspect_*.py
-reset_*.py
-repair_*.py
-refine_fallback.py
-safe_*.py
-surgical_*.py
-unblock_*.py
-auto_fix_main.py
-block_raw_momentum_fallback.py
-disable_fallback_trading.py
-fix_entry_signal_alignment.py
-test_telegram_*.py
-*_backup_*.py
+# Logs / runtime output
+*.log
+*.jsonl
+execution_logs/
+logs/
+monitoring_logs/
+winning_strategy_decisions.jsonl
+
+# Backups / patch scripts / temporary files
+backup_*/
+backup*/
+*_backup*
+*_before_*
 *.bak*
 *.backup*
-*.txt
+main_before_*.py
+main_CURRENT_FOR_AUDIT.py
+main_CLEAN_STRATEGY_INTEGRATED.py
+fix_*.py
+patch_*.py
+rewrite_*.py
+inline_*.py
+force_*.py
+inspect_*.py
+repair_*.py
+reset_*.py
+safe_*.py
+surgical_*.py
+refine_*.py
+unblock_*.py
+wire_*.py
+auto_fix_*.py
+block_*.py
+disable_*.py
+test_telegram_*.py
+apply_quant_winning_strategy.py
 
-# Local OS/editor
+# Scratch notes
+*_inspection.txt
+*_logic.txt
+*_needed.txt
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# OS / editor
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
 
-# Accidental broken filenames
-ervicesapi.py*
+# Docker/runtime
+.docker/
