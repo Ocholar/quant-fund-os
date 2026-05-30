@@ -1,0 +1,22 @@
+{
+  "enabled": true,
+  "sideways_scout_notional_usd": 1.0,
+  "trend_scout_notional_usd": 1.5,
+  "min_trade_price": 0.01,
+  "min_scout_signal_sideways": 0.004,
+  "min_scout_trend_quality": 0.001,
+  "max_scout_volatility_sideways": 0.006,
+  "require_positive_one_tick_for_scout": true,
+  "fallback_stop_loss_pct": -0.006,
+  "breakeven_arm_pct": 0.0035,
+  "breakeven_exit_floor_pct": 0.0004,
+  "trailing_arm_pct": 0.005,
+  "trailing_giveback_pct": 0.0025,
+  "sideways_time_stop_minutes": 45,
+  "sideways_time_stop_min_pnl": -0.0015,
+  "sideways_time_stop_max_pnl": 0.002,
+  "symbol_cooldown_after_losses": 2,
+  "cooldown_minutes": 180,
+  "state_file": "qfos_expectancy_state.json",
+  "decision_log": "qfos_expectancy_decisions.jsonl"
+}
