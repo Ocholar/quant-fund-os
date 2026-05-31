@@ -1,0 +1,20 @@
+{
+  "mode": "growth_test_mode",
+  "created_utc": "2026-05-31T21:51:07.857022+00:00",
+  "changes": {
+    "sideways_max_entries_per_hour": 4,
+    "max_total_exposure_pct": 0.12,
+    "max_symbol_exposure_pct": 0.04,
+    "entry_min_signal_sideways": 0.0012
+  },
+  "baseline_previous_24h": {
+    "starting_equity": 100.0,
+    "ending_equity": 100.31,
+    "total_pnl": 0.31,
+    "total_trades": 83,
+    "win_rate": 0.5769,
+    "risk_off_exit_count": 0,
+    "emergency_exit_count": 0
+  },
+  "note": "Fixed growth patch. Do not judge run until /status risk_rules show target values."
+}
