@@ -1,0 +1,323 @@
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/.gitignore b/.gitignore[m
+[1mindex c39e1b1..1fafcd9 100644[m
+[1m--- a/.gitignore[m
+[1m+++ b/.gitignore[m
+[36m@@ -30,3 +30,14 @@[m [mreset_*.py[m
+ inspect_db.py[m
+ unblock_fallback_test.py[m
+ repair_quant_main.ps1[m
+[32m+[m
+[32m+[m[32m# Local secrets and runtime files[m
+[32m+[m[32m.env[m
+[32m+[m[32m*.log[m
+[32m+[m[32m*.db[m
+[32m+[m[32m*.sqlite[m
+[32m+[m[32m*.sqlite3[m
+[32m+[m[32mdb_backups/[m
+[32m+[m[32mold_logs/[m
+[32m+[m[32m__pycache__/[m
+[32m+[m[32m*.pyc[m
+[1mdiff --git a/core/config.py b/core/config.py[m
+[1mindex edd080e..3aabd22 100644[m
+[1m--- a/core/config.py[m
+[1m+++ b/core/config.py[m
+[36m@@ -14,16 +14,50 @@[m [mclass Settings(BaseSettings):[m
+     max_daily_loss: float = 0.01[m
+     max_portfolio_drawdown: float = 0.05[m
+     max_leverage: float = 0.5[m
+[31m-    max_total_exposure_pct: float = 0.95[m
+[31m-    max_symbol_exposure_pct: float = 0.12[m
+[32m+[m[32m    max_total_exposure_pct: float = 0.08[m
+[32m+[m[32m    max_symbol_exposure_pct: float = 0.03[m
+     max_trades_per_symbol: int = 8[m
+     stop_loss_pct: float = 0.012[m
+     take_profit_pct: float = 0.035[m
+     take_profit_sell_fraction: float = 1.00[m
+     trading_fee_rate: float = 0.0005[m
+     cooldown_seconds: int = 300[m
+[31m-    sideways_max_entries_per_hour: int = 24[m
+[31m-    sideways_min_confidence: float = 0.55[m
+[32m+[m[32m    sideways_max_entries_per_hour: int = 3[m
+[32m+[m[32m    sideways_min_confidence: float = 0.75[m
+[32m+[m
+[32m+[m[32m    # Overnight / small-account risk limits[m
+[32m+[m[32m    trade_count_window_hours: float = 2[m
+[32m+[m[32m    caution_exposure_pct: float = 0.06[m
+[32m+[m
+[32m+[m[32m    # Entry Quality Lockdown[m
+[32m+[m[32m    entry_quality_top_n: int = 2[m
+[32m+[m[32m    entry_min_signal_sideways: float = 0.025[m
+[32m+[m
+[32m+[m[32m    # SIDEWAYS entry pacing / exceptional ladder[m
+[32m+[m[32m    sideways_entry_min_gap_minutes: float = 15[m
+[32m+[m[32m    sideways_reserve_final_slot_until_minute: int = 35[m
+[32m+[m[32m    sideways_exceptional_signal: float = 0.045[m
+[32m+[m[32m    sideways_exceptional_ladder: str = "0.045,0.050,0.055,0.060,0.065,0.070"[m
+[32m+[m[32m    sideways_exceptional_bypass_hourly_cap: str = "true"[m
+[32m+[m[32m    sideways_exceptional_bypass_pacing: str = "true"[m
+[32m+[m[32m    entry_require_long_trend: str = "true"[m
+[32m+[m
+[32m+[m[32m    # Entry cleanup / anti-clustering[m
+[32m+[m[32m    same_symbol_entry_cooldown_minutes: float = 30[m
+[32m+[m[32m    same_symbol_exceptional_cooldown_minutes: float = 10[m
+[32m+[m[32m    entry_quality_log_rejection_limit: int = 12[m
+[32m+[m[32m    entry_min_signal_trending: float = 0.018[m
+[32m+[m[32m    entry_max_volatility: float = 0.008[m
+[32m+[m[32m    entry_min_expected_move_pct: float = 0.012[m
+[32m+[m[32m    entry_stop_loss_quarantine_hours: float = 4[m
+[32m+[m[32m    entry_require_triple_agreement: str = "true"[m
+[32m+[m
+[32m+[m[32m    # Single-exit / breakeven / time-stop[m
+[32m+[m[32m    full_take_profit_pct: float = 0.012[m
+[32m+[m[32m    breakeven_trigger_pct: float = 0.006[m
+[32m+[m[32m    breakeven_exit_pct: float = 0.001[m
+[32m+[m[32m    position_time_stop_minutes: float = 45[m
+[32m+[m[32m    time_stop_exit_below_pct: float = 0.003[m
+     trending_max_entries_per_hour: int = 48[m
+     trending_min_confidence: float = 0.52[m
+     max_new_entries_per_cycle: int = 2[m
+[1mdiff --git a/main.py b/main.py[m
+[1mindex 9fb98ad..0cd8f94 100644[m
+[1m--- a/main.py[m
+[1m+++ b/main.py[m
+[36m@@ -23,8 +23,69 @@[m [mINITIAL_EQUITY = float(settings.starting_equity)[m
+ MAX_TOTAL_EXPOSURE_PCT = float(settings.max_total_exposure_pct)[m
+ MAX_SYMBOL_EXPOSURE_PCT = float(settings.max_symbol_exposure_pct)[m
+ MAX_TRADES_PER_SYMBOL = int(settings.max_trades_per_symbol)[m
+[32m+[m
+[32m+[m[32m# ============================================================[m
+[32m+[m[32m# ENTRY QUALITY LOCKDOWN[m
+[32m+[m[32m# Normal MEXC/FeatureStore features only. No raw fallback trading.[m
+[32m+[m[32m# Designed for small account + limited trade slots.[m
+[32m+[m[32m# ============================================================[m
+[32m+[m[32mENTRY_QUALITY_LOCKDOWN_ENABLED = True[m
+[32m+[m[32mENTRY_QUALITY_TOP_N = int(getattr(settings, "entry_quality_top_n", 2))[m
+[32m+[m[32mENTRY_MIN_SIGNAL_SIDEWAYS = float(getattr(settings, "entry_min_signal_sideways", 0.025))[m
+[32m+[m[32mENTRY_MIN_SIGNAL_TRENDING = float(getattr(settings, "entry_min_signal_trending", 0.018))[m
+[32m+[m[32mENTRY_MAX_VOLATILITY = float(getattr(settings, "entry_max_volatility", 0.008))[m
+[32m+[m[32mENTRY_MIN_EXPECTED_MOVE_PCT = float(getattr(settings, "entry_min_expected_move_pct", 0.012))[m
+[32m+[m[32mENTRY_STOP_LOSS_QUARANTINE_HOURS = float(getattr(settings, "entry_stop_loss_quarantine_hours", 4))[m
+[32m+[m[32mENTRY_REQUIRE_TRIPLE_AGREEMENT = str(getattr(settings, "entry_require_triple_agreement", "true")).lower() in ("1", "true", "yes", "on")[m
+[32m+[m[32mENTRY_BLOCK_SIDEWAYS_IF_NO_TOP_CANDIDATE = True[m
+[32m+[m
+[32m+[m
+[32m+[m[32m# ============================================================[m
+[32m+[m[32m# SIDEWAYS ENTRY PACING + EXCEPTIONAL SIGNAL LADDER[m
+[32m+[m[32m# Normal SIDEWAYS entries are paced.[m
+[32m+[m[32m# Exceptional entries can bypass time quota, but not risk/quality.[m
+[32m+[m[32m# ============================================================[m
+[32m+[m
+[32m+[m[32m# ============================================================[m
+[32m+[m[32m# ENTRY CLEANUP / ANTI-CLUSTERING[m
+[32m+[m[32m# Prevent repeated same-symbol buys from consuming slots.[m
+[32m+[m[32m# ============================================================[m
+[32m+[m[32mSAME_SYMBOL_ENTRY_COOLDOWN_MINUTES = float(getattr(settings, "same_symbol_entry_cooldown_minutes", 30))[m
+[32m+[m[32mSAME_SYMBOL_EXCEPTIONAL_COOLDOWN_MINUTES = float(getattr(settings, "same_symbol_exceptional_cooldown_minutes", 10))[m
+[32m+[m[32mENTRY_QUALITY_LOG_REJECTION_LIMIT = int(getattr(settings, "entry_quality_log_rejection_limit", 12))[m
+[32m+[m
+[32m+[m[32mSIDEWAYS_ENTRY_MIN_GAP_MINUTES = float(getattr(settings, "sideways_entry_min_gap_minutes", 15))[m
+[32m+[m[32mSIDEWAYS_RESERVE_FINAL_SLOT_UNTIL_MINUTE = int(getattr(settings, "sideways_reserve_final_slot_until_minute", 35))[m
+[32m+[m[32mSIDEWAYS_EXCEPTIONAL_SIGNAL = float(getattr(settings, "sideways_exceptional_signal", 0.045))[m
+[32m+[m[32mSIDEWAYS_EXCEPTIONAL_LADDER = [[m
+[32m+[m[32m    float(x.strip())[m
+[32m+[m[32m    for x in str(getattr(settings, "sideways_exceptional_ladder", "0.045,0.050,0.055,0.060,0.065,0.070")).split(",")[m
+[32m+[m[32m    if x.strip()[m
+[32m+[m[32m][m
+[32m+[m[32mSIDEWAYS_EXCEPTIONAL_BYPASS_HOURLY_CAP = str(getattr(settings, "sideways_exceptional_bypass_hourly_cap", "true")).lower() in ("1", "true", "yes", "on")[m
+[32m+[m[32mSIDEWAYS_EXCEPTIONAL_BYPASS_PACING = str(getattr(settings, "sideways_exceptional_bypass_pacing", "true")).lower() in ("1", "true", "yes", "on")[m
+[32m+[m[32mENTRY_REQUIRE_LONG_TREND = str(getattr(settings, "entry_require_long_trend", "true")).lower() in ("1", "true", "yes", "on")[m
+[32m+[m
+[32m+[m[32mEXCLUDED_ENTRY_SYMBOLS = {[m
+[32m+[m[32m    "USDC/USDT",[m
+[32m+[m[32m    "USD1/USDT",[m
+[32m+[m[32m    "EUR/USDT",[m
+[32m+[m[32m    "GOLD(PAXG)/USDT",[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32m# Count max_trades_per_symbol over a rolling window, not lifetime.[m
+[32m+[m[32m# This prevents old experiment trades from permanently blocking symbols.[m
+[32m+[m[32mTRADE_COUNT_WINDOW_HOURS = float(getattr(settings, "trade_count_window_hours", 4))[m
+ STOP_LOSS_PCT = float(settings.stop_loss_pct)[m
+ TAKE_PROFIT_PCT = float(settings.take_profit_pct)[m
+[32m+[m
+[32m+[m[32m# Single-exit profit system for small account / limited trade slots.[m
+[32m+[m[32m# No staged partial sells. Exit full position when the trade has done enough.[m
+[32m+[m[32mFULL_TAKE_PROFIT_PCT = float(getattr(settings, "full_take_profit_pct", 0.012))[m
+[32m+[m[32mBREAKEVEN_TRIGGER_PCT = float(getattr(settings, "breakeven_trigger_pct", 0.006))[m
+[32m+[m[32mBREAKEVEN_EXIT_PCT = float(getattr(settings, "breakeven_exit_pct", 0.001))[m
+[32m+[m[32mTIME_STOP_MINUTES = float(getattr(settings, "position_time_stop_minutes", 45))[m
+[32m+[m[32mTIME_STOP_EXIT_BELOW_PCT = float(getattr(settings, "time_stop_exit_below_pct", 0.003))[m
+ TAKE_PROFIT_SELL_FRACTION = float(settings.take_profit_sell_fraction)[m
+ DAILY_LOSS_LIMIT_PCT = float(settings.max_daily_loss)[m
+ COOLDOWN_SECONDS = int(settings.cooldown_seconds)[m
+[36m@@ -74,6 +135,8 @@[m [magent = AutonomousFundAgent(risk, executor)[m
+ entry_prices = {}[m
+ trade_counts = {}[m
+ last_trade_time = {}[m
+[32m+[m[32mposition_open_time = {}[m
+[32m+[m[32mposition_peak_change = {}[m
+ [m
+ shadow_positions = {}[m
+ shadow_entry_prices = {}[m
+[36m@@ -114,14 +177,19 @@[m [mdef load_state_from_db():[m
+             if rows:[m
+                 print(f"Recovered {len(rows)} open positions.")[m
+ [m
+[31m-            # 3. Recover trade metadata (counts and times)[m
+[32m+[m[32m            # 3. Recover recent trade metadata only.[m
+[32m+[m[32m            # Do not let old test trades permanently block a symbol.[m
+             trades = conn.execute(text("""[m
+[31m-                SELECT symbol, created_at FROM trades[m
+[31m-            """)).mappings().all()[m
+[32m+[m[32m                SELECT symbol, created_at[m
+[32m+[m[32m                FROM trades[m
+[32m+[m[32m                WHERE side = 'buy'[m
+[32m+[m[32m                  AND created_at >= datetime('now', '+3 hours', '-' || :hours || ' hours')[m
+[32m+[m[32m            """), {"hours": TRADE_COUNT_WINDOW_HOURS}).mappings().all()[m
+[32m+[m
+             for t in trades:[m
+                 sym = t["symbol"][m
+                 trade_counts[sym] = trade_counts.get(sym, 0) + 1[m
+[31m-                # simplistic last trade time from created_at string[m
+[32m+[m
+                 try:[m
+                     dt = datetime.fromisoformat(str(t["created_at"]))[m
+                     ts = dt.timestamp()[m
+[36m@@ -267,8 +335,11 @@[m [mdef can_buy(symbol, fill, prices, equity):[m
+     if now - last_trade_time.get(symbol, 0) < COOLDOWN_SECONDS:[m
+         return False, "cooldown"[m
+ [m
+[31m-    if trade_counts.get(symbol, 0) >= MAX_TRADES_PER_SYMBOL:[m
+[31m-        return False, "max_trades_per_symbol"[m
+[32m+[m[32m    recent_symbol_trades = recent_symbol_buy_count(symbol)[m
+[32m+[m[32m    trade_counts[symbol] = recent_symbol_trades[m
+[32m+[m
+[32m+[m[32m    if recent_symbol_trades >= MAX_TRADES_PER_SYMBOL:[m
+[32m+[m[32m        return False, f"max_trades_per_symbol_recent_{recent_symbol_trades}_in_{TRADE_COUNT_WINDOW_HOURS:g}h"[m
+ [m
+     fill_value = float(fill["quantity"]) * float(fill["fill_price"])[m
+ [m
+[36m@@ -430,6 +501,34 @@[m [mdef adaptive_exit_thresholds(symbol, regime):[m
+     return stop, take[m
+ [m
+ [m
+[32m+[m
+[32m+[m[32mdef get_position_age_minutes(symbol):[m
+[32m+[m[32m    now = time.time()[m
+[32m+[m
+[32m+[m[32m    if symbol not in position_open_time:[m
+[32m+[m[32m        position_open_time[symbol] = now[m
+[32m+[m
+[32m+[m[32m    return (now - position_open_time[symbol]) / 60.0[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef update_position_peak_change(symbol, change):[m
+[32m+[m[32m    old_peak = position_peak_change.get(symbol)[m
+[32m+[m
+[32m+[m[32m    if old_peak is None:[m
+[32m+[m[32m        position_peak_change[symbol] = change[m
+[32m+[m[32m    else:[m
+[32m+[m[32m        position_peak_change[symbol] = max(float(old_peak), float(change))[m
+[32m+[m
+[32m+[m[32m    return float(position_peak_change.get(symbol, change))[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef clear_position_exit_trackers(symbol):[m
+[32m+[m[32m    position_open_time.pop(symbol, None)[m
+[32m+[m[32m    position_peak_change.pop(symbol, None)[m
+[32m+[m[32m    position_open_time.pop("shadow_" + symbol, None)[m
+[32m+[m[32m    position_peak_change.pop("shadow_" + symbol, None)[m
+[32m+[m
+[32m+[m
+ def generate_sells(prices, regime):[m
+     sells = [][m
+ [m
+[36m@@ -770,6 +869,57 @@[m [mdef recent_buy_count():[m
+     return int(row["count"] or 0) if row else 0[m
+ [m
+ [m
+[32m+[m
+[32m+[m[32mdef recent_symbol_buy_count(symbol: str):[m
+[32m+[m[32m    """[m
+[32m+[m[32m    Count recent buys for a symbol in a rolling window.[m
+[32m+[m[32m    This replaces lifetime trade_counts blocking.[m
+[32m+[m[32m    """[m
+[32m+[m[32m    try:[m
+[32m+[m[32m        with engine.begin() as conn:[m
+[32m+[m[32m            row = conn.execute(text("""[m
+[32m+[m[32m                SELECT COUNT(*) AS count[m
+[32m+[m[32m                FROM trades[m
+[32m+[m[32m                WHERE symbol = :symbol[m
+[32m+[m[32m                  AND side = 'buy'[m
+[32m+[m[32m                  AND created_at >= datetime('now', '+3 hours', '-' || :hours || ' hours')[m
+[32m+[m[32m            """), {[m
+[32m+[m[32m                "symbol": symbol,[m
+[32m+[m[32m                "hours": TRADE_COUNT_WINDOW_HOURS,[m
+[32m+[m[32m            }).mappings().first()[m
+[32m+[m
+[32m+[m[32m        return int(row["count"] or 0) if row else 0[m
+[32m+[m[32m    except Exception:[m
+[32m+[m[32m        return int(trade_counts.get(symbol, 0) or 0)[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef refresh_recent_trade_counts():[m
+[32m+[m[32m    """[m
+[32m+[m[32m    Rebuild in-memory trade_counts from only recent buy trades.[m
+[32m+[m[32m    Keeps diagnostics and can_buy aligned with the rolling window.[m
+[32m+[m[32m    """[m
+[32m+[m[32m    global trade_counts[m
+[32m+[m[32m    trade_counts = {}[m
+[32m+[m
+[32m+[m[32m    try:[m
+[32m+[m[32m        with engine.begin() as conn:[m
+[32m+[m[32m            rows = conn.execute(text("""[m
+[32m+[m[32m                SELECT symbol, COUNT(*) AS count[m
+[32m+[m[32m                FROM trades[m
+[32m+[m[32m                WHERE side = 'buy'[m
+[32m+[m[32m                  AND created_at >= datetime('now', '+3 hours', '-' || :hours || ' hours')[m
+[32m+[m[32m                GROUP BY symbol[m
+[32m+[m[32m            """), {[m
+[32m+[m[32m                "hours": TRADE_COUNT_WINDOW_HOURS,[m
+[32m+[m[32m            }).mappings().all()[m
+[32m+[m
+[32m+[m[32m        for r in rows:[m
+[32m+[m[32m            trade_counts[r["symbol"]] = int(r["count"] or 0)[m
+[32m+[m
+[32m+[m[32m    except Exception as e:[m
+[32m+[m[32m        print("TRADE_COUNT_REFRESH_ERROR:", e)[m
+[32m+[m
+[32m+[m
+ def is_trending_regime(regime: str):[m
+     r = str(regime or "").upper()[m
+     return r in {"BULL", "BULLISH", "TRENDING", "UPTREND", "TREND"}[m
+[36m@@ -1089,6 +1239,399 @@[m [mdef log_cycle_diagnostic(market_data=None, features=None, orders=None, portfolio[m
+ [m
+     print("=" * 72 + "\n")[m
+ [m
+[32m+[m
+[32m+[m[32mdef _feature_value(data, key, default=0.0):[m
+[32m+[m[32m    try:[m
+[32m+[m[32m        if isinstance(data, dict):[m
+[32m+[m[32m            return float(data.get(key, default) or 0.0)[m
+[32m+[m[32m    except Exception:[m
+[32m+[m[32m        pass[m
+[32m+[m[32m    return float(default or 0.0)[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef _entry_signal_threshold(regime):[m
+[32m+[m[32m    r = str(regime or "").upper()[m
+[32m+[m[32m    if r == "SIDEWAYS":[m
+[32m+[m[32m        return ENTRY_MIN_SIGNAL_SIDEWAYS[m
+[32m+[m[32m    return ENTRY_MIN_SIGNAL_TRENDING[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef _is_normal_feature(data):[m
+[32m+[m[32m    """[m
+[32m+[m[32m    Raw momentum fallback must never be tradable.[m
+[32m+[m[32m    Missing source is treated as NORMAL because current FeatureStore[m
+[32m+[m[32m    often emits feature dicts without a source field.[m
+[32m+[m[32m    """[m
+[32m+[m[32m    if not isinstance(data, dict):[m
+[32m+[m[32m        return False[m
+[32m+[m[32m    source = str(data.get("source", "NORMAL")).upper()[

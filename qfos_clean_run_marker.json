@@ -1,0 +1,11 @@
+{
+  "reset_type": "clean_100_paper_run",
+  "reset_utc": "2026-05-30T21:29:57.742787+00:00",
+  "target_starting_equity": 100.0,
+  "judge_only_trades_after_this_reset": true,
+  "notes": [
+    "Old sqlite paper state was backed up and removed.",
+    "New bot run should initialize from clean paper state.",
+    "Use status after restart to confirm equity/cash/open positions/trades."
+  ]
+}
