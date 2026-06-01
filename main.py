@@ -1986,7 +1986,8 @@ def _minutes_since_last_sideways_entry():
             return 9999.0
         latest_s = str(latest).replace('T', ' ').split('.')[0]
         dt = datetime.fromisoformat(latest_s)
-        age = (datetime.utcnow() - dt).total_seconds() / 60.0
+        from datetime import timedelta
+        age = ((datetime.utcnow() + timedelta(hours=3)) - dt).total_seconds() / 60.0
         if age < 0:
             age = abs(age)
         return age
@@ -2042,7 +2043,8 @@ def _minutes_since_symbol_buy(symbol):
             return 9999.0
         latest_s = str(row.get('created_at')).replace('T', ' ').split('.')[0]
         dt = datetime.fromisoformat(latest_s)
-        age = (datetime.utcnow() - dt).total_seconds() / 60.0
+        from datetime import timedelta
+        age = ((datetime.utcnow() + timedelta(hours=3)) - dt).total_seconds() / 60.0
         if age < 0:
             age = abs(age)
         return age
