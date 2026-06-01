@@ -3,7 +3,7 @@
   "sideways_scout_notional_usd": 1.0,
   "trend_scout_notional_usd": 1.5,
   "min_trade_price": 0.01,
-  "min_scout_signal_sideways": 0.0012,
+  "min_scout_signal_sideways": 0.0016,
   "min_scout_trend_quality": 0.001,
   "max_scout_volatility_sideways": 0.006,
   "require_positive_one_tick_for_scout": true,
