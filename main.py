@@ -1915,6 +1915,15 @@ def _entry_quality_reason(symbol, data, regime):
     expected_move = max(float(globals().get('FULL_TAKE_PROFIT_PCT', 0.0) or 0.0), float(globals().get('TAKE_PROFIT_PCT', 0.0) or 0.0))
     if expected_move < ENTRY_MIN_EXPECTED_MOVE_PCT:
         return f'expected_move_too_small_{expected_move:.4f}_lt_{ENTRY_MIN_EXPECTED_MOVE_PCT:.4f}'
+    
+    pacing_reason = _sideways_pacing_reason(symbol, data, regime)
+    if pacing_reason:
+        return pacing_reason
+
+    same_symbol_reason = _same_symbol_cooldown_reason(symbol, data)
+    if same_symbol_reason:
+        return same_symbol_reason
+
     return None
 
 def entry_quality_ranked_symbols(feature_map, regime):
