@@ -1926,10 +1926,32 @@ def _entry_quality_reason(symbol, data, regime):
 
     return None
 
+def _compute_quality_score(data: dict) -> float:
+    """
+    Cross-sectional composite quality score for SIDEWAYS candidate ranking.
+    Higher is better. Used to select the BEST available symbol, not just the first.
+    """
+    try:
+        signal   = float(_feature_value(data, 'signal_strength') or 0.0)
+        one_tick = float(_feature_value(data, 'one_tick_momentum') or 0.0)
+        trend    = float(_feature_value(data, 'trend') or 0.0)
+        long_t   = float(_feature_value(data, 'long_trend') or 0.0)
+        vol      = abs(float(_feature_value(data, 'volatility') or 0.0))
+        score = (
+            signal   * 2.0    # primary driver
+            + one_tick * 1.5  # breakout confirmation
+            + trend   * 1.0   # directional alignment
+            + long_t  * 0.5   # macro backing
+            - vol     * 2.0   # penalise choppiness
+        )
+        return round(score, 6)
+    except Exception:
+        return 0.0
+
 def entry_quality_ranked_symbols(feature_map, regime):
     """
     Build the eligible top-N execution list from normal FeatureStore features.
-    This is the core ranking gate.
+    Candidates are ranked by composite quality score, not raw signal alone.
     """
     eligible = []
     rejected_preview = []
@@ -1940,10 +1962,16 @@ def entry_quality_ranked_symbols(feature_map, regime):
         if reason:
             rejected_preview.append({'symbol': symbol, 'reason': f'entry_quality_{reason}'})
             continue
-        eligible.append((symbol, _feature_value(data, 'signal_strength'), _feature_value(data, 'momentum')))
+        quality_score = _compute_quality_score(data)
+        signal = _feature_value(data, 'signal_strength')
+        eligible.append((symbol, quality_score, signal))
+    # Sort by composite quality score descending; signal breaks ties.
     eligible.sort(key=lambda x: (x[1], x[2]), reverse=True)
     top = eligible[:ENTRY_QUALITY_TOP_N]
     top_symbols = {s for s, _, _ in top}
+    print(f'[QUALITY_RANK] top-{len(top)}: ' + ', '.join(
+        f'{s}(qs={qs:.4f},sig={sig:.4f})' for s, qs, sig in top[:5]
+    ))
     return (top_symbols, top, rejected_preview)
 
 def _sideways_exceptional_level(signal_strength):
@@ -2010,6 +2038,16 @@ def _sideways_recent_entry_count():
     except Exception:
         return 0
 
+# Strategy Ladder: signal thresholds escalate as hourly slots are consumed.
+# Slot 1 (first buy): easy entry at base. Slot 2: stronger required. Slot 3: only conviction.
+SIDEWAYS_SLOT_THRESHOLDS = [0.0016, 0.0022, 0.0035]
+
+def _sideways_slot_threshold(recent_count: int) -> float:
+    """Return the minimum signal required for the next available SIDEWAYS slot."""
+    slot = min(int(recent_count or 0), len(SIDEWAYS_SLOT_THRESHOLDS) - 1)
+    return SIDEWAYS_SLOT_THRESHOLDS[slot]
+
+
 def _sideways_pacing_reason(symbol, data, regime):
     """
     Returns None if this buy may proceed.
@@ -2038,6 +2076,11 @@ def _sideways_pacing_reason(symbol, data, regime):
         if current_minute < SIDEWAYS_RESERVE_FINAL_SLOT_UNTIL_MINUTE:
             if not is_exceptional:
                 return f'sideways_final_slot_reserved_until_minute_{SIDEWAYS_RESERVE_FINAL_SLOT_UNTIL_MINUTE}'
+    # Strategy Ladder: apply slot-tiered threshold (escalates as slots are consumed).
+    slot_threshold = _sideways_slot_threshold(recent_count)
+    if signal_strength < slot_threshold:
+        if not is_exceptional:
+            return f'sideways_slot_{recent_count + 1}_requires_{slot_threshold:.4f}_got_{signal_strength:.4f}'
     return None
 
 def _minutes_since_symbol_buy(symbol):
