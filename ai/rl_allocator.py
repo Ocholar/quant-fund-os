@@ -1,30 +1,7 @@
 from core.db import engine
 import os
 from sqlalchemy import text
-import sqlite3
 from core.config import settings
-
-
-def _sqlite_db_path() -> str:
-    """
-    Use the same SQLite file inside Docker and Windows.
-    Docker path should be /app/data/quant.db.
-    """
-    direct = os.getenv("SQLITE_DB_PATH")
-    if direct:
-        return direct
-
-    db_url = os.getenv("DATABASE_URL") or os.getenv("DB_URL") or getattr(settings, "database_url", "")
-    db_url = str(db_url or "")
-
-    if db_url.startswith("sqlite:///"):
-        return db_url.replace("sqlite:///", "", 1)
-
-    return "quant.db"
-
-
-def _connect_sqlite():
-    return sqlite3.connect(_sqlite_db_path())
 
 
 STABLE_OR_FIAT_BASES = {
@@ -32,6 +9,79 @@ STABLE_OR_FIAT_BASES = {
     "EUR", "GBP", "TRY", "BRL", "USD", "JPY"
 }
 
+
+
+BLOCKED_EXECUTABLE_SOURCES = {
+    "FALLBACK_SCOUT_BREAKOUT",
+    "RAW_MOMENTUM_FALLBACK",
+    "RAW_MOMENTUM_FALLBACK_DIAGNOSTIC",
+    "RAW_MOMENTUM_FALLBACK_DISABLED",
+    "RAW_MOMENTUM_FALLBACK_ENTRY",
+    "RAW_MOMENTUM_FALLBACK_ORDER",
+    "RAW_MOMENTUM_FALLBACK_SELECTED",
+    "RAW_MOMENTUM_FALLBACK_EXECUTED",
+    "RAW_MOMENTUM_FALLBACK_EXECUTABLE",
+    "RAW_MOMENTUM",
+}
+
+
+def safe_float(value, default=0.0) -> float:
+    try:
+        return float(value if value is not None else default)
+    except Exception:
+        return float(default)
+
+
+def feature_source(f: dict) -> str:
+    return str((f or {}).get("source", "")).strip().upper()
+
+
+def feature_source_is_normal(f: dict) -> bool:
+    return feature_source(f) == "NORMAL"
+
+
+def feature_rejection_reason(symbol: str, f: dict) -> str | None:
+    if not isinstance(f, dict):
+        return "feature_not_dict"
+
+    if not bool(f.get("ready", False)):
+        return "feature_not_ready"
+
+    source = feature_source(f)
+    if source != "NORMAL":
+        if source in BLOCKED_EXECUTABLE_SOURCES or "FALLBACK" in source or "SCOUT" in source or "RAW_MOMENTUM" in source:
+            return "raw_momentum_fallback_disabled"
+        return f"feature_source_not_normal:{source or 'missing'}"
+
+    if safe_float(f.get("price", 0.0), 0.0) <= 0:
+        return "invalid_price"
+
+    try:
+        float(f.get("signal_strength", 0.0) or 0.0)
+    except Exception:
+        return "invalid_signal_strength"
+
+    if not str(f.get("symbol_regime", "") or "").strip():
+        return "missing_symbol_regime"
+
+    return None
+
+
+def allocator_feature_snapshot(f: dict, fallback_confidence: float) -> dict:
+    return {
+        "ready": bool(f.get("ready", False)),
+        "source": feature_source(f),
+        "price": safe_float(f.get("price", 0.0)),
+        "trend": safe_float(f.get("trend", 0.0)),
+        "long_trend": safe_float(f.get("long_trend", 0.0)),
+        "momentum": safe_float(f.get("momentum", 0.0)),
+        "one_tick_momentum": safe_float(f.get("one_tick_momentum", 0.0)),
+        "signal_strength": safe_float(f.get("signal_strength", 0.0)),
+        "confidence": safe_float(f.get("confidence", fallback_confidence), fallback_confidence),
+        "symbol_regime": str(f.get("symbol_regime", "") or ""),
+        "trend_quality": safe_float(f.get("trend_quality", 0.0)),
+        "breakout_score": safe_float(f.get("breakout_score", 0.0)),
+    }
 
 
 
@@ -44,8 +94,7 @@ def is_strong_symbol_uptrend(f: dict) -> bool:
         if not bool(f.get("ready", False)):
             return False
 
-        source = str(f.get("source", "NORMAL")).upper()
-        if source == "RAW_MOMENTUM_FALLBACK":
+        if not feature_source_is_normal(f):
             return False
 
         symbol_regime = str(f.get("symbol_regime", "")).upper()
@@ -102,8 +151,7 @@ def passes_strict_long_filter(f: dict) -> bool:
         if not bool(f.get("ready", False)):
             return False
 
-        source = str(f.get("source", "NORMAL")).upper()
-        if source == "RAW_MOMENTUM_FALLBACK":
+        if not feature_source_is_normal(f):
             return False
 
         trend = float(f.get("trend", 0.0) or 0.0)
@@ -141,28 +189,23 @@ def db_strategy_allowed(name: str) -> bool:
     can be tested, then blocked later if their score goes negative.
     """
     try:
-        conn = _connect_sqlite()
-        cur = conn.cursor()
+        with engine.begin() as conn:
+            row = conn.execute(text("""
+                SELECT score, status
+                FROM strategy_scores
+                WHERE strategy = :name
+            """), {"name": name}).mappings().first()
 
-        row = cur.execute("""
-            SELECT score, status
-            FROM strategy_scores
-            WHERE strategy = ?
-        """, (name,)).fetchone()
+            if row is None:
+                conn.execute(text("""
+                    INSERT INTO strategy_scores (strategy, score, status)
+                    VALUES (:name, 0.0, 'active')
+                    ON CONFLICT (strategy) DO NOTHING
+                """), {"name": name})
+                return True
 
-        if row is None:
-            cur.execute("""
-                INSERT OR IGNORE INTO strategy_scores(strategy, score, status)
-                VALUES (?, 0.0, 'active')
-            """, (name,))
-            conn.commit()
-            conn.close()
-            return True
-
-        score = float(row[0] or 0.0)
-        status = str(row[1] or "").lower()
-
-        conn.close()
+            score = float(row["score"] or 0.0)
+            status = str(row["status"] or "").lower()
 
         if status == "blocked":
             return False
@@ -201,19 +244,17 @@ def choose_allowed_strategy(scored):
 def is_symbol_quarantined(symbol: str) -> bool:
     """
     Skip symbols that are still actively quarantined.
-    Uses Kenya-time DB convention.
+    Timestamps stored as Kenya time (UTC+3); CURRENT_TIMESTAMP + interval '3 hours' = Kenya now.
     """
     try:
-        conn = _connect_sqlite()
-        cur = conn.cursor()
-        row = cur.execute("""
-            SELECT symbol
-            FROM symbol_quarantine
-            WHERE symbol = ?
-              AND blocked_until IS NOT NULL
-              AND blocked_until > datetime('now', '+3 hours')
-        """, (symbol,)).fetchone()
-        conn.close()
+        with engine.begin() as conn:
+            row = conn.execute(text("""
+                SELECT symbol
+                FROM symbol_quarantine
+                WHERE symbol = :symbol
+                  AND blocked_until IS NOT NULL
+                  AND blocked_until > CURRENT_TIMESTAMP + interval '3 hours'
+            """), {"symbol": symbol}).mappings().first()
         return row is not None
     except Exception:
         return False
@@ -233,16 +274,14 @@ def is_already_holding(symbol: str, market_state: dict) -> bool:
         pass
 
     try:
-        conn = _connect_sqlite()
-        cur = conn.cursor()
-        row = cur.execute("""
-            SELECT quantity
-            FROM positions
-            WHERE symbol = ?
-        """, (symbol,)).fetchone()
-        conn.close()
+        with engine.begin() as conn:
+            row = conn.execute(text("""
+                SELECT quantity
+                FROM positions
+                WHERE symbol = :symbol
+            """), {"symbol": symbol}).mappings().first()
 
-        if row and float(row[0] or 0) > 0.00000001:
+        if row and float(row["quantity"] or 0) > 0.00000001:
             return True
     except Exception:
         pass
@@ -254,26 +293,25 @@ def has_bad_symbol_history(symbol: str) -> bool:
     """
     Skip symbols where historical stop-loss exits exceed take-profit exits.
     This mirrors the execution-layer symbol_bad_history rule.
+    Checks the last 3 hours (Kenya time: CURRENT_TIMESTAMP + interval '3 hours' - interval '3 hours' = CURRENT_TIMESTAMP).
     """
     try:
-        conn = _connect_sqlite()
-        cur = conn.cursor()
-        row = cur.execute("""
-            SELECT
-                SUM(CASE WHEN LOWER(TRIM(strategy)) IN ('stop_loss','stop_loss_exit','adaptive_stop_loss') THEN 1 ELSE 0 END) AS stop_losses,
-                SUM(CASE WHEN LOWER(TRIM(strategy)) IN ('take_profit','adaptive_take_profit') THEN 1 ELSE 0 END) AS take_profits
-            FROM trades
-            WHERE symbol = ?
-              AND side = 'sell'
-              AND created_at >= datetime('now', '+3 hours', '-3 hours')
-        """, (symbol,)).fetchone()
-        conn.close()
+        with engine.begin() as conn:
+            row = conn.execute(text("""
+                SELECT
+                    SUM(CASE WHEN LOWER(TRIM(strategy)) IN ('stop_loss','stop_loss_exit','adaptive_stop_loss') THEN 1 ELSE 0 END) AS stop_losses,
+                    SUM(CASE WHEN LOWER(TRIM(strategy)) IN ('take_profit','adaptive_take_profit') THEN 1 ELSE 0 END) AS take_profits
+                FROM trades
+                WHERE symbol = :symbol
+                  AND side = 'sell'
+                  AND created_at >= CURRENT_TIMESTAMP
+            """), {"symbol": symbol}).mappings().first()
 
         if not row:
             return False
 
-        stop_losses = int(row[0] or 0)
-        take_profits = int(row[1] or 0)
+        stop_losses = int(row["stop_losses"] or 0)
+        take_profits = int(row["take_profits"] or 0)
 
         # Softer recent-history rule:
         # block only symbols with repeated recent stop-loss dominance.
@@ -288,27 +326,30 @@ def is_symbol_in_cooldown(symbol: str) -> bool:
     that execution later rejects as cooldown.
     """
     try:
-        conn = _connect_sqlite()
-        cur = conn.cursor()
+        with engine.begin() as conn:
+            row = conn.execute(text("""
+                SELECT created_at
+                FROM trades
+                WHERE symbol = :symbol
+                ORDER BY created_at DESC
+                LIMIT 1
+            """), {"symbol": symbol}).mappings().first()
 
-        row = cur.execute("""
-            SELECT created_at
-            FROM trades
-            WHERE symbol = ?
-            ORDER BY created_at DESC
-            LIMIT 1
-        """, (symbol,)).fetchone()
-
-        conn.close()
-
-        if not row or not row[0]:
+        if not row or not row["created_at"]:
             return False
 
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, timezone
 
-        last_trade = datetime.strptime(str(row[0])[:19], "%Y-%m-%d %H:%M:%S")
-        now = datetime.now()
+        last_trade_raw = row["created_at"]
+        # Handle both string and datetime objects from the DB
+        if isinstance(last_trade_raw, str):
+            last_trade = datetime.strptime(str(last_trade_raw)[:19], "%Y-%m-%d %H:%M:%S")
+        else:
+            last_trade = last_trade_raw
+            if hasattr(last_trade, 'tzinfo') and last_trade.tzinfo is not None:
+                last_trade = last_trade.replace(tzinfo=None)
 
+        now = datetime.utcnow()
         cooldown_seconds = int(getattr(settings, "cooldown_seconds", 600) or 600)
 
         return now < last_trade + timedelta(seconds=cooldown_seconds)
@@ -334,7 +375,7 @@ def has_hit_max_trades_per_symbol(symbol: str) -> bool:
                 FROM trades
                 WHERE symbol = :symbol
                   AND side = 'buy'
-                  AND created_at >= datetime('now', '+3 hours', '-' || :hours || ' hours')
+                  AND created_at >= (CURRENT_TIMESTAMP + interval '3 hours' - (:hours || ' hours')::interval)
             """), {
                 "symbol": symbol,
                 "hours": window_hours,
@@ -360,21 +401,18 @@ def has_hit_hourly_entry_cap(regime: str) -> bool:
     """
     Return True when recent buy entries already reached the configured
     per-hour cap for the current market regime.
+    Timestamps stored as Kenya time (UTC+3); last hour = CURRENT_TIMESTAMP + interval '2 hours'.
     """
     try:
-        conn = _connect_sqlite()
-        cur = conn.cursor()
+        with engine.begin() as conn:
+            row = conn.execute(text("""
+                SELECT COUNT(*) AS count
+                FROM trades
+                WHERE side = 'buy'
+                  AND created_at >= CURRENT_TIMESTAMP + interval '2 hours'
+            """)).mappings().first()
 
-        row = cur.execute("""
-            SELECT COUNT(*)
-            FROM trades
-            WHERE side = 'buy'
-              AND created_at >= datetime('now', '+3 hours', '-1 hour')
-        """).fetchone()
-
-        conn.close()
-
-        buys_last_hour = int(row[0] or 0) if row else 0
+        buys_last_hour = int(row["count"] or 0) if row else 0
         regime = str(regime or "").upper()
 
         if regime == "SIDEWAYS":
@@ -395,25 +433,21 @@ def recent_stop_loss_ratio(limit=10):
     If stop_loss dominates, allocator becomes more selective and smaller.
     """
     try:
-        conn = _connect_sqlite()
-        cur = conn.cursor()
-
-        rows = cur.execute("""
-            SELECT strategy
-            FROM trades
-            WHERE side = 'sell'
-            ORDER BY created_at DESC
-            LIMIT ?
-        """, (limit,)).fetchall()
-
-        conn.close()
+        with engine.begin() as conn:
+            rows = conn.execute(text("""
+                SELECT strategy
+                FROM trades
+                WHERE side = 'sell'
+                ORDER BY created_at DESC
+                LIMIT :limit
+            """), {"limit": limit}).mappings().all()
 
         if not rows:
             return 0.0
 
         stop_losses = sum(
             1 for r in rows
-            if str(r[0] or "").lower() in ("stop_loss", "stop_loss_exit", "adaptive_stop_loss")
+            if str(r["strategy"] or "").lower() in ("stop_loss", "stop_loss_exit", "adaptive_stop_loss")
         )
 
         return stop_losses / len(rows)
@@ -459,7 +493,7 @@ class SimpleAllocator:
         if strategy is None:
             print("ALLOCATOR BLOCK: best_strategy_missing")
             return {"orders": [], "leverage": 0, "estimated_var": 0}
-        print(f"ALLOCATOR BEST: strategy={strategy_name(strategy)} score={float(best.get('score', 0) or 0):.4f} matches={best.get('matches', 0)} db={_sqlite_db_path()}")
+        print(f"ALLOCATOR BEST: strategy={strategy_name(strategy)} score={float(best.get('score', 0) or 0):.4f} matches={best.get('matches', 0)}")
 
         max_orders = int(settings.max_new_entries_per_cycle)
         size_multiplier = 1.0
@@ -481,31 +515,94 @@ class SimpleAllocator:
         # Instead, reduce position size and demand stronger signals.
         sl_ratio = recent_stop_loss_ratio(10)
 
+        regime = str(market_state.get("regime", "") or "").upper()
+        if regime == "SIDEWAYS":
+            min_signal_strength = safe_float(getattr(settings, "entry_min_signal_sideways", 0.0015), 0.0015)
+        else:
+            min_signal_strength = safe_float(getattr(settings, "entry_min_signal_trending", 0.0010), 0.0010)
+
         if sl_ratio >= 0.60:
             print(f"ALLOCATOR MODE: SCOUT stop_loss_ratio={sl_ratio:.2f}")
             size_multiplier = min(size_multiplier, 0.25)
-            min_signal_strength = 0.030
+            min_signal_strength = max(min_signal_strength, 0.0030)
         elif sl_ratio >= 0.40:
             print(f"ALLOCATOR MODE: DEFENSIVE stop_loss_ratio={sl_ratio:.2f}")
             size_multiplier = min(size_multiplier, 0.50)
-            min_signal_strength = 0.025
-        else:
-            min_signal_strength = 0.018
+            min_signal_strength = max(min_signal_strength, 0.0025)
 
-        regime = str(market_state.get("regime", "") or "").upper()
+        min_confidence = (
+            safe_float(getattr(settings, "sideways_min_confidence", 0.50), 0.50)
+            if regime == "SIDEWAYS"
+            else safe_float(getattr(settings, "min_entry_confidence", 0.50), 0.50)
+        )
+        strategy_confidence = safe_float(best.get("score", 0.0), 0.0)
+
+        if strategy_confidence < min_confidence:
+            print(
+                f"ALLOCATOR BLOCK: weak_confidence "
+                f"confidence={strategy_confidence:.4f} min_confidence={min_confidence:.4f} regime={regime}"
+            )
+            return {"orders": [], "leverage": 0, "estimated_var": 0}
+
         if has_hit_hourly_entry_cap(regime):
             print(f"ALLOCATOR BLOCK: {regime}_max_entries_per_hour_hit")
             return {"orders": [], "leverage": 0, "estimated_var": 0}
 
-        ranked = sorted(
-            features.items(),
-            key=lambda item: item[1].get("signal_strength", 0.0),
+        ranked_all = []
+
+        for symbol, f in features.items():
+            reject_reason = feature_rejection_reason(symbol, f)
+            if reject_reason:
+                print(f"ALLOCATOR SKIP {symbol}: {reject_reason}")
+                continue
+
+            ranked_all.append((
+                symbol,
+                f,
+                safe_float(f.get("signal_strength", 0.0)),
+                safe_float(f.get("trend", 0.0)),
+                safe_float(f.get("momentum", 0.0)),
+                safe_float(f.get("confidence", best.get("score", 0.0)), best.get("score", 0.0)),
+            ))
+
+        ranked_all = sorted(
+            ranked_all,
+            key=lambda item: (item[2], item[3], item[4], item[5]),
             reverse=True,
         )
+
+        quality_top_n = int(getattr(settings, "entry_quality_top_n", 10) or 10)
+        top_quality_rows = ranked_all[:quality_top_n]
+        top_quality_symbols = {symbol for symbol, *_rest in top_quality_rows}
+
+        print(
+            "ENTRY QUALITY TOP 10:",
+            [
+                (
+                    symbol,
+                    round(signal, 6),
+                    round(trend, 6),
+                    round(momentum, 6),
+                    round(confidence, 4),
+                    str(f.get("symbol_regime", "")),
+                )
+                for symbol, f, signal, trend, momentum, confidence in top_quality_rows
+            ],
+        )
+
+        if not top_quality_rows:
+            print("ALLOCATOR BLOCK: no_candidate_passed reason=no_trusted_normal_features")
+            return {"orders": [], "leverage": 0, "estimated_var": 0}
+
+        ranked = [(symbol, f) for symbol, f, *_rest in ranked_all]
 
         for symbol, f in ranked:
             if len([o for o in orders if not o.get("shadow_mode")]) >= max_orders:
                 break
+
+            if symbol not in top_quality_symbols:
+                print(f"ALLOCATOR SKIP {symbol}: not_top_quality")
+                continue
 
             if is_already_holding(symbol, market_state):
                 print(f"ALLOCATOR SKIP {symbol}: already_holding")
@@ -533,6 +630,14 @@ class SimpleAllocator:
                     f"trend={float(f.get('trend', 0.0)):.5f} "
                     f"momentum={float(f.get('momentum', 0.0)):.5f} "
                     f"one_tick={float(f.get('one_tick_momentum', 0.0)):.5f}"
+                )
+                continue
+
+            signal_strength = safe_float(f.get("signal_strength", 0.0), 0.0)
+            if signal_strength < min_signal_strength:
+                print(
+                    f"ALLOCATOR SKIP {symbol}: weak_signal "
+                    f"signal={signal_strength:.5f} min_signal={min_signal_strength:.5f} regime={regime}"
                 )
                 continue
 
@@ -570,19 +675,39 @@ class SimpleAllocator:
                 print(f"ALLOCATOR SKIP {symbol}: global_RISK_OFF_without_symbol_uptrend symbol_regime={f.get('symbol_regime')}")
                 continue
 
+            order_confidence = safe_float(best.get("score", 0.0), 0.0)
+            feature_snapshot = allocator_feature_snapshot(f, order_confidence)
+
+            print(
+                f"ALLOCATOR_RESCUE selected {symbol} "
+                f"source={feature_snapshot['source']} ready={feature_snapshot['ready']} "
+                f"strategy={strategy_name(strategy)} confidence={order_confidence:.4f} "
+                f"signal_strength={feature_snapshot['signal_strength']:.5f} "
+                f"symbol_regime={feature_snapshot['symbol_regime']} "
+                f"entry_reason=evo_allocator_rescue_normal_top_quality"
+            )
+
             orders.append({
                 "symbol": symbol,
                 "side": "buy",
                 "qty": qty,
                 "price": price,
                 "strategy": strategy_name(strategy),
-                "confidence": float(best.get("score", 0.0) or 0.0),
+                "confidence": order_confidence,
                 "shadow_mode": False,
+                "feature_source": feature_snapshot["source"],
+                "signal_strength": feature_snapshot["signal_strength"],
+                "symbol_regime": feature_snapshot["symbol_regime"],
+                "entry_reason": "evo_allocator_rescue_normal_top_quality",
+                "feature": feature_snapshot,
             })
 
             remaining_cash -= notional
             if remaining_cash < settings.min_trade_notional:
                 break
+
+        if not orders:
+            print("ALLOCATOR BLOCK: no_candidate_passed reason=quality_or_risk_gates")
 
         leverage = (equity - remaining_cash) / equity if equity else 0
         return {
@@ -593,24 +718,3 @@ class SimpleAllocator:
 
 
 RLAllocator = SimpleAllocator
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

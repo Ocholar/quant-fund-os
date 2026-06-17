@@ -1,0 +1,97 @@
+﻿quant-1  | [STARTUP_DB_INIT] db= /app/data/quant.db
+quant-1  | [STARTUP_DB_INIT] parent= /app/data exists= True writable= True
+quant-1  | [STARTUP_DB_INIT] DB_OK
+quant-1  | QFOS final helper override loaded.
+quant-1  | INFO:     Started server process [12]
+quant-1  | INFO:     Waiting for application startup.
+quant-1  | INFO:     Application startup complete.
+quant-1  | INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
+quant-1  | QFOS expectancy patch helper loaded.
+quant-1  | [QFOS_CLEAN_BASELINE_RUNTIME_GUARD] cleared in-memory positions for clean paper baseline
+quant-1  | Quant Fund OS starting. LIVE_TRADING= False
+quant-1  | Safety mode enabled. Paper trading only.
+quant-1  | TELEGRAM ALERT SENT
+quant-1  | Database connected.
+quant-1  | [QFOS_SCHEMA_GUARD] execution accounting schema/triggers ensured source=startup
+quant-1  | [QFOS_AUTO_STALE_RECONCILER_STARTED] interval_seconds=10[BIG_LOSS_COOLDOWN] wrapped _qfos_exit_decision
+quant-1  | [BIG_LOSS_COOLDOWN] wrapped _entry_quality_reason
+quant-1  | [BASKET_LOSS_GUARD] wrapped _qfos_exit_decision
+quant-1  | 
+quant-1  | [EMERGENCY_BASKET_WATCHDOG] started
+quant-1  | [ACTIVE_POSITION_WATCHDOG] started
+quant-1  | [PROFIT_ENGINE] started
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=100.0000 cash=100.0000 exposure=0.0000 realized=0.0000 unrealized=0.0000 drawdown=0.0000% regime=SIDEWAYS
+quant-1  | [PORTFOLIO_RECONCILER] started
+quant-1  | [POLICY_V2_FINAL_WIRING_READY] feature_snapshot=result_f_by_symbol fallback_filter=result_orders classifier=profit_engine
+quant-1  | Recovering state from database...
+quant-1  | Recovered cash: $100.00
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=100.0000 cash=100.0000 exposure=0.0000 realized=0.0000 unrealized=0.0000 drawdown=0.0000% regime=SIDEWAYS
+quant-1  | MARKET DATA WARNING: ccxt fetch_tickers failed: mexc does not have market symbol MOGU/USDT
+quant-1  | MARKET DATA WARNING: ccxt ticker failed MOGU/USDT: mexc does not have market symbol MOGU/USDT
+quant-1  | MARKET TICK DATA RAW: {'BTC/USDT': 63515.53, 'ETH/USDT': 1742.79, 'SOL/USDT': 67.95, 'USDC/USDT': 1.00076, 'XRP/USDT': 1.1453, 'DOGE/USDT': 0.08679, 'BNB/USDT': 601.53, 'TRIA/USDT': 0.03047, 'TRX/USDT': 0.3287, 'BSB/USDT': 0.2306, 'ADA/USDT': 0.1681, 'USD1/USDT': 0.99982, 'INJ/USDT': 5.359, 'SUI/USDT': 0.7436, 'LTC/USDT': 45.39, 'HYPE/USDT': 63.7, 'BCH/USDT': 241.0, 'ZEC/USDT': 397.57, 'GOLD(PAXG)/USDT': 4440.0, 'FIL/USDT': 0.8493, 'TAO/USDT': 207.89, 'DOT/USDT': 1.024, 'TON/USDT': 1.656, 'TRUMP/USDT': 1.774, 'BILL/USDT': 0.08103, 'NEAR/USDT': 2.1969, 'BEAT/USDT': 1.60428, 'ULTIMA/USDT': 2323.81, 'MX/USDT': 1.7438, 'GUA/USDT': 0.87828, 'ONDO/USDT': 0.36809, 'ASTER/USDT': 0.6754, 'EDEN/USDT': 0.04444, 'EUR/USDT': 1.1624, 'ETHFI/USDT': 0.3209, 'GENIUS/USDT': 0.43512, 'RAIN/USDT': 0.014121, 'XMR/USDT': 333.97, 'UBOX/USDT': 0.001435, 'LINK/USDT': 7.882, 'DASH/USDT': 33.72, 'SHIB/USDT': 4.899e-06, 'PLAY/USDT': 0.08172, 'AVAX/USDT': 7.486, 'PENGU/USDT': 0.006739, 'WXT/USDT': 0.015805, 'ATOM/USDT': 1.81, 'IN/USDT': 0.09005, 'TTN/USDT': 0.05037, 'ATLA/USDT': 189.0, 'PENDLE/USDT': 1.294, 'AIXDROP/USDT': 0.00022634, 'SENS/USDT': 0.00407, 'TIA/USDT': 0.3341, 'BDX/USDT': 0.08019, '9BIT/USDT': 0.04562, 'JGGL/USDT': 2.1226, 'CAKE/USDT': 1.243, 'BOB/USDT': 0.006115}
+quant-1  | PRICE VALIDATION PENDING BTC/USDT: first_seen price=63515.529999999999
+quant-1  | PRICE VALIDATION PENDING ETH/USDT: first_seen price=1742.790000000000
+quant-1  | PRICE VALIDATION PENDING SOL/USDT: first_seen price=67.950000000000
+quant-1  | PRICE VALIDATION PENDING USDC/USDT: first_seen price=1.000760000000
+quant-1  | PRICE VALIDATION PENDING XRP/USDT: first_seen price=1.145300000000
+quant-1  | PRICE VALIDATION PENDING DOGE/USDT: first_seen price=0.086790000000
+quant-1  | PRICE VALIDATION PENDING BNB/USDT: first_seen price=601.530000000000
+quant-1  | PRICE VALIDATION PENDING TRIA/USDT: first_seen price=0.030470000000
+quant-1  | PRICE VALIDATION PENDING TRX/USDT: first_seen price=0.328700000000
+quant-1  | PRICE VALIDATION PENDING BSB/USDT: first_seen price=0.230600000000
+quant-1  | PRICE VALIDATION PENDING ADA/USDT: first_seen price=0.168100000000
+quant-1  | PRICE VALIDATION PENDING USD1/USDT: first_seen price=0.999820000000
+quant-1  | PRICE VALIDATION PENDING INJ/USDT: first_seen price=5.359000000000
+quant-1  | PRICE VALIDATION PENDING SUI/USDT: first_seen price=0.743600000000
+quant-1  | PRICE VALIDATION PENDING LTC/USDT: first_seen price=45.390000000000
+quant-1  | PRICE VALIDATION PENDING HYPE/USDT: first_seen price=63.700000000000
+quant-1  | PRICE VALIDATION PENDING BCH/USDT: first_seen price=241.000000000000
+quant-1  | PRICE VALIDATION PENDING ZEC/USDT: first_seen price=397.570000000000
+quant-1  | PRICE VALIDATION PENDING GOLD(PAXG)/USDT: first_seen price=4440.000000000000
+quant-1  | PRICE VALIDATION PENDING FIL/USDT: first_seen price=0.849300000000
+quant-1  | PRICE VALIDATION PENDING TAO/USDT: first_seen price=207.890000000000
+quant-1  | PRICE VALIDATION PENDING DOT/USDT: first_seen price=1.024000000000
+quant-1  | PRICE VALIDATION PENDING TON/USDT: first_seen price=1.656000000000
+quant-1  | PRICE VALIDATION PENDING TRUMP/USDT: first_seen price=1.774000000000
+quant-1  | PRICE VALIDATION PENDING BILL/USDT: first_seen price=0.081030000000
+quant-1  | PRICE VALIDATION PENDING NEAR/USDT: first_seen price=2.196900000000
+quant-1  | PRICE VALIDATION PENDING BEAT/USDT: first_seen price=1.604280000000
+quant-1  | PRICE VALIDATION PENDING ULTIMA/USDT: first_seen price=2323.810000000000
+quant-1  | PRICE VALIDATION PENDING MX/USDT: first_seen price=1.743800000000
+quant-1  | PRICE VALIDATION PENDING GUA/USDT: first_seen price=0.878280000000
+quant-1  | PRICE VALIDATION PENDING ONDO/USDT: first_seen price=0.368090000000
+quant-1  | PRICE VALIDATION PENDING ASTER/USDT: first_seen price=0.675400000000
+quant-1  | PRICE VALIDATION PENDING EDEN/USDT: first_seen price=0.044440000000
+quant-1  | PRICE VALIDATION PENDING EUR/USDT: first_seen price=1.162400000000
+quant-1  | PRICE VALIDATION PENDING ETHFI/USDT: first_seen price=0.320900000000
+quant-1  | PRICE VALIDATION PENDING GENIUS/USDT: first_seen price=0.435120000000
+quant-1  | PRICE VALIDATION PENDING RAIN/USDT: first_seen price=0.014121000000
+quant-1  | PRICE VALIDATION PENDING XMR/USDT: first_seen price=333.970000000000
+quant-1  | PRICE VALIDATION PENDING UBOX/USDT: first_seen price=0.001435000000
+quant-1  | PRICE VALIDATION PENDING LINK/USDT: first_seen price=7.882000000000
+quant-1  | PRICE VALIDATION PENDING DASH/USDT: first_seen price=33.720000000000
+quant-1  | PRICE VALIDATION PENDING SHIB/USDT: first_seen price=0.000004899000
+quant-1  | PRICE VALIDATION PENDING PLAY/USDT: first_seen price=0.081720000000
+quant-1  | PRICE VALIDATION PENDING AVAX/USDT: first_seen price=7.486000000000
+quant-1  | PRICE VALIDATION PENDING PENGU/USDT: first_seen price=0.006739000000
+quant-1  | PRICE VALIDATION PENDING WXT/USDT: first_seen price=0.015805000000
+quant-1  | PRICE VALIDATION PENDING ATOM/USDT: first_seen price=1.810000000000
+quant-1  | PRICE VALIDATION PENDING IN/USDT: first_seen price=0.090050000000
+quant-1  | PRICE VALIDATION PENDING TTN/USDT: first_seen price=0.050370000000
+quant-1  | PRICE VALIDATION PENDING ATLA/USDT: first_seen price=189.000000000000
+quant-1  | PRICE VALIDATION PENDING PENDLE/USDT: first_seen price=1.294000000000
+quant-1  | PRICE VALIDATION PENDING AIXDROP/USDT: first_seen price=0.000226340000
+quant-1  | PRICE VALIDATION PENDING SENS/USDT: first_seen price=0.004070000000
+quant-1  | PRICE VALIDATION PENDING TIA/USDT: first_seen price=0.334100000000
+quant-1  | PRICE VALIDATION PENDING BDX/USDT: first_seen price=0.080190000000
+quant-1  | PRICE VALIDATION PENDING 9BIT/USDT: first_seen price=0.045620000000
+quant-1  | PRICE VALIDATION PENDING JGGL/USDT: first_seen price=2.122600000000
+quant-1  | PRICE VALIDATION PENDING CAKE/USDT: first_seen price=1.243000000000
+quant-1  | PRICE VALIDATION PENDING BOB/USDT: first_seen price=0.006115000000
+quant-1  | PRICE VALIDATION ENTRY BLOCK: {'sane_for_entries': False, 'reject_count': 0, 'large_tick_count': 0, 'trusted_count': 0, 'total_count': 59, 'reason': 'bad_ticks_0_of_59'}
+quant-1  | MARKET TICK DATA VALIDATED: {}
+quant-1  | MARKET DATA BLOCK: no_valid_prices_this_cycle
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=100.0000 cash=100.0000 exposure=0.0000 realized=0.0000 unrealized=0.0000 drawdown=0.0000% regime=SIDEWAYS
+quant-1  | MARKET DATA WARNING: ccxt fetch_tickers failed: mexc does not have market symbol MOGU/USDT
+quant-1  | MARKET DATA WARNING: ccxt ticker failed MOGU/USDT: mexc does not have market symbol MOGU/USDT
+quant-1  | INFO:     172.18.0.1:49334 - "GET /status HTTP/1.1" 200 OK

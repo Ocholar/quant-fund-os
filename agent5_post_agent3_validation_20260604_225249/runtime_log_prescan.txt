@@ -1,0 +1,87 @@
+﻿
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 
+symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 
+symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 
+symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 
+symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 
+symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 
+symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 
+symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 
+symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 
+symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 
+symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 
+symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 
+symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 
+symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 
+symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 
+symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 
+symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 
+symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 
+symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 
+symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 
+symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 
+symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+
+

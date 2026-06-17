@@ -1,0 +1,12 @@
+﻿services:
+  quant:
+    working_dir: /app
+    environment:
+      DB_PATH: /app/data/quant.db
+      DATABASE_PATH: /app/data/quant.db
+      SQLITE_DB_PATH: /app/data/quant.db
+      QFOS_DB_PATH: /app/data/quant.db
+      QUANT_DB_PATH: /app/data/quant.db
+      DATABASE_URL: sqlite:////app/data/quant.db
+    volumes:
+      - ./data:/app/data

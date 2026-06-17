@@ -1,3 +1,58 @@
+# QFOS_DB_PATH_CONTRACT: Docker runtime SQLite path contract.
+# Agent 1 Runtime DB Access Repair.
+# This block only normalizes DB path environment variables.
+import os as _qfos_db_os
+_qfos_db_path = (
+    _qfos_db_os.environ.get("DB_PATH")
+    or _qfos_db_os.environ.get("DATABASE_PATH")
+    or _qfos_db_os.environ.get("SQLITE_DB_PATH")
+    or _qfos_db_os.environ.get("QFOS_DB_PATH")
+    or _qfos_db_os.environ.get("QUANT_DB_PATH")
+    or "/app/data/quant.db"
+)
+_qfos_db_os.environ["DB_PATH"] = _qfos_db_path
+_qfos_db_os.environ["DATABASE_PATH"] = _qfos_db_path
+_qfos_db_os.environ["SQLITE_DB_PATH"] = _qfos_db_path
+_qfos_db_os.environ["QFOS_DB_PATH"] = _qfos_db_path
+_qfos_db_os.environ["QUANT_DB_PATH"] = _qfos_db_path
+_qfos_db_os.makedirs(_qfos_db_os.path.dirname(_qfos_db_os.path.abspath(_qfos_db_path)), exist_ok=True)
+
+
+# QFOS_RUNTIME_SQLITE_STABILITY_FIX_V1
+# Runtime DB contract:
+# Host:      .\data\quant.db
+# Container: /app/data/quant.db
+# Purpose: force all late/background SQLite helpers to resolve the same DB file.
+def qfos_runtime_db_path():
+    import os
+    p = (
+        os.environ.get("DB_PATH")
+        or os.environ.get("DATABASE_PATH")
+        or os.environ.get("SQLITE_DB_PATH")
+        or os.environ.get("QFOS_DB_PATH")
+        or os.environ.get("QUANT_DB_PATH")
+        or "/app/data/quant.db"
+    )
+    if not p:
+        p = "/app/data/quant.db"
+    os.environ["DB_PATH"] = p
+    os.environ["DATABASE_PATH"] = p
+    os.environ["SQLITE_DB_PATH"] = p
+    os.environ["QFOS_DB_PATH"] = p
+    os.environ["QUANT_DB_PATH"] = p
+    os.makedirs(os.path.dirname(os.path.abspath(p)), exist_ok=True)
+    return p
+
+def qfos_runtime_sqlite_connect(timeout=30):
+    import sqlite3
+    conn = sqlite3.connect(qfos_runtime_db_path(), timeout=timeout)
+    try:
+        conn.execute("PRAGMA busy_timeout=30000")
+        conn.execute("PRAGMA journal_mode=WAL")
+    except Exception:
+        pass
+    return conn
+
 
 # RESCUE_HOURLY_CAP_PATCH_V1
 # Rescue entries were capped too tightly at 2/hour.
@@ -20,7 +75,7 @@ import math
 import statistics
 
 # ============================================================
-# QFOS OUTLIER LOSS CAP — percentage based, equity-scaled
+# QFOS OUTLIER LOSS CAP Ã¢â‚¬â€ percentage based, equity-scaled
 # Purpose:
 #   Prevent one bad trade from wiping out many small wins.
 #   These are percentages of CURRENT equity, not fixed dollars.
@@ -107,7 +162,7 @@ def _qfos_expectancy_guard_with_cycle_log_inner(proposed_fills=None, context=Non
             _after_orders = list(_after_orders or [])
     except Exception as _exc:
 
-        # QFOS FALLBACK SCOUT QUALITY GUARD — inline pre-expectancy filter
+        # QFOS FALLBACK SCOUT QUALITY GUARD Ã¢â‚¬â€ inline pre-expectancy filter
         try:
             _qfos_fb_locals = locals()
             for _qfos_fb_name in ("orders", "proposed_fills", "fills", "proposed_orders"):
@@ -185,7 +240,7 @@ def qfos_expectancy_guard_with_cycle_log(proposed_fills=None, context=None):
       - avoids unbound proposed_fills crashes
       - calls the original expectancy guard if available
 
-      # QFOS FALLBACK SCOUT QUALITY GUARD — inline pre-expectancy filter
+      # QFOS FALLBACK SCOUT QUALITY GUARD Ã¢â‚¬â€ inline pre-expectancy filter
       try:
           _qfos_fb_locals = locals()
           for _qfos_fb_name in ("orders", "proposed_fills", "fills", "proposed_orders"):
@@ -245,7 +300,7 @@ def qfos_expectancy_guard_with_cycle_log(proposed_fills=None, context=None):
             f.write(_json.dumps(row, sort_keys=True) + "\n")
     except Exception as log_exc:
 
-        # QFOS FALLBACK SCOUT QUALITY GUARD — inline pre-expectancy filter
+        # QFOS FALLBACK SCOUT QUALITY GUARD Ã¢â‚¬â€ inline pre-expectancy filter
         try:
             _qfos_fb_locals = locals()
             for _qfos_fb_name in ("orders", "proposed_fills", "fills", "proposed_orders"):
@@ -631,7 +686,7 @@ def allow_risk_off_exit(position, global_state=None, portfolio=None, reason=""):
 # - Scout fallback is blocked during corrupted market-data cycles.
 # ============================================================
 
-QFOS_SCOUT_FALLBACK_ENABLED = True
+QFOS_SCOUT_FALLBACK_ENABLED = False  # QFOS_REAL_MEXC_ONLY_V1: fallback scout disabled
 QFOS_SCOUT_MAX_VALUE_USD = float(getattr(settings, "qfos_scout_max_value_usd", 2.00))
 QFOS_SCOUT_MIN_VALUE_USD = float(getattr(settings, "qfos_scout_min_value_usd", 1.00))
 QFOS_SCOUT_MAX_EXPOSURE_PCT = float(getattr(settings, "qfos_scout_max_exposure_pct", 0.08))
@@ -663,11 +718,6 @@ def _qfos_obj_get(obj, key, default=None):
     except Exception:
         return default
 
-def _qfos_float(value, default=0.0):
-    try:
-        return float(value)
-    except Exception:
-        return default
 
 def qfos_market_data_sane_for_entries(prices=None):
     """
@@ -738,7 +788,7 @@ def _qfos_symbol_db_quarantined(symbol):
                     FROM symbol_quarantine
                     WHERE symbol = :symbol
                       AND blocked_until IS NOT NULL
-                      AND blocked_until > DATETIME('now', '+3 hours')
+                      AND blocked_until > CURRENT_TIMESTAMP + interval '3 hours'
                     LIMIT 1
                 """),
                 {"symbol": symbol},
@@ -1126,7 +1176,7 @@ def load_state_from_db():
                 entry_prices[r['symbol']] = float(r['avg_entry'])
             if rows:
                 print(f'Recovered {len(rows)} open positions.')
-            trades = conn.execute(text("\n                SELECT symbol, created_at\n                FROM trades\n                WHERE side = 'buy'\n                  AND created_at >= datetime('now', '+3 hours', '-' || :hours || ' hours')\n            "), {'hours': TRADE_COUNT_WINDOW_HOURS}).mappings().all()
+            trades = conn.execute(text("\n                SELECT symbol, created_at\n                FROM trades\n                WHERE side = 'buy'\n                  AND created_at >= (CURRENT_TIMESTAMP + interval '3 hours' - (:hours || ' hours')::interval)\n            "), {'hours': TRADE_COUNT_WINDOW_HOURS}).mappings().all()
             for t in trades:
                 sym = t['symbol']
                 trade_counts[sym] = trade_counts.get(sym, 0) + 1
@@ -1138,6 +1188,51 @@ def load_state_from_db():
                     pass
     except Exception as e:
         print(f'State recovery failed: {e}')
+
+# ============================================================
+# QFOS_AGENT1_CLEAN_BASELINE_RUNTIME_GUARD_V1
+# Purpose:
+#   If the DB is at a clean paper baseline, force in-memory runtime
+#   position containers to agree. This prevents stale process-local
+#   state from being synced back into DB as paper_position_sync.
+# ============================================================
+
+def qfos_clean_runtime_state_if_db_baseline():
+    try:
+        with engine.begin() as conn:
+            trades_n = conn.execute(text("SELECT COUNT(*) FROM trades")).scalar()
+            open_n = conn.execute(text("SELECT COUNT(*) FROM positions WHERE quantity > 0.00000001")).scalar()
+            snap = conn.execute(text("""
+                SELECT equity, cash, exposure
+                FROM portfolio_snapshots
+                ORDER BY id DESC
+                LIMIT 1
+            """)).mappings().first()
+
+        equity = float((snap or {}).get("equity") or INITIAL_EQUITY)
+        cash = float((snap or {}).get("cash") or INITIAL_EQUITY)
+        exposure = float((snap or {}).get("exposure") or 0.0)
+
+        if int(trades_n or 0) == 0 and int(open_n or 0) == 0 and abs(equity - 100.0) < 1e-06 and abs(cash - 100.0) < 1e-06 and abs(exposure) < 1e-06:
+            portfolio.cash = 100.0
+            portfolio.positions.clear()
+            entry_prices.clear()
+            position_open_time.clear()
+            position_peak_change.clear()
+            shadow_positions.clear()
+            shadow_entry_prices.clear()
+            shadow_trade_counts.clear()
+            print("[QFOS_CLEAN_BASELINE_RUNTIME_GUARD] cleared in-memory positions for clean paper baseline", flush=True)
+            return True
+    except Exception as e:
+        print(f"[QFOS_CLEAN_BASELINE_RUNTIME_GUARD_ERROR] error={e}", flush=True)
+    return False
+
+# ============================================================
+# End QFOS_AGENT1_CLEAN_BASELINE_RUNTIME_GUARD_V1
+# ============================================================
+
+qfos_clean_runtime_state_if_db_baseline()
 print('Quant Fund OS starting. LIVE_TRADING=', settings.live_trading)
 print('Safety mode enabled. Paper trading only.')
 try:
@@ -1298,7 +1393,7 @@ def symbol_exposure(symbol, prices):
 def cleanup_expired_quarantines():
     try:
         with engine.begin() as conn:
-            conn.execute(text("\n                DELETE FROM symbol_quarantine\n                WHERE blocked_until IS NOT NULL\n                  AND blocked_until <= DATETIME('now', '+3 hours')\n            "))
+            conn.execute(text("\n                DELETE FROM symbol_quarantine\n                WHERE blocked_until IS NOT NULL\n                  AND blocked_until <= CURRENT_TIMESTAMP + interval '3 hours'\n            "))
     except Exception:
         pass
 LAST_GLOBAL_BUY_TS = 0.0
@@ -1434,24 +1529,56 @@ def can_buy(symbol, fill, prices, equity):
         current_drawdown = float(getattr(portfolio, 'drawdown', 0.0) or 0.0)
         caution_drawdown = float(getattr(settings, 'caution_drawdown', -0.02))
         blocked_drawdown = float(getattr(settings, 'blocked_drawdown', -0.05))
-        if current_drawdown <= blocked_drawdown * 0.9:
+        near_buffer = abs(float(getattr(settings, 'near_blocked_drawdown_buffer', 0.0025)))
+        near_blocked_drawdown = blocked_drawdown + near_buffer
+
+        open_positions_count = sum(
+            1 for _, q in portfolio.positions.items()
+            if float(q or 0) > 1e-08
+        )
+
+        # Agent 2 Phase 3A stale drawdown repair:
+        # If runtime/DB is clean and equity is back at the reset baseline,
+        # do not let old portfolio.peak/equity memory block fresh BUYs.
+        if open_positions_count == 0 and float(equity or 0.0) >= INITIAL_EQUITY * 0.999:
+            if current_drawdown < 0:
+                try:
+                    portfolio.cash = float(equity or INITIAL_EQUITY)
+                    portfolio.equity = float(equity or INITIAL_EQUITY)
+                    portfolio.peak = max(float(INITIAL_EQUITY), float(equity or INITIAL_EQUITY))
+                    current_drawdown = 0.0
+                    print('[AGENT2_RISK_RESET] cleared stale drawdown gate in can_buy', flush=True)
+                except Exception:
+                    pass
+
+        # Hard blocked must come before near-blocked.
+        # A real hard breach should not be mislabeled near_blocked_drawdown.
+        if current_drawdown <= blocked_drawdown:
+            return (False, f'blocked_drawdown_{current_drawdown:.4f}')
+
+        # Near-blocked is the warning zone before hard blocked.
+        # Drawdown is negative, so near threshold is less negative than blocked.
+        if current_drawdown <= near_blocked_drawdown:
             return (False, f'near_blocked_drawdown_{current_drawdown:.4f}')
+
         if current_drawdown <= caution_drawdown:
-            open_positions_count = sum((1 for _, q in portfolio.positions.items() if float(q or 0) > 1e-08))
             try:
                 current_exposure = float(getattr(portfolio, 'exposure', 0.0) or 0.0)
-                current_exposure_pct = current_exposure / max(float(equity or 0.0), 1e-06)
             except Exception:
-                current_exposure_pct = 0.0
-            if current_exposure_pct >= 0.2:
-                return (False, f'caution_mode_exposure_{current_exposure_pct:.4f}')
-            if open_positions_count >= 10:
-                return (False, f'caution_mode_max_positions_{open_positions_count}')
+                current_exposure = 0.0
+            try:
+                exposure_pct = current_exposure / max(float(equity or 0.0), 1e-09)
+            except Exception:
+                exposure_pct = 0.0
+            if open_positions_count >= 2:
+                return (False, f'caution_drawdown_position_cap_{current_drawdown:.4f}')
+            if exposure_pct >= 0.5:
+                return (False, f'caution_drawdown_exposure_{current_drawdown:.4f}_{exposure_pct:.4f}')
     except Exception:
         pass
     try:
         with engine.begin() as conn:
-            row = conn.execute(text("\n                SELECT\n                    SUM(CASE WHEN strategy='stop_loss' THEN 1 ELSE 0 END) AS stop_losses,\n                    SUM(CASE WHEN strategy='take_profit' THEN 1 ELSE 0 END) AS take_profits\n                FROM trades\n                WHERE symbol = :symbol\n                  AND side = 'sell'\n                  AND created_at >= DATETIME('now', '+3 hours', '-3 hours')\n            "), {'symbol': symbol}).mappings().first()
+            row = conn.execute(text("\n                SELECT\n                    SUM(CASE WHEN strategy='stop_loss' THEN 1 ELSE 0 END) AS stop_losses,\n                    SUM(CASE WHEN strategy='take_profit' THEN 1 ELSE 0 END) AS take_profits\n                FROM trades\n                WHERE symbol = :symbol\n                  AND side = 'sell'\n                  AND created_at >= CURRENT_TIMESTAMP\n            "), {'symbol': symbol}).mappings().first()
             if row:
                 stop_losses = int(row['stop_losses'] or 0)
                 take_profits = int(row['take_profits'] or 0)
@@ -1499,6 +1626,70 @@ def apply_buy(fill):
     trade_counts[symbol] = trade_counts.get(symbol, 0) + 1
     last_trade_time[symbol] = time.time()
     return True
+
+# ============================================================
+# QFOS_AGENT1_PREPERSIST_BUY_ROLLBACK_V1
+# Purpose:
+#   apply_buy() mutates in-memory paper cash/positions before the
+#   final firewall/persistence stage. If the final firewall rejects
+#   that BUY, the runtime can keep a ghost position with no BUY row.
+#   This rollback removes only that unpersisted in-memory mutation.
+#   It does not change thresholds, risk, fallback logic, dashboard,
+#   or Agent 5's atomic persistence boundary.
+# ============================================================
+
+def qfos_rollback_unpersisted_buy(fill, source="final_firewall"):
+    try:
+        if not isinstance(fill, dict):
+            return False
+        side = str(fill.get("side", "")).lower()
+        if side != "buy":
+            return False
+        if bool(fill.get("shadow_mode", False)):
+            return False
+
+        symbol = str(fill.get("symbol") or "")
+        if not symbol:
+            return False
+
+        qty = float(fill.get("quantity") or fill.get("qty") or 0.0)
+        price = float(fill.get("fill_price") or fill.get("expected_price") or fill.get("price") or 0.0)
+        if qty <= 0 or price <= 0:
+            return False
+
+        fee = qty * price * FEE_RATE
+        current_qty = float(portfolio.positions.get(symbol, 0.0) or 0.0)
+
+        # Only reverse up to the quantity that this rejected BUY added.
+        rollback_qty = min(qty, max(current_qty, 0.0))
+        if rollback_qty <= 0:
+            return False
+
+        portfolio.cash += rollback_qty * price + fee
+        new_qty = current_qty - rollback_qty
+
+        if new_qty <= 1e-08:
+            portfolio.positions[symbol] = 0.0
+            entry_prices.pop(symbol, None)
+            position_open_time.pop(symbol, None)
+            position_peak_change.pop(symbol, None)
+            trade_counts[symbol] = max(0, int(trade_counts.get(symbol, 0) or 0) - 1)
+        else:
+            portfolio.positions[symbol] = new_qty
+
+        print(
+            f"[QFOS_PREPERSIST_BUY_ROLLBACK] symbol={symbol} qty={rollback_qty:.12f} "
+            f"price={price:.12f} source={source}",
+            flush=True,
+        )
+        return True
+    except Exception as e:
+        print(f"[QFOS_PREPERSIST_BUY_ROLLBACK_ERROR] error={e}", flush=True)
+        return False
+
+# ============================================================
+# End QFOS_AGENT1_PREPERSIST_BUY_ROLLBACK_V1
+# ============================================================
 
 def apply_sell(symbol, qty, price, reason):
     held = portfolio.positions.get(symbol, 0.0)
@@ -1678,13 +1869,6 @@ def _qfos_take_profit_target(regime):
         return 0.008
 
 
-def _qfos_float(value, default=0.0):
-    try:
-        if value is None:
-            return default
-        return float(value)
-    except Exception:
-        return default
 
 
 def _qfos_get(obj, key, default=None):
@@ -2012,19 +2196,20 @@ def emergency_reduce_exposure(prices):
     return sells
 
 def save_trade(conn, fill):
-    conn.execute(text("\n        INSERT INTO trades(\n            symbol, side, quantity, expected_price, fill_price,\n            slippage_bps, pnl, strategy, confidence, live, shadow_mode, created_at\n        )\n        VALUES(\n            :symbol, :side, :quantity, :expected_price, :fill_price,\n            :slippage_bps, 0, :strategy, :confidence, :live, :shadow_mode, DATETIME('now', '+3 hours')\n        )\n    "), fill | {'live': settings.live_trading, 'shadow_mode': fill.get('shadow_mode', False)})
+    # Preserve legacy helper name, but route through the single atomic boundary.
+    return qfos_persist_fill_atomic(conn, fill, source='save_trade')
 
 def ensure_positions_table():
     with engine.begin() as conn:
-        conn.execute(text("\n            CREATE TABLE IF NOT EXISTS positions (\n                symbol TEXT PRIMARY KEY,\n                quantity REAL NOT NULL DEFAULT 0,\n                avg_entry REAL NOT NULL DEFAULT 0,\n                realized_pnl REAL NOT NULL DEFAULT 0,\n                unrealized_pnl REAL NOT NULL DEFAULT 0,\n                last_price REAL NOT NULL DEFAULT 0,\n                exposure REAL NOT NULL DEFAULT 0,\n                strategy TEXT,\n                updated_at DATETIME DEFAULT (DATETIME('now', '+3 hours'))\n            )\n        "))
-        cols = [r[1] for r in conn.execute(text('PRAGMA table_info(positions)'))]
+        conn.execute(text("\n            CREATE TABLE IF NOT EXISTS positions (\n                symbol TEXT PRIMARY KEY,\n                quantity REAL NOT NULL DEFAULT 0,\n                avg_entry REAL NOT NULL DEFAULT 0,\n                realized_pnl REAL NOT NULL DEFAULT 0,\n                unrealized_pnl REAL NOT NULL DEFAULT 0,\n                last_price REAL NOT NULL DEFAULT 0,\n                exposure REAL NOT NULL DEFAULT 0,\n                strategy TEXT,\n                updated_at DATETIME DEFAULT (CURRENT_TIMESTAMP + interval '3 hours')\n            )\n        "))
+        cols = [r[0] for r in conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'positions' AND table_schema = 'public'"))]
         if 'strategy' not in cols:
             conn.execute(text('ALTER TABLE positions ADD COLUMN strategy TEXT'))
-        conn.execute(text("\n            CREATE TABLE IF NOT EXISTS symbol_quarantine (\n                symbol TEXT PRIMARY KEY,\n                reason TEXT NOT NULL,\n                blocked_until DATETIME,\n                created_at DATETIME DEFAULT (DATETIME('now', '+3 hours'))\n            )\n        "))
+        conn.execute(text("\n            CREATE TABLE IF NOT EXISTS symbol_quarantine (\n                symbol TEXT PRIMARY KEY,\n                reason TEXT NOT NULL,\n                blocked_until DATETIME,\n                created_at DATETIME DEFAULT (CURRENT_TIMESTAMP + interval '3 hours')\n            )\n        "))
 
 def quarantine_symbol(symbol: str, reason: str, hours: int=24):
     with engine.begin() as conn:
-        conn.execute(text("\n            INSERT INTO symbol_quarantine (symbol, reason, blocked_until, created_at)\n            VALUES (:symbol, :reason, datetime('now', '+' || :hours || ' hours', '+3 hours'), datetime('now', '+3 hours'))\n            ON CONFLICT (symbol) DO UPDATE SET\n            reason = EXCLUDED.reason,\n            blocked_until = EXCLUDED.blocked_until,\n            created_at = EXCLUDED.created_at\n        "), {'symbol': symbol, 'reason': reason, 'hours': hours})
+        conn.execute(text("\n            INSERT INTO symbol_quarantine (symbol, reason, blocked_until, created_at)\n            VALUES (:symbol, :reason, (CURRENT_TIMESTAMP + interval '3 hours' + (:hours || ' hours')::interval), CURRENT_TIMESTAMP + interval '3 hours')\n            ON CONFLICT (symbol) DO UPDATE SET\n            reason = EXCLUDED.reason,\n            blocked_until = EXCLUDED.blocked_until,\n            created_at = EXCLUDED.created_at\n        "), {'symbol': symbol, 'reason': reason, 'hours': hours})
     send_telegram_alert(f'<b>Symbol Quarantined</b>\nSymbol: {symbol}\nReason: {reason}')
 
 def update_position_from_fill(conn, fill):
@@ -2068,8 +2253,312 @@ def update_position_from_fill(conn, fill):
         return 0.0
     exposure = new_qty * price
     unrealized_pnl = new_qty * (price - new_avg_entry) if new_qty > 0 else 0.0
-    conn.execute(text("\n        INSERT INTO positions(\n            symbol, quantity, avg_entry, realized_pnl,\n            unrealized_pnl, last_price, exposure, strategy, updated_at\n        )\n        VALUES(\n            :symbol, :quantity, :avg_entry, :realized_pnl,\n            :unrealized_pnl, :last_price, :exposure, :strategy, DATETIME('now', '+3 hours')\n        )\n        ON CONFLICT (symbol)\n        DO UPDATE SET\n            quantity = EXCLUDED.quantity,\n            avg_entry = EXCLUDED.avg_entry,\n            realized_pnl = EXCLUDED.realized_pnl,\n            unrealized_pnl = EXCLUDED.unrealized_pnl,\n            last_price = EXCLUDED.last_price,\n            exposure = EXCLUDED.exposure,\n            strategy = EXCLUDED.strategy,\n            updated_at = DATETIME('now', '+3 hours')\n    "), {'symbol': symbol, 'quantity': new_qty, 'avg_entry': new_avg_entry, 'realized_pnl': new_realized_pnl, 'unrealized_pnl': unrealized_pnl, 'last_price': price, 'exposure': exposure, 'strategy': new_strategy})
+    conn.execute(text("\n        INSERT INTO positions(\n            symbol, quantity, avg_entry, realized_pnl,\n            unrealized_pnl, last_price, exposure, strategy, updated_at\n        )\n        VALUES(\n            :symbol, :quantity, :avg_entry, :realized_pnl,\n            :unrealized_pnl, :last_price, :exposure, :strategy, CURRENT_TIMESTAMP + interval '3 hours'\n        )\n        ON CONFLICT (symbol)\n        DO UPDATE SET\n            quantity = EXCLUDED.quantity,\n            avg_entry = EXCLUDED.avg_entry,\n            realized_pnl = EXCLUDED.realized_pnl,\n            unrealized_pnl = EXCLUDED.unrealized_pnl,\n            last_price = EXCLUDED.last_price,\n            exposure = EXCLUDED.exposure,\n            strategy = EXCLUDED.strategy,\n            updated_at = CURRENT_TIMESTAMP + interval '3 hours'\n    "), {'symbol': symbol, 'quantity': new_qty, 'avg_entry': new_avg_entry, 'realized_pnl': new_realized_pnl, 'unrealized_pnl': unrealized_pnl, 'last_price': price, 'exposure': exposure, 'strategy': new_strategy})
     return (fill_pnl, applied_strategy)
+
+
+# ============================================================
+# QFOS_ATOMIC_FILL_PERSISTENCE_V1
+# Single validation/persistence boundary for paper BUY/SELL rows.
+# Prevents duplicate/oversized SELL rows from Profit Engine,
+# watchdogs, or the main loop when DB open quantity is already zero.
+# ============================================================
+
+def _qfos_atomic_get(fill, key, default=None):
+    try:
+        if isinstance(fill, dict):
+            return fill.get(key, default)
+        return getattr(fill, key, default)
+    except Exception:
+        return default
+
+
+def _qfos_atomic_float(value, default=0.0):
+    try:
+        if value is None:
+            return default
+        v = float(value)
+        if math.isnan(v) or math.isinf(v):
+            return default
+        return v
+    except Exception:
+        return default
+
+
+
+
+def _qfos_atomic_select_position(conn, symbol):
+    if _qfos_atomic_is_sqlalchemy(conn):
+        return conn.execute(text("""
+            SELECT symbol, quantity, avg_entry, realized_pnl, strategy
+            FROM positions
+            WHERE symbol = :symbol
+            LIMIT 1
+        """), {"symbol": symbol}).mappings().first()
+
+    return conn.execute("""
+        SELECT symbol, quantity, avg_entry, realized_pnl, strategy
+        FROM positions
+        WHERE symbol = ?
+        LIMIT 1
+    """, (symbol,)).fetchone()
+
+
+def _qfos_atomic_row_get(row, key, index, default=None):
+    if row is None:
+        return default
+    try:
+        return row[key]
+    except Exception:
+        pass
+    try:
+        return row[index]
+    except Exception:
+        return default
+
+
+
+
+
+
+
+# ============================================================
+# END QFOS_ATOMIC_FILL_PERSISTENCE_V1
+# ============================================================
+
+
+# ============================================================
+# QFOS_DB_POSITION_SYNC_V1
+# Purpose:
+#   Keep SQLite positions table aligned with the bot's real
+#   in-memory paper portfolio.
+#
+# Why:
+#   /status reads positions from DB, but the live loop can hold
+#   positions in portfolio.positions while the DB positions table
+#   remains empty or stale. This makes dashboard exposure/trades
+#   look false.
+#
+# Rules:
+#   - No commits here. Caller owns engine.begin().
+#   - No strategy/risk changes.
+#   - Only sync non-zero paper positions into DB.
+# ============================================================
+
+
+# ============================================================
+# QFOS_TRADES_SCHEMA_REPAIR_V1
+# Repairs old SQLite trades table without dropping data.
+# No commits here. Caller owns engine.begin().
+# ============================================================
+
+def qfos_ensure_trades_schema(conn):
+    try:
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS trades (
+                id SERIAL PRIMARY KEY,
+                symbol TEXT,
+                side TEXT,
+                quantity REAL,
+                expected_price REAL,
+                fill_price REAL,
+                slippage_bps REAL DEFAULT 0,
+                pnl REAL DEFAULT 0,
+                strategy TEXT,
+                confidence REAL,
+                live BOOLEAN DEFAULT 0,
+                shadow_mode BOOLEAN DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+
+        existing_cols = {
+            row[0] for row in conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'trades' AND table_schema = 'public'")).fetchall()
+        }
+
+        required_cols = {
+            "symbol": "TEXT",
+            "side": "TEXT",
+            "quantity": "REAL",
+            "expected_price": "REAL",
+            "fill_price": "REAL",
+            "slippage_bps": "REAL DEFAULT 0",
+            "pnl": "REAL DEFAULT 0",
+            "strategy": "TEXT",
+            "confidence": "REAL",
+            "live": "BOOLEAN DEFAULT 0",
+            "shadow_mode": "BOOLEAN DEFAULT 0",
+            "created_at": "DATETIME DEFAULT CURRENT_TIMESTAMP",
+        }
+
+        for col, ddl in required_cols.items():
+            if col not in existing_cols:
+                conn.execute(text(f"ALTER TABLE trades ADD COLUMN {col} {ddl}"))
+                print(f"[TRADES_SCHEMA_REPAIR] added column trades.{col}", flush=True)
+
+    except Exception as exc:
+        print(f"[TRADES_SCHEMA_REPAIR] failed: {exc}", flush=True)
+
+# ============================================================
+# End QFOS_TRADES_SCHEMA_REPAIR_V1
+# ============================================================
+
+def qfos_db_sync_positions_from_portfolio(conn, portfolio, prices):
+    try:
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS positions (
+                symbol TEXT PRIMARY KEY,
+                quantity REAL,
+                avg_entry REAL,
+                realized_pnl REAL DEFAULT 0,
+                unrealized_pnl REAL DEFAULT 0,
+                last_price REAL,
+                exposure REAL,
+                strategy TEXT,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+    except Exception as e:
+        print(f"[QFOS_DB_POSITION_SYNC] ensure positions failed: {e}", flush=True)
+        return
+
+    try:
+        raw_positions = getattr(portfolio, "positions", {}) or {}
+    except Exception:
+        raw_positions = {}
+
+    if not isinstance(raw_positions, dict):
+        return
+
+    live_symbols = set()
+
+    for symbol, qty_raw in raw_positions.items():
+        try:
+            symbol = str(symbol)
+            qty = float(qty_raw or 0.0)
+        except Exception:
+            continue
+
+        if abs(qty) <= 0.00000001:
+            continue
+
+        live_symbols.add(symbol)
+
+        try:
+            price = float((prices or {}).get(symbol) or 0.0)
+        except Exception:
+            price = 0.0
+
+        if price <= 0:
+            try:
+                existing = conn.execute(text("""
+                    SELECT last_price, avg_entry
+                    FROM positions
+                    WHERE symbol = :symbol
+                """), {"symbol": symbol}).mappings().first()
+                if existing:
+                    price = float(existing.get("last_price") or existing.get("avg_entry") or 0.0)
+            except Exception:
+                price = 0.0
+
+        try:
+            existing = conn.execute(text("""
+                SELECT avg_entry, realized_pnl, strategy
+                FROM positions
+                WHERE symbol = :symbol
+            """), {"symbol": symbol}).mappings().first()
+        except Exception:
+            existing = None
+
+        avg_entry = 0.0
+        realized_pnl = 0.0
+        strategy = "paper_position_sync"
+
+        if existing:
+            try:
+                avg_entry = float(existing.get("avg_entry") or 0.0)
+            except Exception:
+                avg_entry = 0.0
+            try:
+                realized_pnl = float(existing.get("realized_pnl") or 0.0)
+            except Exception:
+                realized_pnl = 0.0
+            try:
+                strategy = str(existing.get("strategy") or strategy)
+            except Exception:
+                pass
+
+        # If avg_entry was missing because the DB row was absent/stale,
+        # use current price as a safe display fallback. This avoids fake PnL.
+        if avg_entry <= 0:
+            avg_entry = price if price > 0 else 0.0
+
+        exposure = abs(qty) * price if price > 0 else 0.0
+        unrealized_pnl = qty * (price - avg_entry) if price > 0 and avg_entry > 0 else 0.0
+
+        try:
+            conn.execute(text("""
+                INSERT INTO positions (
+                    symbol, quantity, avg_entry, realized_pnl,
+                    unrealized_pnl, last_price, exposure, strategy, updated_at
+                )
+                VALUES (
+                    :symbol, :quantity, :avg_entry, :realized_pnl,
+                    :unrealized_pnl, :last_price, :exposure, :strategy,
+                    CURRENT_TIMESTAMP + interval '3 hours'
+                )
+                ON CONFLICT(symbol) DO UPDATE SET
+                    quantity = excluded.quantity,
+                    avg_entry = CASE
+                        WHEN positions.avg_entry IS NULL OR positions.avg_entry <= 0
+                        THEN excluded.avg_entry
+                        ELSE positions.avg_entry
+                    END,
+                    realized_pnl = COALESCE(positions.realized_pnl, 0),
+                    unrealized_pnl = excluded.unrealized_pnl,
+                    last_price = excluded.last_price,
+                    exposure = excluded.exposure,
+                    strategy = COALESCE(positions.strategy, excluded.strategy),
+                    updated_at = excluded.updated_at
+            """), {
+                "symbol": symbol,
+                "quantity": qty,
+                "avg_entry": avg_entry,
+                "realized_pnl": realized_pnl,
+                "unrealized_pnl": unrealized_pnl,
+                "last_price": price,
+                "exposure": exposure,
+                "strategy": strategy,
+            })
+        except Exception as e:
+            print(f"[QFOS_DB_POSITION_SYNC] upsert failed symbol={symbol}: {e}", flush=True)
+
+    # Mark DB rows closed if they are no longer in memory.
+    # Do not delete them; keep realized/history visible.
+    try:
+        rows = conn.execute(text("""
+            SELECT symbol
+            FROM positions
+            WHERE quantity > 0.00000001
+        """)).mappings().all()
+
+        for row in rows:
+            db_symbol = str(row.get("symbol") or "")
+            if db_symbol and db_symbol not in live_symbols:
+                conn.execute(text("""
+                    UPDATE positions
+                    SET quantity = 0.0,
+                        exposure = 0.0,
+                        unrealized_pnl = 0.0,
+                        updated_at = CURRENT_TIMESTAMP + interval '3 hours'
+                    WHERE symbol = :symbol
+                """), {"symbol": db_symbol})
+    except Exception as e:
+        print(f"[QFOS_DB_POSITION_SYNC] stale close pass failed: {e}", flush=True)
+
+# ============================================================
+# End QFOS_DB_POSITION_SYNC_V1
+# ============================================================
 
 def mark_positions_to_market(conn, prices):
     for symbol, price in prices.items():
@@ -2080,7 +2569,7 @@ def mark_positions_to_market(conn, prices):
         avg_entry = float(row['avg_entry'] or 0)
         exposure = qty * float(price)
         unrealized_pnl = qty * (float(price) - avg_entry) if qty > 0 else 0.0
-        conn.execute(text("\n            UPDATE positions\n            SET last_price = :last_price,\n                exposure = :exposure,\n                unrealized_pnl = :unrealized_pnl,\n                updated_at = DATETIME('now', '+3 hours')\n            WHERE symbol = :symbol\n        "), {'symbol': symbol, 'last_price': float(price), 'exposure': exposure, 'unrealized_pnl': unrealized_pnl})
+        conn.execute(text("\n            UPDATE positions\n            SET last_price = :last_price,\n                exposure = :exposure,\n                unrealized_pnl = :unrealized_pnl,\n                updated_at = CURRENT_TIMESTAMP + interval '3 hours'\n            WHERE symbol = :symbol\n        "), {'symbol': symbol, 'last_price': float(price), 'exposure': exposure, 'unrealized_pnl': unrealized_pnl})
 wait_for_database()
 ensure_positions_table()
 
@@ -2115,7 +2604,7 @@ def check_daily_loss_guard(equity: float, exposure: float, regime: str):
 
 def recent_buy_count():
     with engine.begin() as conn:
-        row = conn.execute(text("\n            SELECT COUNT(*) AS count\n            FROM trades\n            WHERE side = 'buy'\n              AND created_at >= datetime('now', '+3 hours', '-1 hour')\n        ")).mappings().first()
+        row = conn.execute(text("\n            SELECT COUNT(*) AS count\n            FROM trades\n            WHERE side = 'buy'\n              AND created_at >= CURRENT_TIMESTAMP + interval '2 hours'\n        ")).mappings().first()
     return int(row['count'] or 0) if row else 0
 
 def recent_symbol_buy_count(symbol: str):
@@ -2125,7 +2614,7 @@ def recent_symbol_buy_count(symbol: str):
     """
     try:
         with engine.begin() as conn:
-            row = conn.execute(text("\n                SELECT COUNT(*) AS count\n                FROM trades\n                WHERE symbol = :symbol\n                  AND side = 'buy'\n                  AND created_at >= datetime('now', '+3 hours', '-' || :hours || ' hours')\n            "), {'symbol': symbol, 'hours': TRADE_COUNT_WINDOW_HOURS}).mappings().first()
+            row = conn.execute(text("\n                SELECT COUNT(*) AS count\n                FROM trades\n                WHERE symbol = :symbol\n                  AND side = 'buy'\n                  AND created_at >= (CURRENT_TIMESTAMP + interval '3 hours' - (:hours || ' hours')::interval)\n            "), {'symbol': symbol, 'hours': TRADE_COUNT_WINDOW_HOURS}).mappings().first()
         return int(row['count'] or 0) if row else 0
     except Exception:
         return int(trade_counts.get(symbol, 0) or 0)
@@ -2139,7 +2628,7 @@ def refresh_recent_trade_counts():
     trade_counts = {}
     try:
         with engine.begin() as conn:
-            rows = conn.execute(text("\n                SELECT symbol, COUNT(*) AS count\n                FROM trades\n                WHERE side = 'buy'\n                  AND created_at >= datetime('now', '+3 hours', '-' || :hours || ' hours')\n                GROUP BY symbol\n            "), {'hours': TRADE_COUNT_WINDOW_HOURS}).mappings().all()
+            rows = conn.execute(text("\n                SELECT symbol, COUNT(*) AS count\n                FROM trades\n                WHERE side = 'buy'\n                  AND created_at >= (CURRENT_TIMESTAMP + interval '3 hours' - (:hours || ' hours')::interval)\n                GROUP BY symbol\n            "), {'hours': TRADE_COUNT_WINDOW_HOURS}).mappings().all()
         for r in rows:
             trade_counts[r['symbol']] = int(r['count'] or 0)
     except Exception as e:
@@ -2149,9 +2638,81 @@ def is_trending_regime(regime: str):
     r = str(regime or '').upper()
     return r in {'BULL', 'BULLISH', 'TRENDING', 'UPTREND', 'TREND'}
 
+
+# ============================================================
+# QFOS_REAL_MEXC_ONLY_FUNCTIONS_V1
+# Runtime function install.
+# Blocks fallback scout / RAW_MOMENTUM_FALLBACK buys.
+# Allows normal evo / evo_allocator_rescue MEXC-derived buys.
+# ============================================================
+
+def qfos_real_mexc_entry_allowed(fill):
+    try:
+        if not isinstance(fill, dict):
+            return True, "not_dict_passthrough"
+
+        side = str(fill.get("side", "") or "").lower()
+        if side != "buy":
+            return True, "non_buy_passthrough"
+
+        strategy = str(fill.get("strategy", "") or "").lower()
+        source = str(fill.get("source", "") or "").lower()
+
+        feature = fill.get("feature")
+        if not isinstance(feature, dict):
+            feature = fill.get("features")
+        if not isinstance(feature, dict):
+            feature = {}
+
+        feature_source = str(feature.get("source", "") or "").upper()
+
+        if strategy == "fallback_scout_breakout":
+            return False, "blocked_fallback_scout_breakout"
+
+        if strategy == "raw_momentum_fallback":
+            return False, "blocked_raw_momentum_fallback_strategy"
+
+        if "fallback" in source:
+            return False, "blocked_fallback_source"
+
+        if feature_source == "RAW_MOMENTUM_FALLBACK":
+            return False, "blocked_raw_momentum_fallback_feature"
+
+        if feature_source and feature_source != "NORMAL":
+            return False, f"blocked_non_normal_feature_source_{feature_source}"
+
+        return True, "real_mexc_only_ok"
+
+    except Exception as exc:
+        return False, f"real_mexc_only_exception_{exc}"
+
+
+def qfos_real_data_trade_firewall(fill, regime):
+    allowed, reason = qfos_real_mexc_entry_allowed(fill)
+
+    if not allowed:
+        try:
+            print(
+                f"[REAL_MEXC_ONLY] blocked symbol={fill.get('symbol')} "
+                f"side={fill.get('side')} strategy={fill.get('strategy')} reason={reason}",
+                flush=True,
+            )
+        except Exception:
+            pass
+        return False, reason
+
+    try:
+        return final_trade_firewall(fill, regime)
+    except NameError:
+        return True, reason
+
+# ============================================================
+# End QFOS_REAL_MEXC_ONLY_FUNCTIONS_V1
+# ============================================================
+
 def entry_policy_allows(symbol: str, regime: str, confidence: float, entries_this_cycle: int, strategy: str=None):
     with engine.begin() as conn:
-        q = conn.execute(text("SELECT symbol FROM symbol_quarantine WHERE symbol = :sym AND blocked_until IS NOT NULL AND blocked_until > DATETIME('now', '+3 hours')"), {'sym': symbol}).first()
+        q = conn.execute(text("SELECT symbol FROM symbol_quarantine WHERE symbol = :sym AND blocked_until IS NOT NULL AND blocked_until > CURRENT_TIMESTAMP + interval '3 hours'"), {'sym': symbol}).first()
         if q:
             return (False, 'symbol_quarantined')
         if strategy and strategy != 'fallback_scout_breakout':
@@ -2325,7 +2886,7 @@ def log_cycle_diagnostic(market_data=None, features=None, orders=None, portfolio
     else:
         no_trade_reason = 'orders_created_or_applied'
     print('\n' + '=' * 72)
-    print('QUANT FUND OS — CYCLE DIAGNOSTIC')
+    print('QUANT FUND OS Ã¢â‚¬â€ CYCLE DIAGNOSTIC')
     print(f'Time: {datetime.utcnow().isoformat()}Z')
     print(f'Market symbols: {market_count}')
     print(f'Feature symbols: {feature_count}')
@@ -2393,7 +2954,7 @@ def _recent_stop_loss_blocked(symbol):
     """
     try:
         with engine.begin() as conn:
-            row = conn.execute(text("\n                SELECT COUNT(*) AS count\n                FROM trades\n                WHERE symbol = :symbol\n                  AND (\n                        strategy IN ('stop_loss', 'adaptive_stop_loss')\n                     OR side = 'sell' AND strategy LIKE '%stop_loss%'\n                  )\n                  AND created_at >= datetime('now', '+3 hours', '-' || :hours || ' hours')\n            "), {'symbol': symbol, 'hours': ENTRY_STOP_LOSS_QUARANTINE_HOURS}).mappings().first()
+            row = conn.execute(text("\n                SELECT COUNT(*) AS count\n                FROM trades\n                WHERE symbol = :symbol\n                  AND (\n                        strategy IN ('stop_loss', 'adaptive_stop_loss')\n                     OR side = 'sell' AND strategy LIKE '%stop_loss%'\n                  )\n                  AND created_at >= (CURRENT_TIMESTAMP + interval '3 hours' - (:hours || ' hours')::interval)\n            "), {'symbol': symbol, 'hours': ENTRY_STOP_LOSS_QUARANTINE_HOURS}).mappings().first()
         return int(row['count'] or 0) > 0
     except Exception as e:
         print(f'ENTRY QUALITY quarantine check error for {symbol}: {e}')
@@ -2523,7 +3084,7 @@ def _recent_buy_rows_for_sideways():
     rows = []
     try:
         with engine.begin() as conn:
-            rows = conn.execute(text("\n                SELECT symbol, strategy, created_at\n                FROM trades\n                WHERE side = 'buy'\n                  AND created_at >= datetime('now', '+3 hours', '-1 hours')\n                ORDER BY created_at DESC\n            ")).mappings().all()
+            rows = conn.execute(text("\n                SELECT symbol, strategy, created_at\n                FROM trades\n                WHERE side = 'buy'\n                  AND created_at >= CURRENT_TIMESTAMP + interval '2 hours'\n                ORDER BY created_at DESC\n            ")).mappings().all()
     except Exception as e:
         print('SIDEWAYS PACING recent buy query error:', e)
     return list(rows or [])
@@ -2713,6 +3274,1736 @@ def enforce_entry_quality_lockdown(result, feature_map, regime):
         print('ENTRY QUALITY REJECTED:', rejected[:ENTRY_QUALITY_LOG_REJECTION_LIMIT])
     return (filtered, rejected)
 
+
+
+
+
+
+
+
+
+
+
+
+# BEGIN QFOS_ATOMIC_FILL_PERSISTENCE_V1
+# Phase 1 execution boundary:
+# All paper BUY/SELL fills must pass through qfos_persist_fill_atomic().
+# This prevents fake SELL rows, duplicate full-position SELLs, oversells,
+# negative positions, and SELL persistence when no open spot quantity exists.
+
+from datetime import datetime as _qfos_datetime
+try:
+    from sqlalchemy import text as _qfos_sa_text
+except Exception:
+    _qfos_sa_text = None
+
+_QFOS_EPSILON = 1e-12
+
+
+def _qfos_is_sqlalchemy_conn(conn):
+    return hasattr(conn, "execute") and conn.__class__.__module__.startswith("sqlalchemy")
+
+
+def _qfos_exec(conn, sql, params=None):
+    """
+    Executes SQL against either raw sqlite3 connections or SQLAlchemy 2.x connections.
+    SQLAlchemy requires text(sql) and dict parameters.
+    """
+    if params is None:
+        params = {}
+
+    if _qfos_is_sqlalchemy_conn(conn):
+        if _qfos_sa_text is None:
+            raise RuntimeError("SQLAlchemy connection detected but sqlalchemy.text unavailable")
+
+        if isinstance(params, (tuple, list)):
+            raise RuntimeError("SQLAlchemy execution requires named dict parameters")
+
+        return conn.execute(_qfos_sa_text(sql), params)
+
+    if isinstance(params, dict):
+        return conn.execute(sql, params)
+
+    return conn.execute(sql, params)
+
+
+def _qfos_commit(conn):
+    try:
+        _qfos_commit(conn)
+    except Exception:
+        pass
+
+
+def _qfos_rollback(conn):
+    try:
+        _qfos_rollback(conn)
+    except Exception:
+        pass
+
+
+
+def _qfos_now_utc_text():
+    return _qfos_datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _qfos_table_columns(conn, table_name):
+    try:
+        rows = _qfos_exec(
+            conn,
+            f"SELECT column_name FROM information_schema.columns WHERE table_name = '{table_name}' AND table_schema = 'public'"
+        ).fetchall()
+        return [r[0] for r in rows]
+    except Exception:
+        return []
+
+
+def _qfos_first_existing_column(columns, candidates):
+    for c in candidates:
+        if c in columns:
+            return c
+    return None
+
+
+def _qfos_float(value, default=0.0):
+    try:
+        if value is None:
+            return default
+        return float(value)
+    except Exception:
+        return default
+
+
+def _qfos_bool_int(value):
+    return 1 if bool(value) else 0
+
+
+def _qfos_log_atomic(message):
+    try:
+        print(message, flush=True)
+    except Exception:
+        pass
+
+
+def _qfos_get_position_row(conn, symbol):
+    cols = _qfos_table_columns(conn, "positions")
+    if not cols:
+        raise RuntimeError("positions table missing or unreadable")
+
+    qty_col = _qfos_first_existing_column(cols, ["quantity", "qty", "amount"])
+    avg_col = _qfos_first_existing_column(cols, ["avg_entry", "avg_price", "entry_price", "average_entry"])
+    realized_col = _qfos_first_existing_column(cols, ["realized_pnl", "pnl_realized"])
+
+    if not qty_col:
+        raise RuntimeError("positions table has no quantity column")
+
+    select_cols = ["symbol", qty_col]
+    if avg_col:
+        select_cols.append(avg_col)
+    if realized_col:
+        select_cols.append(realized_col)
+
+    sql = f"SELECT {', '.join(select_cols)} FROM positions WHERE symbol=? LIMIT 1"
+    row = conn.execute(sql, (symbol,)).fetchone()
+
+    if not row:
+        return {
+            "exists": False,
+            "quantity": 0.0,
+            "avg_entry": 0.0,
+            "realized_pnl": 0.0,
+            "columns": cols,
+            "qty_col": qty_col,
+            "avg_col": avg_col,
+            "realized_col": realized_col,
+        }
+
+    idx = 1
+    qty = _qfos_float(row[idx]); idx += 1
+
+    avg_entry = 0.0
+    realized = 0.0
+
+    if avg_col:
+        avg_entry = _qfos_float(row[idx]); idx += 1
+    if realized_col:
+        realized = _qfos_float(row[idx]); idx += 1
+
+    return {
+        "exists": True,
+        "quantity": qty,
+        "avg_entry": avg_entry,
+        "realized_pnl": realized,
+        "columns": cols,
+        "qty_col": qty_col,
+        "avg_col": avg_col,
+        "realized_col": realized_col,
+    }
+
+
+def _qfos_upsert_position_atomic(conn, symbol, fill_price, strategy, new_qty, new_avg_entry, new_realized_pnl):
+    cols = _qfos_table_columns(conn, "positions")
+    if not cols:
+        raise RuntimeError("positions table missing or unreadable")
+
+    qty_col = _qfos_first_existing_column(cols, ["quantity", "qty", "amount"])
+    avg_col = _qfos_first_existing_column(cols, ["avg_entry", "avg_price", "entry_price", "average_entry"])
+    realized_col = _qfos_first_existing_column(cols, ["realized_pnl", "pnl_realized"])
+    unrealized_col = _qfos_first_existing_column(cols, ["unrealized_pnl", "pnl_unrealized"])
+    last_price_col = _qfos_first_existing_column(cols, ["last_price", "mark_price", "price"])
+    exposure_col = _qfos_first_existing_column(cols, ["exposure", "notional"])
+    strategy_col = _qfos_first_existing_column(cols, ["strategy"])
+    updated_col = _qfos_first_existing_column(cols, ["updated_at", "created_at", "timestamp"])
+
+    if not qty_col:
+        raise RuntimeError("positions table has no quantity column")
+
+    exists = _qfos_exec(
+        conn,
+        "SELECT 1 FROM positions WHERE symbol=:symbol LIMIT 1",
+        {"symbol": symbol}
+    ).fetchone() is not None
+
+    safe_qty = float(max(new_qty, 0.0))
+
+    values = {qty_col: safe_qty}
+
+    if avg_col:
+        values[avg_col] = float(new_avg_entry)
+
+    if realized_col:
+        values[realized_col] = float(new_realized_pnl)
+
+    if unrealized_col:
+        values[unrealized_col] = 0.0
+
+    if last_price_col:
+        values[last_price_col] = float(fill_price)
+
+    if exposure_col:
+        values[exposure_col] = float(safe_qty * fill_price)
+
+    if strategy_col:
+        values[strategy_col] = str(strategy or "unknown")
+
+    if updated_col:
+        values[updated_col] = _qfos_now_utc_text()
+
+    if exists:
+        assignments = ", ".join([f"{k}=:{k}" for k in values.keys()])
+        params = dict(values)
+        params["__symbol"] = symbol
+        _qfos_exec(
+            conn,
+            f"UPDATE positions SET {assignments} WHERE symbol=:__symbol",
+            params,
+        )
+    else:
+        insert_cols = ["symbol"] + list(values.keys())
+        placeholders = ", ".join([f":{k}" for k in insert_cols])
+        params = {"symbol": symbol}
+        params.update(values)
+        _qfos_exec(
+            conn,
+            f"INSERT INTO positions ({', '.join(insert_cols)}) VALUES ({placeholders})",
+            params,
+        )
+
+
+def _qfos_insert_trade_atomic(conn, normalized_fill):
+    cols = _qfos_table_columns(conn, "trades")
+    if not cols:
+        raise RuntimeError("trades table missing or unreadable")
+
+    created_at = normalized_fill.get("created_at") or _qfos_now_utc_text()
+
+    data = {
+        "symbol": normalized_fill.get("symbol"),
+        "side": normalized_fill.get("side"),
+        "quantity": float(normalized_fill.get("quantity", 0.0)),
+        "qty": float(normalized_fill.get("quantity", 0.0)),
+        "expected_price": float(normalized_fill.get("expected_price", normalized_fill.get("fill_price", 0.0))),
+        "fill_price": float(normalized_fill.get("fill_price", 0.0)),
+        "price": float(normalized_fill.get("fill_price", 0.0)),
+        "slippage_bps": float(normalized_fill.get("slippage_bps", 0.0)),
+        "pnl": float(normalized_fill.get("pnl", 0.0)),
+        "realized_pnl": float(normalized_fill.get("pnl", 0.0)),
+        "strategy": normalized_fill.get("strategy", "unknown"),
+        "confidence": float(normalized_fill.get("confidence", 0.0)),
+        "live": _qfos_bool_int(normalized_fill.get("live", False)),
+        "shadow_mode": _qfos_bool_int(normalized_fill.get("shadow_mode", False)),
+        "source": normalized_fill.get("source", "unknown"),
+        "is_exit": _qfos_bool_int(normalized_fill.get("is_exit", False)),
+        "exit_reason": normalized_fill.get("exit_reason"),
+        "created_at": created_at,
+        "updated_at": created_at,
+        "timestamp": created_at,
+    }
+
+    insert_cols = []
+    insert_vals = []
+
+    for col in cols:
+        if col.lower() == "id":
+            continue
+        if col in data:
+            insert_cols.append(col)
+            insert_vals.append(data[col])
+
+    if not insert_cols:
+        raise RuntimeError("trades table has no compatible insert columns")
+
+    placeholders = ", ".join([f":p{i}" for i in range(len(insert_cols))])
+    sql = f"INSERT INTO trades ({', '.join(insert_cols)}) VALUES ({placeholders})"
+    params = {f"p{i}": insert_vals[i] for i in range(len(insert_cols))}
+    _qfos_exec(conn, sql, params)
+
+
+
+def _qfos_latest_trade_for_symbol(conn, symbol):
+    cols = _qfos_table_columns(conn, "trades")
+    if not cols:
+        return None
+
+    id_col = _qfos_first_existing_column(cols, ["id"])
+    side_col = _qfos_first_existing_column(cols, ["side"])
+    qty_col = _qfos_first_existing_column(cols, ["quantity", "qty", "amount"])
+    strategy_col = _qfos_first_existing_column(cols, ["strategy"])
+
+    if not side_col or not qty_col:
+        return None
+
+    select_cols = []
+    if id_col:
+        select_cols.append(id_col)
+    else:
+        select_cols.append("rowid")
+
+    select_cols.extend([side_col, qty_col])
+
+    if strategy_col:
+        select_cols.append(strategy_col)
+
+    order_col = id_col if id_col else "rowid"
+
+    row = _qfos_exec(
+        conn,
+        f"SELECT {', '.join(select_cols)} FROM trades WHERE symbol=:symbol ORDER BY {order_col} DESC LIMIT 1",
+        {"symbol": symbol}
+    ).fetchone()
+
+    if not row:
+        return None
+
+    out = {
+        "id": row[0],
+        "side": str(row[1] or "").lower(),
+        "quantity": _qfos_float(row[2], 0.0),
+        "strategy": "",
+    }
+
+    if strategy_col and len(row) >= 4:
+        out["strategy"] = str(row[3] or "")
+
+    return out
+
+
+def _qfos_duplicate_sell_guard(conn, symbol, requested_qty, strategy):
+    """
+    Runtime idempotency guard.
+
+    If the latest persisted trade for this symbol is already a SELL with the
+    same quantity and same strategy, reject the new SELL. This stops repeated
+    full-position SELL spam even if an upstream loop keeps firing the same exit.
+    """
+    latest = _qfos_latest_trade_for_symbol(conn, symbol)
+    if not latest:
+        return None
+
+    latest_side = latest.get("side")
+    latest_qty = _qfos_float(latest.get("quantity"), 0.0)
+    latest_strategy = str(latest.get("strategy") or "")
+    strategy = str(strategy or "")
+
+    qty_tol = max(_QFOS_EPSILON, abs(requested_qty) * 1e-9)
+
+    if (
+        latest_side == "sell"
+        and abs(latest_qty - requested_qty) <= qty_tol
+        and latest_strategy == strategy
+    ):
+        return {
+            "reason": "duplicate_latest_sell",
+            "latest_id": latest.get("id"),
+            "latest_qty": latest_qty,
+            "latest_strategy": latest_strategy,
+        }
+
+    return None
+
+
+def _qfos_cleanup_closed_symbol_runtime_state(symbol, reason="closed_or_duplicate_sell", source="unknown"):
+    """
+    Clears stale runtime/profit-engine state for a symbol after the DB proves
+    the symbol is already closed or the latest trade is already a SELL.
+
+    This prevents Profit Engine / watchdog loops from repeatedly requesting
+    the same invalid duplicate SELL.
+    """
+    removed = []
+
+    dict_names = [
+        "profit_engine_state",
+        "profit_engine_peaks",
+        "qfos_profit_engine_state",
+        "qfos_profit_engine_peaks",
+        "_qfos_profit_engine_state",
+        "_qfos_profit_engine_peaks",
+        "profit_engine_positions",
+        "position_profit_state",
+        "position_peaks",
+        "pe_state",
+        "peaks",
+        "position_tracking_cache",
+        "qfos_position_tracking_cache",
+        "watchdog_state",
+        "position_watchdog_state",
+        "qfos_watchdog_state",
+    ]
+
+    set_names = [
+        "profit_engine_active_symbols",
+        "qfos_profit_engine_active_symbols",
+        "position_watchdog_symbols",
+        "qfos_position_watchdog_symbols",
+        "closing_symbols",
+        "symbols_pending_close",
+        "qfos_symbols_pending_close",
+    ]
+
+    g = globals()
+
+    for name in dict_names:
+        obj = g.get(name)
+        if isinstance(obj, dict) and symbol in obj:
+            try:
+                obj.pop(symbol, None)
+                removed.append(name)
+            except Exception:
+                pass
+
+    for name in set_names:
+        obj = g.get(name)
+        if isinstance(obj, set) and symbol in obj:
+            try:
+                obj.discard(symbol)
+                removed.append(name)
+            except Exception:
+                pass
+
+    if removed:
+        _qfos_log_atomic(
+            "[QFOS_RUNTIME_STATE_CLEANUP] symbol=%s reason=%s source=%s cleared=%s"
+            % (symbol, reason, source, ",".join(sorted(set(removed))))
+        )
+    else:
+        _qfos_log_atomic(
+            "[QFOS_RUNTIME_STATE_CLEANUP] symbol=%s reason=%s source=%s cleared=none"
+            % (symbol, reason, source)
+        )
+
+    return removed
+
+
+def _qfos_db_open_qty_for_symbol(conn, symbol):
+    try:
+        pos = _qfos_get_position_row(conn, symbol)
+        return _qfos_float(pos.get("quantity"), 0.0)
+    except Exception:
+        return None
+
+
+def _qfos_latest_trade_is_sell_and_no_open_qty(conn, symbol):
+    """
+    True when DB says:
+    - latest trade for symbol is SELL
+    - position quantity is zero or missing
+
+    Used by Profit Engine / watchdog source guards to avoid producing
+    duplicate SELL requests after the symbol is already closed.
+    """
+    latest = _qfos_latest_trade_for_symbol(conn, symbol)
+    if not latest:
+        return False
+
+    if latest.get("side") != "sell":
+        return False
+
+    open_qty = _qfos_db_open_qty_for_symbol(conn, symbol)
+    if open_qty is None:
+        return False
+
+    return open_qty <= _QFOS_EPSILON
+
+
+def _qfos_reconcile_position_from_duplicate_latest_sell(
+    conn,
+    symbol,
+    requested_qty,
+    existing_qty,
+    existing_avg,
+    existing_realized,
+    fill_price,
+    strategy,
+    source,
+    dup,
+):
+    """
+    Fixes stale DB position after a SELL trade already exists.
+
+    If latest trade is already a SELL for this symbol and the DB still shows
+    open quantity, this is not a new SELL. It is a reconciliation event:
+    zero the position and insert no new trade row.
+    """
+    latest_qty = _qfos_float(dup.get("latest_qty"), 0.0)
+    qty_tol = max(_QFOS_EPSILON, abs(existing_qty) * 1e-9)
+
+    if existing_qty <= _QFOS_EPSILON:
+        return False
+
+    # Accept either exact latest trade quantity or current requested quantity
+    # as proof that the already-recorded SELL covers the stale open position.
+    latest_covers_open = latest_qty >= existing_qty - qty_tol
+    request_covers_open = requested_qty >= existing_qty - qty_tol
+
+    if not (latest_covers_open or request_covers_open):
+        return False
+
+    _qfos_upsert_position_atomic(
+        conn=conn,
+        symbol=symbol,
+        fill_price=fill_price,
+        strategy=strategy,
+        new_qty=0.0,
+        new_avg_entry=existing_avg,
+        new_realized_pnl=existing_realized,
+    )
+
+    _qfos_cleanup_closed_symbol_runtime_state(
+        symbol,
+        reason="reconciled_duplicate_latest_sell_position_zeroed",
+        source=source,
+    )
+
+    _qfos_log_atomic(
+        "[SELL_POSITION_RECONCILED_FROM_LATEST_SELL] symbol=%s existing_qty=%s requested_qty=%s latest_qty=%s strategy=%s latest_id=%s source=%s"
+        % (
+            symbol,
+            existing_qty,
+            requested_qty,
+            latest_qty,
+            strategy,
+            dup.get("latest_id"),
+            source,
+        )
+    )
+
+    return True
+
+
+_QFOS_CLOSED_SYMBOL_TOMBSTONES = globals().setdefault("_QFOS_CLOSED_SYMBOL_TOMBSTONES", {})
+
+
+def _qfos_mark_symbol_closed(symbol, side, quantity, strategy, source):
+    if side != "sell":
+        return
+
+    _QFOS_CLOSED_SYMBOL_TOMBSTONES[symbol] = {
+        "quantity": float(quantity or 0.0),
+        "strategy": str(strategy or ""),
+        "source": str(source or ""),
+        "closed_at": _qfos_now_utc_text(),
+    }
+
+    _qfos_log_atomic(
+        "[QFOS_SYMBOL_CLOSED_TOMBSTONE_SET] symbol=%s qty=%s strategy=%s source=%s"
+        % (symbol, quantity, strategy, source)
+    )
+
+
+def _qfos_clear_symbol_closed_tombstone(symbol, reason="buy_or_reopen"):
+    if symbol in _QFOS_CLOSED_SYMBOL_TOMBSTONES:
+        _QFOS_CLOSED_SYMBOL_TOMBSTONES.pop(symbol, None)
+        _qfos_log_atomic(
+            "[QFOS_SYMBOL_CLOSED_TOMBSTONE_CLEARED] symbol=%s reason=%s"
+            % (symbol, reason)
+        )
+
+
+def _qfos_has_closed_tombstone(symbol):
+    return symbol in _QFOS_CLOSED_SYMBOL_TOMBSTONES
+
+
+def _qfos_latest_trade_side(conn, symbol):
+    latest = _qfos_latest_trade_for_symbol(conn, symbol)
+    if not latest:
+        return None
+    return latest.get("side")
+
+
+def _qfos_reject_or_reconcile_tombstoned_sell(
+    conn,
+    symbol,
+    requested_qty,
+    existing_qty,
+    existing_avg,
+    existing_realized,
+    fill_price,
+    strategy,
+    source,
+):
+    """
+    If this process already closed the symbol and no new BUY has happened,
+    do not allow another SELL row. If stale sync restored quantity, zero it.
+    """
+    if not _qfos_has_closed_tombstone(symbol):
+        return False
+
+    latest_side = _qfos_latest_trade_side(conn, symbol)
+
+    # A new BUY should clear tombstone and allow normal lifecycle.
+    if latest_side == "buy":
+        _qfos_clear_symbol_closed_tombstone(symbol, reason="latest_trade_buy")
+        return False
+
+    if latest_side != "sell":
+        return False
+
+    if existing_qty > _QFOS_EPSILON:
+        _qfos_assert_sell_exit_accounting(normalized)
+
+        _qfos_upsert_position_atomic(
+            conn=conn,
+            symbol=symbol,
+            fill_price=fill_price,
+            strategy=strategy,
+            new_qty=0.0,
+            new_avg_entry=existing_avg,
+            new_realized_pnl=existing_realized,
+        )
+        _qfos_cleanup_closed_symbol_runtime_state(
+            symbol,
+            reason="tombstone_rezero_stale_restored_position",
+            source=source,
+        )
+        _qfos_log_atomic(
+            "[SELL_TOMBSTONE_RECONCILED_STALE_POSITION] symbol=%s existing_qty=%s requested_qty=%s strategy=%s source=%s"
+            % (symbol, existing_qty, requested_qty, strategy, source)
+        )
+        return True
+
+    _qfos_cleanup_closed_symbol_runtime_state(
+        symbol,
+        reason="tombstone_duplicate_sell_no_open_qty",
+        source=source,
+    )
+    _qfos_log_atomic(
+        "[SELL_TOMBSTONE_REJECT] symbol=%s requested_qty=%s strategy=%s source=%s"
+        % (symbol, requested_qty, strategy, source)
+    )
+    return True
+
+
+def qfos_reconcile_stale_closed_positions(conn, source="stale_position_reconciler"):
+    """
+    DB-level safety sweep.
+
+    If positions.quantity > 0 but latest trade for that symbol is SELL and
+    there is no newer BUY, the position is stale/corrupt. Zero it without
+    inserting a trade row.
+
+    This catches cases where no new SELL request arrives to trigger the
+    normal duplicate/tombstone reconciliation path.
+    """
+    cols = _qfos_table_columns(conn, "positions")
+    if not cols:
+        return []
+
+    qty_col = _qfos_first_existing_column(cols, ["quantity", "qty", "amount"])
+    avg_col = _qfos_first_existing_column(cols, ["avg_entry", "avg_price", "entry_price", "average_entry"])
+    realized_col = _qfos_first_existing_column(cols, ["realized_pnl", "pnl_realized"])
+    last_price_col = _qfos_first_existing_column(cols, ["last_price", "mark_price", "price"])
+    strategy_col = _qfos_first_existing_column(cols, ["strategy"])
+
+    if not qty_col:
+        return []
+
+    rows = _qfos_exec(
+        conn,
+        f"SELECT symbol, {qty_col}"
+        + (f", {avg_col}" if avg_col else ", 0")
+        + (f", {realized_col}" if realized_col else ", 0")
+        + (f", {last_price_col}" if last_price_col else ", 0")
+        + (f", {strategy_col}" if strategy_col else ", ''")
+        + f" FROM positions WHERE {qty_col} > :eps",
+        {"eps": _QFOS_EPSILON}
+    ).fetchall()
+
+    reconciled = []
+
+    for row in rows:
+        symbol = row[0]
+        open_qty = _qfos_float(row[1], 0.0)
+        avg_entry = _qfos_float(row[2], 0.0)
+        realized = _qfos_float(row[3], 0.0)
+        last_price = _qfos_float(row[4], 0.0)
+        strategy = str(row[5] or "stale_position_reconciler")
+
+        latest = _qfos_latest_trade_for_symbol(conn, symbol)
+        if not latest:
+            continue
+
+        if latest.get("side") != "sell":
+            continue
+
+        latest_qty = _qfos_float(latest.get("quantity"), 0.0)
+        qty_tol = max(_QFOS_EPSILON, abs(open_qty) * 1e-9)
+
+        if latest_qty + qty_tol < open_qty:
+            continue
+
+        _qfos_upsert_position_atomic(
+            conn=conn,
+            symbol=symbol,
+            fill_price=last_price if last_price > _QFOS_EPSILON else avg_entry,
+            strategy=strategy,
+            new_qty=0.0,
+            new_avg_entry=avg_entry,
+            new_realized_pnl=realized,
+        )
+
+        _qfos_cleanup_closed_symbol_runtime_state(
+            symbol,
+            reason="db_stale_closed_position_reconciled",
+            source=source,
+        )
+
+        _qfos_mark_symbol_closed(
+            symbol=symbol,
+            side="sell",
+            quantity=open_qty,
+            strategy=strategy,
+            source=source,
+        )
+
+        _qfos_log_atomic(
+            "[QFOS_DB_STALE_POSITION_RECONCILED] symbol=%s open_qty=%s latest_sell_qty=%s latest_id=%s source=%s"
+            % (symbol, open_qty, latest_qty, latest.get("id"), source)
+        )
+
+        reconciled.append(symbol)
+
+    return reconciled
+
+
+def _qfos_exit_accounting_fields(fill, side, strategy, source):
+    """
+    Phase 3A accounting invariant.
+
+    Any SELL in spot paper mode is a reduction/exit, not a fresh entry.
+    Therefore it must be persisted with:
+      is_exit = true
+      exit_reason populated
+
+    BUY rows remain non-exit unless explicitly supplied otherwise.
+    """
+    side = str(side or "").lower()
+    strategy = str(strategy or "").strip()
+    source = str(source or "").strip()
+
+    raw_is_exit = fill.get("is_exit", None)
+    raw_exit_reason = fill.get("exit_reason", None)
+
+    if side == "sell":
+        reason = (
+            str(raw_exit_reason).strip()
+            if raw_exit_reason not in (None, "", "None")
+            else ""
+        )
+
+        if not reason:
+            reason = strategy or source or "paper_sell_exit"
+
+        return True, reason
+
+    # BUY should not be counted as exit by default.
+    if raw_is_exit in (True, 1, "1", "true", "True", "yes", "YES"):
+        reason = (
+            str(raw_exit_reason).strip()
+            if raw_exit_reason not in (None, "", "None")
+            else "explicit_buy_exit_flag"
+        )
+        return True, reason
+
+    return False, None
+
+
+def _qfos_assert_sell_exit_accounting(normalized_fill):
+    side = str(normalized_fill.get("side") or "").lower()
+    if side != "sell":
+        return
+
+    is_exit = normalized_fill.get("is_exit")
+    exit_reason = normalized_fill.get("exit_reason")
+
+    if not is_exit:
+        raise RuntimeError(
+            "SELL_ACCOUNTING_INVARIANT_FAIL:is_exit_false:%s"
+            % normalized_fill.get("symbol")
+        )
+
+    if exit_reason in (None, "", "None"):
+        raise RuntimeError(
+            "SELL_ACCOUNTING_INVARIANT_FAIL:missing_exit_reason:%s"
+            % normalized_fill.get("symbol")
+        )
+
+
+def _qfos_symbol_buy_lifecycle_qty(conn, symbol):
+    """
+    Returns total BUY quantity recorded in trades for this symbol.
+    After a clean reset, this must be > 0 before any SELL can be accepted.
+    """
+    try:
+        cols = _qfos_table_columns(conn, "trades")
+        if not cols:
+            return 0.0
+
+        side_col = _qfos_first_existing_column(cols, ["side"])
+        qty_col = _qfos_first_existing_column(cols, ["quantity", "qty", "amount"])
+
+        if not side_col or not qty_col:
+            return 0.0
+
+        row = _qfos_exec(
+            conn,
+            f"""
+            SELECT COALESCE(SUM({qty_col}), 0)
+            FROM trades
+            WHERE symbol=:symbol
+              AND {side_col}='buy'
+            """,
+            {"symbol": symbol}
+        ).fetchone()
+
+        return _qfos_float(row[0] if row else 0.0, 0.0)
+    except Exception as exc:
+        _qfos_log_atomic(
+            "[BUY_LIFECYCLE_CHECK_ERROR] symbol=%s error=%s"
+            % (symbol, repr(exc))
+        )
+        return 0.0
+
+
+def _qfos_symbol_sell_lifecycle_qty(conn, symbol):
+    try:
+        cols = _qfos_table_columns(conn, "trades")
+        if not cols:
+            return 0.0
+
+        side_col = _qfos_first_existing_column(cols, ["side"])
+        qty_col = _qfos_first_existing_column(cols, ["quantity", "qty", "amount"])
+
+        if not side_col or not qty_col:
+            return 0.0
+
+        row = _qfos_exec(
+            conn,
+            f"""
+            SELECT COALESCE(SUM({qty_col}), 0)
+            FROM trades
+            WHERE symbol=:symbol
+              AND {side_col}='sell'
+            """,
+            {"symbol": symbol}
+        ).fetchone()
+
+        return _qfos_float(row[0] if row else 0.0, 0.0)
+    except Exception:
+        return 0.0
+
+
+def _qfos_has_valid_buy_lifecycle_for_sell(conn, symbol, requested_qty):
+    """
+    A SELL is valid only if this DB has recorded BUY lifecycle quantity.
+    This prevents clean-reset SELL-only rows caused by paper_position_sync.
+    """
+    buy_qty = _qfos_symbol_buy_lifecycle_qty(conn, symbol)
+    sell_qty = _qfos_symbol_sell_lifecycle_qty(conn, symbol)
+    remaining_lifecycle_qty = max(buy_qty - sell_qty, 0.0)
+
+    qty_tol = max(_QFOS_EPSILON, abs(requested_qty) * 1e-9)
+
+    return buy_qty > _QFOS_EPSILON and remaining_lifecycle_qty + qty_tol > 0.0
+
+
+def _qfos_zero_invalid_no_buy_position(conn, symbol, existing_avg, existing_realized, fill_price, strategy, source):
+    """
+    If paper_position_sync resurrected a position with no BUY lifecycle,
+    zero it without creating a trade row.
+    """
+    _qfos_upsert_position_atomic(
+        conn=conn,
+        symbol=symbol,
+        fill_price=fill_price,
+        strategy=strategy or "invalid_no_buy_lifecycle_zeroed",
+        new_qty=0.0,
+        new_avg_entry=existing_avg,
+        new_realized_pnl=existing_realized,
+    )
+
+    _qfos_cleanup_closed_symbol_runtime_state(
+        symbol,
+        reason="invalid_no_buy_lifecycle_zeroed",
+        source=source,
+    )
+
+    _qfos_log_atomic(
+        "[SELL_VALIDATION_REJECT] symbol=%s reason=no_buy_lifecycle_position_zeroed strategy=%s source=%s"
+        % (symbol, strategy, source)
+    )
+
+
+def qfos_reconcile_positions_without_buy_lifecycle(conn, source="no_buy_lifecycle_reconciler"):
+    """
+    Sweeps DB positions. Any positive position with no BUY lifecycle in trades
+    is invalid after a clean reset and is zeroed with no trade row.
+    """
+    cols = _qfos_table_columns(conn, "positions")
+    if not cols:
+        return []
+
+    qty_col = _qfos_first_existing_column(cols, ["quantity", "qty", "amount"])
+    avg_col = _qfos_first_existing_column(cols, ["avg_entry", "avg_price", "entry_price", "average_entry"])
+    realized_col = _qfos_first_existing_column(cols, ["realized_pnl", "pnl_realized"])
+    last_price_col = _qfos_first_existing_column(cols, ["last_price", "mark_price", "price"])
+    strategy_col = _qfos_first_existing_column(cols, ["strategy"])
+
+    if not qty_col:
+        return []
+
+    rows = _qfos_exec(
+        conn,
+        f"SELECT symbol, {qty_col}"
+        + (f", {avg_col}" if avg_col else ", 0")
+        + (f", {realized_col}" if realized_col else ", 0")
+        + (f", {last_price_col}" if last_price_col else ", 0")
+        + (f", {strategy_col}" if strategy_col else ", ''")
+        + f" FROM positions WHERE {qty_col} > :eps",
+        {"eps": _QFOS_EPSILON}
+    ).fetchall()
+
+    fixed = []
+
+    for row in rows:
+        symbol = row[0]
+        open_qty = _qfos_float(row[1], 0.0)
+        avg_entry = _qfos_float(row[2], 0.0)
+        realized = _qfos_float(row[3], 0.0)
+        last_price = _qfos_float(row[4], 0.0)
+        strategy = str(row[5] or "no_buy_lifecycle_reconciler")
+
+        buy_qty = _qfos_symbol_buy_lifecycle_qty(conn, symbol)
+
+        if buy_qty > _QFOS_EPSILON:
+            continue
+
+        _qfos_upsert_position_atomic(
+            conn=conn,
+            symbol=symbol,
+            fill_price=last_price if last_price > _QFOS_EPSILON else avg_entry,
+            strategy=strategy,
+            new_qty=0.0,
+            new_avg_entry=avg_entry,
+            new_realized_pnl=realized,
+        )
+
+        _qfos_cleanup_closed_symbol_runtime_state(
+            symbol,
+            reason="db_no_buy_lifecycle_position_zeroed",
+            source=source,
+        )
+
+        _qfos_log_atomic(
+            "[QFOS_NO_BUY_LIFECYCLE_POSITION_ZEROED] symbol=%s open_qty=%s strategy=%s source=%s"
+            % (symbol, open_qty, strategy, source)
+        )
+
+        fixed.append(symbol)
+
+    return fixed
+
+def qfos_persist_fill_atomic(conn, fill, source="main_loop"):
+    """
+    Atomic paper fill persistence boundary.
+
+    Invariants:
+    - SELL with no open quantity is rejected before trade insert.
+    - SELL requested_qty <= 0 is rejected before trade insert.
+    - SELL requested_qty > open_qty is capped to open_qty.
+    - Repeated full-position SELL after zero is rejected.
+    - Position update succeeds before trade insert.
+    - SELL realized PnL uses DB avg_entry.
+    - Historical rows are not rewritten.
+    """
+    if conn is None:
+        raise RuntimeError("qfos_persist_fill_atomic requires sqlite connection")
+
+    if not isinstance(fill, dict):
+        _qfos_log_atomic("[FILL_VALIDATION_REJECT] reason=fill_not_dict source=%s" % source)
+        return None
+
+    symbol = str(fill.get("symbol") or "").strip()
+    side = str(fill.get("side") or "").strip().lower()
+
+    requested_qty = _qfos_float(fill.get("quantity", fill.get("qty")), 0.0)
+    expected_price = _qfos_float(fill.get("expected_price", fill.get("fill_price", fill.get("price"))), 0.0)
+    fill_price = _qfos_float(fill.get("fill_price", fill.get("price", expected_price)), 0.0)
+    slippage_bps = _qfos_float(fill.get("slippage_bps"), 0.0)
+    strategy = str(fill.get("strategy") or fill.get("reason") or "unknown")
+    confidence = _qfos_float(fill.get("confidence"), 0.0)
+
+    if not symbol:
+        _qfos_log_atomic("[FILL_VALIDATION_REJECT] reason=missing_symbol source=%s" % source)
+        return None
+
+    if side not in ("buy", "sell"):
+        _qfos_log_atomic("[FILL_VALIDATION_REJECT] symbol=%s side=%s reason=invalid_side source=%s" % (symbol, side, source))
+        return None
+
+    if requested_qty <= _QFOS_EPSILON:
+        _qfos_log_atomic("[FILL_VALIDATION_REJECT] symbol=%s side=%s qty=%s reason=non_positive_qty source=%s" % (symbol, side, requested_qty, source))
+        return None
+
+    if fill_price <= _QFOS_EPSILON:
+        _qfos_log_atomic("[FILL_VALIDATION_REJECT] symbol=%s side=%s price=%s reason=non_positive_fill_price source=%s" % (symbol, side, fill_price, source))
+        return None
+
+    if side == "buy":
+        _qfos_clear_symbol_closed_tombstone(symbol, reason="accepted_buy_request")
+
+    started_tx = False
+
+    try:
+        if not getattr(conn, "in_transaction", False):
+            _qfos_exec(conn, "BEGIN IMMEDIATE")
+            started_tx = True
+
+        pos = _qfos_get_position_row(conn, symbol)
+        existing_qty = _qfos_float(pos.get("quantity"), 0.0)
+        existing_avg = _qfos_float(pos.get("avg_entry"), 0.0)
+        existing_realized = _qfos_float(pos.get("realized_pnl"), 0.0)
+
+        final_qty = requested_qty
+        pnl = 0.0
+
+        if side == "sell":
+            if not _qfos_has_valid_buy_lifecycle_for_sell(conn, symbol, requested_qty):
+                _qfos_zero_invalid_no_buy_position(
+                    conn=conn,
+                    symbol=symbol,
+                    existing_avg=existing_avg,
+                    existing_realized=existing_realized,
+                    fill_price=fill_price,
+                    strategy=strategy,
+                    source=source,
+                )
+                if started_tx:
+                    _qfos_commit(conn)
+                return None
+
+            tombstone_handled = _qfos_reject_or_reconcile_tombstoned_sell(
+                conn=conn,
+                symbol=symbol,
+                requested_qty=requested_qty,
+                existing_qty=existing_qty,
+                existing_avg=existing_avg,
+                existing_realized=existing_realized,
+                fill_price=fill_price,
+                strategy=strategy,
+                source=source,
+            )
+            if tombstone_handled:
+                if started_tx:
+                    _qfos_commit(conn)
+                return None
+
+            dup = _qfos_duplicate_sell_guard(conn, symbol, requested_qty, strategy)
+            if dup:
+                reconciled = _qfos_reconcile_position_from_duplicate_latest_sell(
+                    conn=conn,
+                    symbol=symbol,
+                    requested_qty=requested_qty,
+                    existing_qty=existing_qty,
+                    existing_avg=existing_avg,
+                    existing_realized=existing_realized,
+                    fill_price=fill_price,
+                    strategy=strategy,
+                    source=source,
+                    dup=dup,
+                )
+
+                if reconciled:
+                    if started_tx:
+                        _qfos_commit(conn)
+                    return None
+
+                _qfos_log_atomic(
+                    "[SELL_VALIDATION_REJECT] symbol=%s requested_qty=%s strategy=%s reason=%s latest_id=%s source=%s"
+                    % (symbol, requested_qty, strategy, dup.get("reason"), dup.get("latest_id"), source)
+                )
+                _qfos_cleanup_closed_symbol_runtime_state(
+                    symbol,
+                    reason="duplicate_latest_sell",
+                    source=source,
+                )
+                if started_tx:
+                    _qfos_rollback(conn)
+                return None
+            if existing_qty <= _QFOS_EPSILON:
+                _qfos_log_atomic(
+                    "[SELL_VALIDATION_REJECT] symbol=%s requested_qty=%s open_qty=%s strategy=%s reason=no_open_position source=%s"
+                    % (symbol, requested_qty, existing_qty, strategy, source)
+                )
+                if started_tx:
+                    _qfos_rollback(conn)
+                return None
+
+            if requested_qty > existing_qty + _QFOS_EPSILON:
+                _qfos_log_atomic(
+                    "[SELL_VALIDATION_CAP] symbol=%s requested_qty=%s open_qty=%s strategy=%s reason=qty_gt_open_capped source=%s"
+                    % (symbol, requested_qty, existing_qty, strategy, source)
+                )
+                final_qty = existing_qty
+
+            if final_qty <= _QFOS_EPSILON:
+                _qfos_log_atomic(
+                    "[SELL_VALIDATION_REJECT] symbol=%s requested_qty=%s final_qty=%s strategy=%s reason=zero_final_qty source=%s"
+                    % (symbol, requested_qty, final_qty, strategy, source)
+                )
+                if started_tx:
+                    _qfos_rollback(conn)
+                return None
+
+            new_qty = max(existing_qty - final_qty, 0.0)
+            new_avg = existing_avg
+            pnl = float(final_qty * (fill_price - existing_avg))
+            new_realized = existing_realized + pnl
+
+        else:
+            old_value = existing_qty * existing_avg
+            buy_value = requested_qty * fill_price
+            new_qty = existing_qty + requested_qty
+            new_avg = (old_value + buy_value) / new_qty if new_qty > _QFOS_EPSILON else fill_price
+            new_realized = existing_realized
+            final_qty = requested_qty
+            pnl = 0.0
+
+        if new_qty < -_QFOS_EPSILON:
+            _qfos_log_atomic(
+                "[FILL_VALIDATION_REJECT] symbol=%s side=%s requested_qty=%s open_qty=%s new_qty=%s reason=negative_position_guard source=%s"
+                % (symbol, side, requested_qty, existing_qty, new_qty, source)
+            )
+            if started_tx:
+                _qfos_rollback(conn)
+            return None
+
+        exit_is_exit, exit_reason = _qfos_exit_accounting_fields(
+            fill=fill,
+            side=side,
+            strategy=strategy,
+            source=source,
+        )
+
+        normalized = dict(fill)
+        normalized.update({
+            "symbol": symbol,
+            "side": side,
+            "quantity": float(final_qty),
+            "expected_price": float(expected_price if expected_price > _QFOS_EPSILON else fill_price),
+            "fill_price": float(fill_price),
+            "slippage_bps": float(slippage_bps),
+            "pnl": float(pnl),
+            "strategy": strategy,
+            "confidence": float(confidence),
+            "live": bool(fill.get("live", False)),
+            "shadow_mode": bool(fill.get("shadow_mode", False)),
+            "source": str(source),
+            "is_exit": bool(exit_is_exit),
+            "exit_reason": exit_reason,
+            "created_at": fill.get("created_at") or _qfos_now_utc_text(),
+        })
+
+        _qfos_upsert_position_atomic(
+            conn=conn,
+            symbol=symbol,
+            fill_price=fill_price,
+            strategy=strategy,
+            new_qty=new_qty,
+            new_avg_entry=new_avg,
+            new_realized_pnl=new_realized,
+        )
+
+        _qfos_insert_trade_atomic(conn, normalized)
+
+        if side == "sell" and new_qty <= _QFOS_EPSILON:
+            _qfos_mark_symbol_closed(
+                symbol=symbol,
+                side=side,
+                quantity=final_qty,
+                strategy=strategy,
+                source=source,
+            )
+
+        if started_tx:
+            _qfos_commit(conn)
+
+        _qfos_log_atomic(
+            "[FILL_PERSISTED_ATOMIC] symbol=%s side=%s qty=%s new_qty=%s pnl=%s strategy=%s source=%s"
+            % (symbol, side, final_qty, new_qty, pnl, strategy, source)
+        )
+
+        return normalized
+
+    except Exception as exc:
+        if started_tx:
+            try:
+                _qfos_rollback(conn)
+            except Exception:
+                pass
+        _qfos_log_atomic(
+            "[FILL_PERSISTENCE_ERROR] symbol=%s side=%s qty=%s error=%s source=%s"
+            % (symbol, side, requested_qty, repr(exc), source)
+        )
+        raise
+# END QFOS_ATOMIC_FILL_PERSISTENCE_V1
+
+
+# BEGIN QFOS_EXECUTION_ACCOUNTING_SCHEMA_GUARD_V1
+# Ensures execution-accounting schema exists and blocks stale position resurrection.
+# This does not tune strategy, dashboard, risk, fallback buys, or live trading.
+
+import os as _qfos_schema_os
+import sqlite3 as _qfos_schema_sqlite3
+
+_QFOS_EXECUTION_SCHEMA_GUARD_DONE = globals().setdefault("_QFOS_EXECUTION_SCHEMA_GUARD_DONE", False)
+
+
+def _qfos_schema_find_db_path():
+    candidates = []
+
+    env_path = _qfos_schema_os.environ.get("QFOS_DB_PATH") or _qfos_schema_os.environ.get("QUANT_DB_PATH")
+    if env_path:
+        candidates.append(env_path)
+
+    database_url = _qfos_schema_os.environ.get("DATABASE_URL") or ""
+    if database_url.startswith("sqlite:///"):
+        candidates.append(database_url.replace("sqlite:///", "", 1))
+
+    candidates.extend([
+        "/app/data/quant.db",
+    ])
+
+    for path in candidates:
+        try:
+            if path and _qfos_schema_os.path.exists(path):
+                return path
+        except Exception:
+            pass
+
+    return "/app/data/quant.db"
+
+
+def qfos_ensure_execution_accounting_schema_and_guards(db_path=None, source="schema_guard"):
+    """
+    Phase 3A hard guard.
+
+    1. Adds trades.is_exit and trades.exit_reason if missing.
+    2. Adds SQLite triggers that prevent stale position resurrection:
+       if latest trade for symbol is already SELL and covers the proposed
+       position quantity, positions insert/update is ignored.
+    """
+    if db_path is None:
+        db_path = _qfos_schema_find_db_path()
+
+    if not db_path or not _qfos_schema_os.path.exists(db_path):
+        return False
+
+    conn = _qfos_schema_sqlite3.connect(db_path, timeout=30)
+    cur = conn.cursor()
+
+    def _pragma_cols(cursor, table):
+        try:
+            cursor.execute(f"SELECT column_name FROM information_schema.columns WHERE table_name = '{table}' AND table_schema = 'public'")
+            return [r[0] for r in cursor.fetchall()]
+        except Exception:
+            try:
+                cursor.execute(f"PRAGMA table_info({table})")
+                return [r[1] for r in cursor.fetchall()]
+            except Exception:
+                return []
+
+    try:
+        trade_cols = _pragma_cols(cur, "trades")
+
+        if "is_exit" not in trade_cols:
+            cur.execute("ALTER TABLE trades ADD COLUMN is_exit BOOLEAN DEFAULT 0")
+            print("[QFOS_SCHEMA_GUARD] added trades.is_exit source=%s" % source, flush=True)
+
+        trade_cols = _pragma_cols(cur, "trades")
+
+        if "exit_reason" not in trade_cols:
+            cur.execute("ALTER TABLE trades ADD COLUMN exit_reason TEXT")
+            print("[QFOS_SCHEMA_GUARD] added trades.exit_reason source=%s" % source, flush=True)
+
+        # Block stale INSERT restore:
+        # If latest trade is SELL and its quantity covers NEW.quantity,
+        # ignore attempts to recreate a positive position.
+        cur.execute("DROP TRIGGER IF EXISTS qfos_block_stale_position_insert")
+        cur.execute("""
+        CREATE TRIGGER qfos_block_stale_position_insert
+        BEFORE INSERT ON positions
+        WHEN NEW.quantity > 0.00000001
+         AND COALESCE((SELECT side FROM trades WHERE symbol = NEW.symbol ORDER BY id DESC LIMIT 1), '') = 'sell'
+         AND COALESCE((SELECT quantity FROM trades WHERE symbol = NEW.symbol ORDER BY id DESC LIMIT 1), 0) + 0.00000001 >= NEW.quantity
+        BEGIN
+            SELECT RAISE(IGNORE);
+        END;
+        """)
+
+        # Block stale UPDATE restore:
+        # If a closed/zero position is repeatedly restored by sync, ignore it.
+        cur.execute("DROP TRIGGER IF EXISTS qfos_block_stale_position_update")
+        cur.execute("""
+        CREATE TRIGGER qfos_block_stale_position_update
+        BEFORE UPDATE OF quantity ON positions
+        WHEN NEW.quantity > 0.00000001
+         AND COALESCE((SELECT side FROM trades WHERE symbol = NEW.symbol ORDER BY id DESC LIMIT 1), '') = 'sell'
+         AND COALESCE((SELECT quantity FROM trades WHERE symbol = NEW.symbol ORDER BY id DESC LIMIT 1), 0) + 0.00000001 >= NEW.quantity
+        BEGIN
+            SELECT RAISE(IGNORE);
+        END;
+        """)
+
+        conn.commit()
+        print("[QFOS_SCHEMA_GUARD] execution accounting schema/triggers ensured source=%s" % source, flush=True)
+        return True
+
+    finally:
+        conn.close()
+
+
+def qfos_start_execution_accounting_schema_guard():
+    global _QFOS_EXECUTION_SCHEMA_GUARD_DONE
+
+    if _QFOS_EXECUTION_SCHEMA_GUARD_DONE:
+        return False
+
+    _QFOS_EXECUTION_SCHEMA_GUARD_DONE = True
+
+    try:
+        qfos_ensure_execution_accounting_schema_and_guards(source="startup")
+    except Exception as exc:
+        try:
+            print("[QFOS_SCHEMA_GUARD_ERROR] error=%s" % repr(exc), flush=True)
+        except Exception:
+            pass
+
+    return True
+
+
+try:
+    qfos_start_execution_accounting_schema_guard()
+except Exception as _qfos_schema_guard_start_error:
+    try:
+        print("[QFOS_SCHEMA_GUARD_START_ERROR] error=%s" % repr(_qfos_schema_guard_start_error), flush=True)
+    except Exception:
+        pass
+# END QFOS_EXECUTION_ACCOUNTING_SCHEMA_GUARD_V1
+
+
+
+
+
+# BEGIN QFOS_STALE_POSITION_RECONCILER_DAEMON_V1
+# Runtime safety daemon:
+# Automatically repairs positions resurrected by stale paper_position_sync after a full SELL.
+# It inserts no trade rows and does not change strategy thresholds.
+
+import os as _qfos_os
+import time as _qfos_time
+import threading as _qfos_threading
+import sqlite3 as _qfos_sqlite3
+
+_QFOS_STALE_RECONCILER_STARTED = globals().setdefault("_QFOS_STALE_RECONCILER_STARTED", False)
+
+
+def _qfos_find_sqlite_db_path():
+    candidates = []
+
+    env_path = _qfos_os.environ.get("QFOS_DB_PATH") or _qfos_os.environ.get("QUANT_DB_PATH")
+    if env_path:
+        candidates.append(env_path)
+
+    database_url = _qfos_os.environ.get("DATABASE_URL") or ""
+    if database_url.startswith("sqlite:///"):
+        candidates.append(database_url.replace("sqlite:///", "", 1))
+
+    candidates.extend([
+        "/app/data/quant.db",
+    ])
+
+    for path in candidates:
+        try:
+            if path and _qfos_os.path.exists(path):
+                return path
+        except Exception:
+            pass
+
+    # Default Docker path. It may appear after startup.
+    return "/app/data/quant.db"
+
+
+def qfos_run_stale_position_reconciler_once(source="auto_phase2h_reconciler"):
+    try:
+        db_path = _qfos_find_sqlite_db_path()
+        if not db_path or not _qfos_os.path.exists(db_path):
+            return []
+
+        conn = _qfos_sqlite3.connect(db_path, timeout=30)
+        try:
+            symbols = qfos_reconcile_stale_closed_positions(conn, source=source)
+            no_buy_symbols = []
+            try:
+                no_buy_symbols = qfos_reconcile_positions_without_buy_lifecycle(
+                    conn,
+                    source=source,
+                )
+            except Exception as _no_buy_reconcile_error:
+                print(
+                    "[QFOS_NO_BUY_LIFECYCLE_RECONCILER_ERROR] error=%s"
+                    % repr(_no_buy_reconcile_error),
+                    flush=True,
+                )
+
+            all_symbols = sorted(set((symbols or []) + (no_buy_symbols or [])))
+
+            conn.commit()
+            if all_symbols:
+                print(
+                    "[QFOS_AUTO_STALE_RECONCILER] reconciled=%s source=%s"
+                    % (",".join(all_symbols), source),
+                    flush=True,
+                )
+            return all_symbols
+        finally:
+            conn.close()
+    except Exception as exc:
+        try:
+            print("[QFOS_AUTO_STALE_RECONCILER_ERROR] error=%s" % repr(exc), flush=True)
+        except Exception:
+            pass
+        return []
+
+
+def qfos_start_stale_position_reconciler_daemon(interval_seconds=10):
+    global _QFOS_STALE_RECONCILER_STARTED
+
+    if _QFOS_STALE_RECONCILER_STARTED:
+        return False
+
+    if str(_qfos_os.environ.get("QFOS_DISABLE_STALE_RECONCILER", "")).lower() in ("1", "true", "yes"):
+        print("[QFOS_AUTO_STALE_RECONCILER_DISABLED]", flush=True)
+        return False
+
+    _QFOS_STALE_RECONCILER_STARTED = True
+
+    def _loop():
+        print(
+            "[QFOS_AUTO_STALE_RECONCILER_STARTED] interval_seconds=%s"
+            % interval_seconds,
+            flush=True,
+        )
+        while True:
+            qfos_run_stale_position_reconciler_once(source="auto_phase2h_reconciler")
+            _qfos_time.sleep(interval_seconds)
+
+    t = _qfos_threading.Thread(
+        target=_loop,
+        name="qfos_stale_position_reconciler",
+        daemon=True,
+    )
+    t.start()
+    return True
+
+
+# Start at module import so it runs under uvicorn/start.sh as well as normal main loop.
+try:
+    qfos_start_stale_position_reconciler_daemon(interval_seconds=10)
+except Exception as _qfos_reconciler_start_error:
+    try:
+        print(
+            "[QFOS_AUTO_STALE_RECONCILER_START_ERROR] error=%s"
+            % repr(_qfos_reconciler_start_error),
+            flush=True,
+        )
+    except Exception:
+        pass
+# END QFOS_STALE_POSITION_RECONCILER_DAEMON_V1
+
+
+
+
+# AGENT3_LEGACY_RESCUE_GATE_V1
+# Strict fail-closed sanitizer for legacy main.py ALLOCATOR_RESCUE path.
+# Authorized scope: main.py ALLOCATOR_RESCUE block only.
+def _agent3_float(value, default=0.0):
+    try:
+        return float(value if value is not None else default)
+    except Exception:
+        return float(default)
+
+
+def _agent3_order_source(order):
+    if not isinstance(order, dict):
+        return ""
+    feature = order.get("feature") if isinstance(order.get("feature"), dict) else {}
+    return str(order.get("feature_source") or feature.get("source") or "").strip().upper()
+
+
+def _agent3_is_rescue_order(order):
+    if not isinstance(order, dict):
+        return False
+    src = str(order.get("source", "") or "").lower()
+    strategy = str(order.get("strategy", "") or "").lower()
+    reason = str(order.get("entry_reason", "") or "").lower()
+    return (
+        "allocator_opportunity_rescue" in src
+        or "allocator_rescue" in src
+        or "evo_allocator_rescue" in strategy
+        or "allocator_rescue" in reason
+    )
+
+
+def _agent3_extract_top_symbols(local_vars):
+    """
+    Extract visible ENTRY QUALITY TOP list using likely variable names.
+    Fail closed if no list/set can be found.
+    """
+    candidates = []
+
+    for name in (
+        "entry_quality_top_10",
+        "entry_quality_top",
+        "entry_quality",
+        "top_quality_rows",
+        "entry_quality_rows",
+        "quality_top_rows",
+        "top_entries",
+        "top_candidates",
+        "top_symbols",
+        "entry_quality_top_symbols",
+    ):
+        if name in local_vars:
+            candidates.append(local_vars.get(name))
+
+    symbols = set()
+
+    def add_symbol(value):
+        if value is None:
+            return
+        if isinstance(value, str):
+            if "/" in value:
+                symbols.add(value)
+            return
+        if isinstance(value, dict):
+            sym = value.get("symbol") or value.get("pair")
+            if isinstance(sym, str) and "/" in sym:
+                symbols.add(sym)
+            return
+        if isinstance(value, (tuple, list)) and value:
+            first = value[0]
+            if isinstance(first, str) and "/" in first:
+                symbols.add(first)
+            elif isinstance(first, dict):
+                sym = first.get("symbol") or first.get("pair")
+                if isinstance(sym, str) and "/" in sym:
+                    symbols.add(sym)
+
+    for obj in candidates:
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                add_symbol(k)
+                add_symbol(v)
+        elif isinstance(obj, (list, tuple, set)):
+            for item in obj:
+                add_symbol(item)
+        else:
+            add_symbol(obj)
+
+    return symbols
+
+
+def _agent3_lookup_feature(order, local_vars):
+    if not isinstance(order, dict):
+        return {}
+
+    feature = order.get("feature")
+    if isinstance(feature, dict):
+        return feature
+
+    symbol = order.get("symbol")
+    for name in ("features", "feature_map", "features_by_symbol", "normal_features", "market_features"):
+        obj = local_vars.get(name)
+        if isinstance(obj, dict) and symbol in obj and isinstance(obj.get(symbol), dict):
+            return obj.get(symbol)
+
+    market_state = local_vars.get("market_state")
+    if isinstance(market_state, dict):
+        obj = market_state.get("features")
+        if isinstance(obj, dict) and symbol in obj and isinstance(obj.get(symbol), dict):
+            return obj.get(symbol)
+
+    return {}
+
+
+def _agent3_exposure_allows_rescue(local_vars):
+    """
+    Best-effort pre-handoff exposure guard.
+    Fail open only when exposure data is absent, because canonical exposure guard still runs later.
+    Fail closed when exposure data is present and over the known SIDEWAYS cap.
+    """
+    regime = str(local_vars.get("regime") or local_vars.get("market_regime") or "").upper()
+
+    portfolio = local_vars.get("portfolio")
+    market_state = local_vars.get("market_state")
+
+    exposure_pct = None
+    if isinstance(portfolio, dict):
+        exposure_pct = portfolio.get("exposure_pct")
+    if exposure_pct is None and isinstance(market_state, dict):
+        exposure_pct = market_state.get("exposure_pct")
+    if exposure_pct is None:
+        exposure_pct = local_vars.get("exposure_pct")
+
+    if exposure_pct is None:
+        return True, ""
+
+    exposure_pct = _agent3_float(exposure_pct, 0.0)
+
+    # Match observed runtime guard from logs: SIDEWAYS exposure limit 0.0450.
+    # Do not change risk thresholds; this only mirrors existing guard before rescue handoff.
+    if regime == "SIDEWAYS" and exposure_pct >= 0.045:
+        return False, f"exposure_cap regime=SIDEWAYS exposure_pct={exposure_pct:.4f} limit=0.0450"
+
+    return True, ""
+
+
+def _agent3_rescue_order_gate(order, local_vars):
+    """
+    Return (allowed: bool, reason: str, enriched_order: dict).
+    Fail closed when rank/source/metadata cannot be proven.
+    """
+    if not isinstance(order, dict):
+        return False, "invalid_order", order
+
+    if not _agent3_is_rescue_order(order):
+        return True, "not_rescue_order", order
+
+    symbol = order.get("symbol")
+    if not symbol:
+        return False, "missing_symbol", order
+
+    top_symbols = _agent3_extract_top_symbols(local_vars)
+    if not top_symbols:
+        return False, "entry_quality_top_empty", order
+
+    if symbol not in top_symbols:
+        return False, "not_top_quality", order
+
+    feature = _agent3_lookup_feature(order, local_vars)
+    if not isinstance(feature, dict) or not feature:
+        return False, "missing_feature_snapshot", order
+
+    if not bool(feature.get("ready", False)):
+        return False, "feature_not_ready", order
+
+    feature_source = str(feature.get("source", "") or "").strip().upper()
+    if feature_source != "NORMAL":
+        return False, "feature_source_not_normal", order
+
+    source_words = " ".join([
+        str(order.get("source", "")),
+        str(order.get("strategy", "")),
+        str(order.get("entry_reason", "")),
+        str(feature.get("source", "")),
+    ]).upper()
+
+    if (
+        "FALLBACK_SCOUT" in source_words
+        or "RAW_MOMENTUM_FALLBACK" in source_words
+        or "RAW_MOMENTUM" in source_words
+    ):
+        return False, "fallback_source_disabled", order
+
+    symbol_regime = str(feature.get("symbol_regime", "") or "").upper()
+    if symbol_regime not in ("SYMBOL_TREND_UP", "SYMBOL_BREAKOUT_UP"):
+        return False, f"weak_symbol_regime:{symbol_regime or 'missing'}", order
+
+    signal_strength = _agent3_float(feature.get("signal_strength", order.get("signal_strength")), 0.0)
+    if signal_strength <= 0:
+        return False, "weak_signal", order
+
+    confidence = _agent3_float(order.get("confidence", feature.get("confidence", 0.0)), 0.0)
+    if confidence <= 0:
+        return False, "weak_confidence", order
+
+    exposure_ok, exposure_reason = _agent3_exposure_allows_rescue(local_vars)
+    if not exposure_ok:
+        return False, exposure_reason, order
+
+    enriched = dict(order)
+    enriched["feature"] = feature
+    enriched["feature_source"] = "NORMAL"
+    enriched["signal_strength"] = signal_strength
+    enriched["symbol_regime"] = symbol_regime
+    enriched["entry_reason"] = "evo_allocator_rescue_entry_quality_top_normal"
+    enriched["confidence"] = confidence
+
+    return True, "passed", enriched
+
+
+def _agent3_filter_legacy_rescue_orders(order_list, local_vars):
+    if not isinstance(order_list, list):
+        return order_list
+
+    filtered = []
+    blocked = []
+
+    for order in order_list:
+        allowed, reason, enriched = _agent3_rescue_order_gate(order, local_vars)
+        if allowed:
+            filtered.append(enriched)
+        else:
+            symbol = order.get("symbol") if isinstance(order, dict) else None
+            blocked.append((symbol, reason))
+            print(f"[ALLOCATOR_RESCUE] no_candidate_passed reason={reason} symbol={symbol}")
+
+    if blocked:
+        print(f"[ALLOCATOR_RESCUE] blocked_legacy_orders count={len(blocked)} details={blocked}")
+
+    return filtered
+
+
 def main():
     positions = globals().get('positions', [])
     load_state_from_db()
@@ -2731,7 +5022,7 @@ def main():
             refresh_recent_trade_counts()
             features.update(prices)
             f_by_symbol = {s: features.features(s) for s in settings.symbol_list}
-            # POLICY V2 FIXED — persist normal feature map immediately after feature build
+            # POLICY V2 FIXED Ã¢â‚¬â€ persist normal feature map immediately after feature build
             try:
                 _qfos_v2_upsert_feature_snapshot(f_by_symbol)
             except Exception as _qfos_v2_feature_error:
@@ -2746,7 +5037,7 @@ def main():
                     print('FALLBACK FEATURES DIAGNOSTIC ONLY:', fallback_features)
                 else:
 
-                    # POLICY V2 — persist current feature map for trade classification
+                    # POLICY V2 Ã¢â‚¬â€ persist current feature map for trade classification
                     try:
                         if "features" in locals() and isinstance(features, dict):
                             _qfos_v2_upsert_feature_snapshot(features)
@@ -2772,7 +5063,7 @@ def main():
             except Exception as entry_quality_error:
                 print('ENTRY QUALITY LOCKDOWN ERROR:', entry_quality_error)
 
-            # QFOS ALLOCATOR OPPORTUNITY RESCUE — upstream rescue before fallback scout
+            # QFOS ALLOCATOR OPPORTUNITY RESCUE Ã¢â‚¬â€ upstream rescue before fallback scout
             try:
                 if isinstance(result, dict):
                     _qfos_ar_orders = result.get("orders") or []
@@ -2795,7 +5086,7 @@ def main():
                     result['orders'] = [scout_order]
                     entry_quality_rejections = []
                     print('[SCOUT_FALLBACK] injected into proposed_fills:', scout_order)
-                    # POLICY V2 FIXED — source-block weak fallback immediately after injection
+                    # POLICY V2 FIXED Ã¢â‚¬â€ source-block weak fallback immediately after injection
                     try:
                         if isinstance(result, dict) and isinstance(result.get('orders'), list):
                             result['orders'] = _qfos_v2_filter_fallback_orders(
@@ -2806,7 +5097,7 @@ def main():
                         print(f"[POLICY_V2] post_scout_filter_error={_qfos_v2_filter_error}", flush=True)
 
 
-                    # QFOS FALLBACK SCOUT SOURCE GUARD — directly after scout injection
+                    # QFOS FALLBACK SCOUT SOURCE GUARD Ã¢â‚¬â€ directly after scout injection
                     try:
                         _qfos_fbs_locals = locals()
                         for _qfos_fbs_name in ("proposed_fills", "orders", "fills", "proposed_orders"):
@@ -2829,7 +5120,7 @@ def main():
 
             print('FEATURES:', {k: v for k, v in state['features'].items() if isinstance(v, dict) and v.get('ready')})
 
-            # POLICY V2 — block weak fallback scout before ORDERS/EXPECTANCY
+            # POLICY V2 Ã¢â‚¬â€ block weak fallback scout before ORDERS/EXPECTANCY
             try:
                 _qfos_v2_locals = locals()
                 for _qfos_v2_name in ("proposed_fills", "orders", "fills", "proposed_orders"):
@@ -2841,7 +5132,7 @@ def main():
             except Exception as _qfos_v2_filter_error:
                 print(f"[POLICY_V2] fallback_filter_inline_error={_qfos_v2_filter_error}", flush=True)
 
-            # POLICY V2 FIXED — block weak fallback orders in the real result['orders'] list
+            # POLICY V2 FIXED Ã¢â‚¬â€ block weak fallback orders in the real result['orders'] list
             try:
                 if isinstance(result, dict) and isinstance(result.get('orders'), list):
                     result['orders'] = _qfos_v2_filter_fallback_orders(
@@ -3015,7 +5306,7 @@ def main():
                 applied_fills = _qfos_normalize_fill_list(list(applied_fills or []))
                 applied_fills = _qfos_full_exit_filter_fills(applied_fills)
                 for fill in applied_fills:
-                    allowed, reason = final_trade_firewall(fill, regime)
+                    allowed, reason = qfos_real_data_trade_firewall(fill, regime)
                     if allowed:
                         filtered_fills.append(fill)
                     else:
@@ -3024,20 +5315,25 @@ def main():
                             f"symbol={fill.get('symbol', 'UNKNOWN')} strategy={fill.get('strategy')} reason={reason}",
                             flush=True,
                         )
+                        if str(fill.get('side', '')).lower() == 'buy':
+                            qfos_rollback_unpersisted_buy(fill, source=f"final_firewall:{reason}")
                         rejected.append({'symbol': fill.get('symbol', 'UNKNOWN'), 'reason': reason})
                 applied_fills = filtered_fills
                 print(f"[EXECUTION_STAGE] final_applied_fills={len(applied_fills)}", flush=True)
-                for fill in applied_fills:
-                    fill_pnl, original_strat = update_position_from_fill(conn, fill)
-                    fill['pnl'] = fill_pnl
+                for raw_fill in applied_fills:
+                    persisted_fill = qfos_persist_fill_atomic(conn, raw_fill, source='main_loop')
+                    if not persisted_fill:
+                        continue
+                    fill = persisted_fill
+                    fill_pnl = float(fill.get('pnl', 0.0) or 0.0)
+                    original_strat = fill.get('applied_strategy', fill.get('strategy', 'unknown'))
                     trades_total.inc()
-                    conn.execute(text("\n                        INSERT INTO trades(\n                            symbol, side, quantity, expected_price, fill_price,\n            slippage_bps, pnl, strategy, confidence, live, shadow_mode, created_at\n                        )\n                        VALUES(\n                            :symbol, :side, :quantity, :expected_price, :fill_price,\n                            :slippage_bps, :pnl, :strategy, :confidence, :live, :shadow_mode, DATETIME('now', '+3 hours')\n                        )\n                    "), fill | {'live': settings.live_trading, 'shadow_mode': fill.get('shadow_mode', False)})
                     side = fill.get('side', '').upper()
                     symbol = fill.get('symbol', '')
-                    qty = float(fill.get('quantity', 0))
-                    price = float(fill.get('fill_price', 0))
+                    qty = float(fill.get('quantity', 0) or 0)
+                    price = float(fill.get('fill_price', 0) or 0)
                     strategy = fill.get('strategy', 'unknown')
-                    confidence = float(fill.get('confidence', 0))
+                    confidence = float(fill.get('confidence', 0) or 0)
                     is_shadow = fill.get('shadow_mode', False)
                     if not is_shadow:
                         pos_row = conn.execute(text('SELECT quantity FROM positions WHERE symbol = :s'), {'s': symbol}).mappings().first()
@@ -3057,6 +5353,8 @@ def main():
                     if score_strategy and score_strategy not in ('take_profit', 'single_full_take_profit', 'breakeven_protection_exit', 'time_stop_exit', 'trailing_profit_exit', 'stop_loss', 'adaptive_take_profit', 'adaptive_stop_loss', 'risk_off_exit', 'emergency_exposure_reduction', 'unknown'):
                         conn.execute(text("\n                            INSERT INTO strategy_scores (strategy, sharpe, drawdown, score, status)\n                            VALUES (:strategy, 0, 0, :pnl, 'active')\n                            ON CONFLICT DO NOTHING\n                        "), {'strategy': score_strategy, 'pnl': fill_pnl})
                         conn.execute(text("\n                            UPDATE strategy_scores\n                            SET score = score + :pnl, status = CASE WHEN score + :pnl < 0 THEN 'blocked' ELSE 'active' END\n                            WHERE strategy = :strategy\n                        "), {'strategy': score_strategy, 'pnl': fill_pnl})
+                qfos_ensure_trades_schema(conn)
+                qfos_db_sync_positions_from_portfolio(conn, portfolio, prices)
                 mark_positions_to_market(conn, prices)
                 conn.execute(text('\n                    INSERT INTO portfolio_snapshots(\n                        equity, cash, exposure, drawdown, regime\n                    )\n                    VALUES(\n                        :equity, :cash, :exposure, :drawdown, :regime\n                    )\n                '), {'equity': equity, 'cash': portfolio.cash, 'exposure': exposure, 'drawdown': portfolio.drawdown, 'regime': regime})
             equity_gauge.set(equity)
@@ -3345,7 +5643,7 @@ def live_status():
 
 
 # ============================================================
-# QFOS SAFE WRAPPER PATCH — ACTIVE OUTLIER LOSS + BIG LOSER COOLDOWN
+# QFOS SAFE WRAPPER PATCH Ã¢â‚¬â€ ACTIVE OUTLIER LOSS + BIG LOSER COOLDOWN
 # Added as wrappers to avoid fragile inline edits.
 # Percentages scale with equity across $10, $50, $100, $500, $1000+ accounts.
 # ============================================================
@@ -3380,14 +5678,7 @@ def _qfos_safe_now_local():
     return datetime.utcnow() + timedelta(hours=3)
 
 def _qfos_safe_db_path():
-    from pathlib import Path
-    for p in [Path("/app/data/quant.db"), Path("data/quant.db"), Path("./data/quant.db"), Path("quant.db")]:
-        try:
-            if p.exists():
-                return str(p)
-        except Exception:
-            pass
-    return "data/quant.db"
+    return qfos_runtime_db_path()
 
 def _qfos_safe_equity(portfolio=None):
     try:
@@ -3769,7 +6060,7 @@ _qfos_safe_install_wrappers()
 
 
 # ============================================================
-# QFOS BASKET LOSS GUARD — ACTIVE WRAPPER
+# QFOS BASKET LOSS GUARD Ã¢â‚¬â€ ACTIVE WRAPPER
 # Purpose:
 #   Prevent several small losing positions from combining into
 #   one large portfolio-level drawdown.
@@ -3803,14 +6094,7 @@ def _qfos_basket_get(obj, key, default=None):
         return default
 
 def _qfos_basket_db_path():
-    from pathlib import Path
-    for p in [Path("/app/data/quant.db"), Path("data/quant.db"), Path("./data/quant.db"), Path("quant.db")]:
-        try:
-            if p.exists():
-                return str(p)
-        except Exception:
-            pass
-    return "data/quant.db"
+    return qfos_runtime_db_path()
 
 def _qfos_basket_equity(portfolio=None):
     try:
@@ -3971,7 +6255,7 @@ _qfos_basket_install_wrapper()
 
 
 # ============================================================
-# QFOS EMERGENCY BASKET WATCHDOG — DB-LEVEL PAPER EXIT
+# QFOS EMERGENCY BASKET WATCHDOG Ã¢â‚¬â€ DB-LEVEL PAPER EXIT
 # Purpose:
 #   The previous wrappers load correctly, but logs show exits=0
 #   when no proposed exits/orders are created. This watchdog does
@@ -3995,14 +6279,7 @@ QFOS_WATCHDOG_SYMBOL_COOLDOWN_HOURS = globals().get("QFOS_WATCHDOG_SYMBOL_COOLDO
 QFOS_WATCHDOG_STRATEGY_COOLDOWN_HOURS = globals().get("QFOS_WATCHDOG_STRATEGY_COOLDOWN_HOURS", 6.0)
 
 def _qfos_watchdog_db_path():
-    from pathlib import Path
-    for p in [Path("/app/data/quant.db"), Path("data/quant.db"), Path("./data/quant.db"), Path("quant.db")]:
-        try:
-            if p.exists():
-                return str(p)
-        except Exception:
-            pass
-    return "data/quant.db"
+    return qfos_runtime_db_path()
 
 def _qfos_watchdog_now_local():
     from datetime import datetime, timedelta
@@ -4142,29 +6419,26 @@ def _qfos_watchdog_close_worst_loser_once():
             flush=True,
         )
 
-        # Record paper sell.
-        cur.execute("""
-            INSERT INTO trades (
-                symbol, side, quantity, expected_price, fill_price,
-                slippage_bps, pnl, strategy, confidence, live, shadow_mode, created_at
-            )
-            VALUES (?, 'sell', ?, ?, ?, 0.0, ?, 'basket_loss_cap', 1.0, 0, 0, ?)
-        """, (symbol, qty, mark, mark, pnl, now_s))
+        persisted = qfos_persist_fill_atomic(cur, {
+            "symbol": symbol,
+            "side": "sell",
+            "quantity": qty,
+            "expected_price": mark,
+            "fill_price": mark,
+            "slippage_bps": 0.0,
+            "strategy": "basket_loss_cap",
+            "confidence": 1.0,
+            "live": False,
+            "shadow_mode": False,
+            "created_at": now_s,
+        }, source="emergency_basket_watchdog")
 
-        # Flatten position in paper DB.
-        cur.execute("""
-            UPDATE positions
-            SET quantity = 0.0,
-                avg_entry = 0.0,
-                realized_pnl = COALESCE(realized_pnl, 0.0) + ?,
-                unrealized_pnl = 0.0,
-                exposure = 0.0,
-                strategy = 'basket_loss_cap',
-                updated_at = ?
-            WHERE symbol = ?
-        """, (pnl, now_s, symbol))
+        if not persisted:
+            conn.rollback()
+            return
 
-        # Quarantine symbol and source strategy.
+        pnl = float(persisted.get("pnl", pnl) or 0.0)
+
         cur.execute("""
             INSERT OR REPLACE INTO symbol_quarantine(symbol, reason, blocked_until, created_at)
             VALUES (?, 'basket_loss_cap', ?, ?)
@@ -4640,7 +6914,7 @@ def _qfos_fbs_filter_proposed_fills(order_list, local_vars=None, source="source"
 
 
 # ============================================================
-# QFOS ACTIVE POSITION WATCHDOG — DB-LEVEL EXIT PROTECTION
+# QFOS ACTIVE POSITION WATCHDOG Ã¢â‚¬â€ DB-LEVEL EXIT PROTECTION
 # Purpose:
 #   1. Stop any single position from reaching oversized loss.
 #   2. Protect positions that were in profit but give it back.
@@ -4682,14 +6956,7 @@ def _qfos_poswd_float(value, default=0.0):
         return default
 
 def _qfos_poswd_db_path():
-    from pathlib import Path
-    for p in [Path("/app/data/quant.db"), Path("data/quant.db"), Path("./data/quant.db"), Path("quant.db")]:
-        try:
-            if p.exists():
-                return str(p)
-        except Exception:
-            pass
-    return "data/quant.db"
+    return qfos_runtime_db_path()
 
 def _qfos_poswd_now_local():
     from datetime import datetime, timedelta
@@ -4805,25 +7072,24 @@ def _qfos_poswd_close_position(cur, pos, reason, pnl, now_s):
         flush=True,
     )
 
-    cur.execute("""
-        INSERT INTO trades (
-            symbol, side, quantity, expected_price, fill_price,
-            slippage_bps, pnl, strategy, confidence, live, shadow_mode, created_at
-        )
-        VALUES (?, 'sell', ?, ?, ?, 0.0, ?, ?, 1.0, 0, 0, ?)
-    """, (symbol, qty, mark, mark, pnl, reason, now_s))
+    persisted = qfos_persist_fill_atomic(cur, {
+        "symbol": symbol,
+        "side": "sell",
+        "quantity": qty,
+        "expected_price": mark,
+        "fill_price": mark,
+        "slippage_bps": 0.0,
+        "strategy": reason,
+        "confidence": 1.0,
+        "live": False,
+        "shadow_mode": False,
+        "created_at": now_s,
+    }, source="active_position_watchdog")
 
-    cur.execute("""
-        UPDATE positions
-        SET quantity = 0.0,
-            avg_entry = 0.0,
-            realized_pnl = COALESCE(realized_pnl, 0.0) + ?,
-            unrealized_pnl = 0.0,
-            exposure = 0.0,
-            strategy = ?,
-            updated_at = ?
-        WHERE symbol = ?
-    """, (pnl, reason, now_s, symbol))
+    if not persisted:
+        return False
+
+    pnl = float(persisted.get("pnl", pnl) or 0.0)
 
     cur.execute("""
         INSERT OR REPLACE INTO symbol_quarantine(symbol, reason, blocked_until, created_at)
@@ -4846,6 +7112,7 @@ def _qfos_poswd_close_position(cur, pos, reason, pnl, now_s):
         f"symbol={symbol} reason={reason} pnl={pnl:.6f} blocked_until={blocked_until}",
         flush=True,
     )
+    return True
 
 def _qfos_poswd_check_once():
     import sqlite3
@@ -5001,7 +7268,7 @@ _qfos_start_active_position_watchdog()
 
 
 # ============================================================
-# QFOS PROFIT ENGINE V1 — TRADE CLASS + PARTIAL TP + RUNNERS
+# QFOS PROFIT ENGINE V1 Ã¢â‚¬â€ TRADE CLASS + PARTIAL TP + RUNNERS
 # Purpose:
 #   Fix negative expectancy caused by tiny full exits and larger
 #   losses. This engine separates fallback, sideways scalp, and
@@ -5056,14 +7323,7 @@ def _qfos_pe_float(value, default=0.0):
         return default
 
 def _qfos_pe_db_path():
-    from pathlib import Path
-    for p in [Path("/app/data/quant.db"), Path("data/quant.db"), Path("./data/quant.db"), Path("quant.db")]:
-        try:
-            if p.exists():
-                return str(p)
-        except Exception:
-            pass
-    return "data/quant.db"
+    return qfos_runtime_db_path()
 
 def _qfos_pe_now_local():
     from datetime import datetime, timedelta
@@ -5213,12 +7473,38 @@ def _qfos_pe_quarantine(cur, symbol, strategy, reason, now_s):
     return blocked_until
 
 def _qfos_pe_sell(cur, pos, quantity, reason, pnl, now_s, quarantine=True):
+    # PHASE2D_PE_DUPLICATE_SELL_SOURCE_GUARD
+    try:
+        if _qfos_latest_trade_is_sell_and_no_open_qty(conn, symbol):
+            _qfos_cleanup_closed_symbol_runtime_state(
+                symbol,
+                reason="pe_source_latest_sell_no_open_qty",
+                source="_qfos_pe_sell",
+            )
+            print(
+                "[PE_SELL_SOURCE_SKIP] symbol=%s reason=latest_sell_no_open_qty"
+                % (symbol,),
+                flush=True,
+            )
+            return None
+    except Exception as _phase2d_guard_error:
+        print(
+            "[PE_SELL_SOURCE_GUARD_ERROR] symbol=%s error=%s"
+            % (symbol if "symbol" in locals() else "unknown", repr(_phase2d_guard_error)),
+            flush=True,
+        )
+
     symbol = str(pos["symbol"])
     qty = abs(_qfos_pe_float(quantity))
     mark = _qfos_pe_float(pos["last_price"])
     strategy = str(pos.get("strategy") or reason)
 
     if qty <= 0:
+        print(
+            f"[SELL_VALIDATION_REJECT] source=profit_engine symbol={symbol} "
+            f"strategy={reason} reason=requested_qty_lte_zero qty={qty}",
+            flush=True,
+        )
         return False
 
     print(
@@ -5227,49 +7513,49 @@ def _qfos_pe_sell(cur, pos, quantity, reason, pnl, now_s, quarantine=True):
         flush=True,
     )
 
-    cur.execute("""
-        INSERT INTO trades (
-            symbol, side, quantity, expected_price, fill_price,
-            slippage_bps, pnl, strategy, confidence, live, shadow_mode, created_at
-        )
-        VALUES (?, 'sell', ?, ?, ?, 0.0, ?, ?, 1.0, 0, 0, ?)
-    """, (symbol, qty, mark, mark, pnl, reason, now_s))
+    persisted = qfos_persist_fill_atomic(cur, {
+        "symbol": symbol,
+        "side": "sell",
+        "quantity": qty,
+        "expected_price": mark,
+        "fill_price": mark,
+        "slippage_bps": 0.0,
+        "strategy": reason,
+        "confidence": 1.0,
+        "live": False,
+        "shadow_mode": False,
+        "created_at": now_s,
+    }, source="profit_engine")
 
-    old_qty = abs(_qfos_pe_float(pos["quantity"]))
-    new_qty = max(old_qty - qty, 0.0)
-    new_exposure = new_qty * mark
+    if not persisted:
+        return False
 
-    if new_qty <= 1e-12:
-        cur.execute("""
-            UPDATE positions
-            SET quantity = 0.0,
-                avg_entry = 0.0,
-                realized_pnl = COALESCE(realized_pnl, 0.0) + ?,
-                unrealized_pnl = 0.0,
-                exposure = 0.0,
-                strategy = ?,
-                updated_at = ?
-            WHERE symbol = ?
-        """, (pnl, reason, now_s, symbol))
+    final_qty = abs(_qfos_pe_float(persisted.get("quantity", qty)))
+    final_pnl = _qfos_pe_float(persisted.get("pnl", pnl))
 
+    row = cur.execute("SELECT quantity FROM positions WHERE symbol = ? LIMIT 1", (symbol,)).fetchone()
+    remaining_qty = _qfos_pe_float(row[0], 0.0) if row else 0.0
+
+    if remaining_qty <= 1e-12:
         if quarantine:
             blocked_until = _qfos_pe_quarantine(cur, symbol, strategy, reason, now_s)
-            print(f"[PROFIT_ENGINE] closed symbol={symbol} reason={reason} blocked_until={blocked_until}", flush=True)
+            print(
+                f"[PROFIT_ENGINE] closed symbol={symbol} reason={reason} "
+                f"pnl={final_pnl:.6f} blocked_until={blocked_until}",
+                flush=True,
+            )
         else:
-            print(f"[PROFIT_ENGINE] closed symbol={symbol} reason={reason}", flush=True)
-
+            print(
+                f"[PROFIT_ENGINE] closed symbol={symbol} reason={reason} "
+                f"pnl={final_pnl:.6f}",
+                flush=True,
+            )
     else:
-        cur.execute("""
-            UPDATE positions
-            SET quantity = ?,
-                realized_pnl = COALESCE(realized_pnl, 0.0) + ?,
-                unrealized_pnl = ?,
-                exposure = ?,
-                updated_at = ?
-            WHERE symbol = ?
-        """, (new_qty, pnl, 0.0, new_exposure, now_s, symbol))
-
-        print(f"[PROFIT_ENGINE] partial sold symbol={symbol} remaining_qty={new_qty:.8f}", flush=True)
+        print(
+            f"[PROFIT_ENGINE] partial sold symbol={symbol} sold_qty={final_qty:.8f} "
+            f"remaining_qty={remaining_qty:.8f} pnl={final_pnl:.6f}",
+            flush=True,
+        )
 
     return True
 
@@ -5632,14 +7918,7 @@ def _qfos_acct_float(value, default=0.0):
         return default
 
 def _qfos_acct_db_path():
-    from pathlib import Path
-    for p in [Path("/app/data/quant.db"), Path("data/quant.db"), Path("./data/quant.db"), Path("quant.db")]:
-        try:
-            if p.exists():
-                return str(p)
-        except Exception:
-            pass
-    return "data/quant.db"
+    return qfos_runtime_db_path()
 
 def _qfos_acct_now_local():
     from datetime import datetime, timedelta
@@ -5647,9 +7926,14 @@ def _qfos_acct_now_local():
 
 def _qfos_acct_table_columns(cur, table):
     try:
-        return [r[1] for r in cur.execute(f"PRAGMA table_info({table})").fetchall()]
+        cur.execute(f"SELECT column_name FROM information_schema.columns WHERE table_name = '{table}' AND table_schema = 'public'")
+        return [r[0] for r in cur.fetchall()]
     except Exception:
-        return []
+        try:
+            cur.execute(f"PRAGMA table_info({table})")
+            return [r[1] for r in cur.fetchall()]
+        except Exception:
+            return []
 
 def _qfos_acct_latest_regime(cur):
     try:
@@ -5706,7 +7990,7 @@ def _qfos_acct_open_position_totals(cur):
 def _qfos_acct_ensure_snapshot_table(cur):
     cur.execute("""
         CREATE TABLE IF NOT EXISTS portfolio_snapshots (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             equity REAL,
             cash REAL,
             exposure REAL,
@@ -5835,7 +8119,7 @@ _qfos_start_portfolio_reconciler()
 
 
 # ============================================================
-# QFOS POLICY V2 — CONSOLIDATED ENTRY CLASSIFICATION + RUNNER LOGIC
+# QFOS POLICY V2 Ã¢â‚¬â€ CONSOLIDATED ENTRY CLASSIFICATION + RUNNER LOGIC
 # Purpose:
 #   Fix confused scalper/trend-following behavior.
 #
@@ -5885,14 +8169,7 @@ def _qfos_v2_float(value, default=0.0):
         return default
 
 def _qfos_v2_db_path():
-    from pathlib import Path
-    for p in [Path("/app/data/quant.db"), Path("data/quant.db"), Path("./data/quant.db"), Path("quant.db")]:
-        try:
-            if p.exists():
-                return str(p)
-        except Exception:
-            pass
-    return "data/quant.db"
+    return qfos_runtime_db_path()
 
 def _qfos_v2_now_local():
     from datetime import datetime, timedelta
@@ -6417,14 +8694,7 @@ def _qfos_opp_float(value, default=0.0):
         return default
 
 def _qfos_opp_db_path():
-    from pathlib import Path
-    for p in [Path("/app/data/quant.db"), Path("data/quant.db"), Path("./data/quant.db"), Path("quant.db")]:
-        try:
-            if p.exists():
-                return str(p)
-        except Exception:
-            pass
-    return "data/quant.db"
+    return qfos_runtime_db_path()
 
 def _qfos_opp_state():
     import sqlite3
@@ -6760,14 +9030,7 @@ def _qfos_ar_float(value, default=0.0):
         return default
 
 def _qfos_ar_db_path():
-    from pathlib import Path
-    for p in [Path("/app/data/quant.db"), Path("data/quant.db"), Path("./data/quant.db"), Path("quant.db")]:
-        try:
-            if p.exists():
-                return str(p)
-        except Exception:
-            pass
-    return "data/quant.db"
+    return qfos_runtime_db_path()
 
 def _qfos_ar_now_local():
     from datetime import datetime, timedelta
@@ -7110,6 +9373,15 @@ def _qfos_allocator_opportunity_rescue(result, local_vars=None):
         )
 
     if orders:
+        # AGENT3_LEGACY_RESCUE_SANITIZER_CALL_V1
+        try:
+            orders = _agent3_filter_legacy_rescue_orders(orders, locals())
+        except Exception as _agent3_rescue_gate_error:
+            print(f"[ALLOCATOR_RESCUE] no_candidate_passed reason=rescue_gate_error symbol=None error={_agent3_rescue_gate_error}")
+            try:
+                orders = [o for o in orders if not _agent3_is_rescue_order(o)]
+            except Exception:
+                orders = []
         print(f"[ALLOCATOR_RESCUE] injected_orders count={len(orders)}", flush=True)
     else:
         print("[ALLOCATOR_RESCUE] no_candidate_passed", flush=True)
@@ -7211,14 +9483,7 @@ def _qfos_harden_float(value, default=0.0):
         return default
 
 def _qfos_harden_db_path():
-    from pathlib import Path
-    for p in [Path("/app/data/quant.db"), Path("data/quant.db"), Path("./data/quant.db"), Path("quant.db")]:
-        try:
-            if p.exists():
-                return str(p)
-        except Exception:
-            pass
-    return "data/quant.db"
+    return qfos_runtime_db_path()
 
 def _qfos_harden_recent_rescue_buy_count(seconds=3600):
     import sqlite3
@@ -7395,14 +9660,7 @@ def _qfos_full_exit_float(value, default=0.0):
         return default
 
 def _qfos_full_exit_db_path():
-    from pathlib import Path
-    for p in [Path("/app/data/quant.db"), Path("data/quant.db"), Path("./data/quant.db"), Path("quant.db")]:
-        try:
-            if p.exists():
-                return str(p)
-        except Exception:
-            pass
-    return "data/quant.db"
+    return qfos_runtime_db_path()
 
 def _qfos_full_exit_open_qty(symbol):
     import sqlite3
@@ -7504,3 +9762,225 @@ if __name__ == '__main__':
 # QFOS_PROFIT_ENGINE_SIDEWAYS_GUARD_V1 installed
 
 # METRIC_TRUTH_STOPLOSS_WINRATE_V1 installed
+
+
+
+
+
+# ============================================================
+# QFOS_DUPLICATE_PROFIT_ENGINE_SELL_GUARD_V1
+#
+# Problem fixed:
+#   Profit Engine direct exits such as sideways_green_to_red_exit
+#   can repeatedly write SELL rows for the same position if the
+#   DB/state still presents the position as open on the next cycle.
+#
+# Protection:
+#   - Full-exit reasons may only sell once after the latest BUY.
+#   - If positions.quantity is already zero/missing, skip the sell.
+#   - If requested sell qty exceeds DB open qty, cap it.
+#   - Does not affect new BUY logic.
+# ============================================================
+
+_QFOS_FULL_EXIT_REASONS = {
+    "sideways_green_to_red_exit",
+    "sideways_scalp_stop_loss",
+    "sideways_scalp_take_profit",
+    "sideways_max_hold_profit_engine",
+    "fallback_stop_loss",
+    "fallback_take_profit",
+    "fallback_max_hold_exit",
+    "quality_initial_stop_loss",
+    "quality_runner_breakeven_exit",
+    "quality_runner_trailing_exit",
+    "quality_time_stop_exit",
+    "adaptive_stop_loss",
+    "adaptive_take_profit",
+    "trailing_profit_exit",
+    "breakeven_protection_exit",
+    "time_stop_exit",
+    "risk_off_exit",
+    "emergency_exposure_reduction",
+    "basket_loss_guard",
+    "big_loss_cooldown_exit",
+}
+
+def _qfos_guard_get_pos_value(pos, key, default=None):
+    try:
+        if isinstance(pos, dict):
+            return pos.get(key, default)
+    except Exception:
+        pass
+
+    try:
+        return pos[key]
+    except Exception:
+        pass
+
+    try:
+        return getattr(pos, key)
+    except Exception:
+        return default
+
+
+def _qfos_guard_float(v, default=0.0):
+    try:
+        if v is None:
+            return default
+        return float(v)
+    except Exception:
+        return default
+
+
+def _qfos_guard_latest_trade_time(cur, symbol, side):
+    try:
+        row = cur.execute(
+            """
+            SELECT created_at
+            FROM trades
+            WHERE symbol = ?
+              AND LOWER(side) = LOWER(?)
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+            """,
+            (symbol, side),
+        ).fetchone()
+
+        if not row:
+            return None
+
+        return row[0]
+    except Exception:
+        return None
+
+
+def _qfos_guard_has_full_exit_after_latest_buy(cur, symbol):
+    try:
+        latest_buy = _qfos_guard_latest_trade_time(cur, symbol, "buy")
+
+        if latest_buy:
+            row = cur.execute(
+                """
+                SELECT id, strategy, created_at
+                FROM trades
+                WHERE symbol = ?
+                  AND LOWER(side) = 'sell'
+                  AND created_at >= (?)::timestamp
+                ORDER BY created_at DESC, id DESC
+                LIMIT 1
+                """,
+                (symbol, latest_buy),
+            ).fetchone()
+        else:
+            row = cur.execute(
+                """
+                SELECT id, strategy, created_at
+                FROM trades
+                WHERE symbol = ?
+                  AND LOWER(side) = 'sell'
+                ORDER BY created_at DESC, id DESC
+                LIMIT 1
+                """,
+                (symbol,),
+            ).fetchone()
+
+        if not row:
+            return False, None
+
+        strategy = str(row[1] or "").lower()
+        if strategy in _QFOS_FULL_EXIT_REASONS:
+            return True, strategy
+
+        return False, strategy
+
+    except Exception:
+        return False, None
+
+
+def _qfos_guard_open_qty_from_db(cur, symbol):
+    try:
+        row = cur.execute(
+            """
+            SELECT quantity
+            FROM positions
+            WHERE symbol = ?
+            LIMIT 1
+            """,
+            (symbol,),
+        ).fetchone()
+
+        if not row:
+            return 0.0
+
+        return _qfos_guard_float(row[0], 0.0)
+    except Exception:
+        return None
+
+
+try:
+    _qfos_pe_sell_original_before_dup_guard = _qfos_pe_sell
+
+    def _qfos_pe_sell(cur, pos, qty, reason, unrealized, now_s, quarantine=False):
+        symbol = str(
+            _qfos_guard_get_pos_value(pos, "symbol")
+            or _qfos_guard_get_pos_value(pos, 0)
+            or ""
+        )
+
+        reason_l = str(reason or "").lower()
+        requested_qty = _qfos_guard_float(qty, 0.0)
+
+        if not symbol:
+            print("[DUP_SELL_GUARD] blocked missing_symbol", flush=True)
+            return False
+
+        if requested_qty <= 0:
+            print(
+                f"[DUP_SELL_GUARD] blocked symbol={symbol} reason={reason_l} invalid_qty={requested_qty}",
+                flush=True,
+            )
+            return False
+
+        if reason_l in _QFOS_FULL_EXIT_REASONS:
+            already_exited, prior_reason = _qfos_guard_has_full_exit_after_latest_buy(cur, symbol)
+            if already_exited:
+                print(
+                    f"[DUP_SELL_GUARD] blocked_duplicate_full_exit symbol={symbol} "
+                    f"reason={reason_l} prior_exit={prior_reason}",
+                    flush=True,
+                )
+                return False
+
+        open_qty = _qfos_guard_open_qty_from_db(cur, symbol)
+
+        if open_qty is not None:
+            if open_qty <= 0.00000001:
+                print(
+                    f"[DUP_SELL_GUARD] blocked_no_open_qty symbol={symbol} reason={reason_l} db_qty={open_qty}",
+                    flush=True,
+                )
+                return False
+
+            if requested_qty > open_qty:
+                print(
+                    f"[DUP_SELL_GUARD] capped_qty symbol={symbol} reason={reason_l} "
+                    f"requested={requested_qty:.8f} open={open_qty:.8f}",
+                    flush=True,
+                )
+                qty = open_qty
+
+        return _qfos_pe_sell_original_before_dup_guard(
+            cur, pos, qty, reason, unrealized, now_s, quarantine=quarantine
+        )
+
+    print("[DUP_SELL_GUARD] installed", flush=True)
+
+except Exception as exc:
+    print(f"[DUP_SELL_GUARD] install_failed={exc}", flush=True)
+
+# ============================================================
+# End QFOS_DUPLICATE_PROFIT_ENGINE_SELL_GUARD_V1
+# ============================================================
+
+
+

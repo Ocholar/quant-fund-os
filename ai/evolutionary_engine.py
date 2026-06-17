@@ -59,9 +59,10 @@ class StrategyPool:
 
                     ready_count += 1
 
-                    # Raw momentum fallback must not be used for scoring/trading.
-                    source = str(f.get("source", "NORMAL")).upper()
-                    if source == "RAW_MOMENTUM_FALLBACK":
+                    # Only trusted FeatureStore NORMAL data may score strategies.
+                    # Do not default missing source to NORMAL.
+                    source = str(f.get("source", "")).strip().upper()
+                    if source != "NORMAL":
                         continue
 
                     normal_count += 1

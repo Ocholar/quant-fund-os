@@ -1,0 +1,500 @@
+﻿quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=99.8902 cash=95.1901 exposure=4.7001 realized=-0.0603 unrealized=-0.0495 drawdown=-0.1098% regime=SIDEWAYS
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | INFO:     172.18.0.1:49604 - "GET /status HTTP/1.1" 200 OK
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=99.8902 cash=95.1901 exposure=4.7001 realized=-0.0603 unrealized=-0.0495 drawdown=-0.1098% regime=SIDEWAYS
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | INFO:     172.18.0.1:44482 - "GET /status HTTP/1.1" 200 OK
+quant-1  | INFO:     172.18.0.1:44490 - "GET /status HTTP/1.1" 200 OK
+quant-1  | INFO:     172.18.0.1:44506 - "GET /status HTTP/1.1" 200 OK
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | INFO:     172.18.0.1:50416 - "GET /status HTTP/1.1" 200 OK
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=99.8902 cash=95.1901 exposure=4.7001 realized=-0.0603 unrealized=-0.0495 drawdown=-0.1098% regime=SIDEWAYS
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | INFO:     172.18.0.1:34326 - "GET /status HTTP/1.1" 200 OK
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=99.8902 cash=95.1901 exposure=4.7001 realized=-0.0603 unrealized=-0.0495 drawdown=-0.1098% regime=SIDEWAYS
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | INFO:     172.18.0.1:59300 - "GET /status HTTP/1.1" 200 OK
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | INFO:     172.18.0.1:59306 - "GET /status HTTP/1.1" 200 OK
+quant-1  | INFO:     172.18.0.1:59312 - "GET /status HTTP/1.1" 200 OK
+quant-1  | INFO:     172.18.0.1:44474 - "GET /status HTTP/1.1" 200 OK
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=99.8902 cash=95.1901 exposure=4.7001 realized=-0.0603 unrealized=-0.0495 drawdown=-0.1098% regime=SIDEWAYS
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | INFO:     172.18.0.1:53250 - "GET /status HTTP/1.1" 200 OK
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | MARKET DATA WARNING: ccxt ticker failed LINK/USDT: mexc GET https://api.mexc.com/api/v3/ticker/24hr?symbol=LINKUSDT
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=99.8902 cash=95.1901 exposure=4.7001 realized=-0.0603 unrealized=-0.0495 drawdown=-0.1098% regime=SIDEWAYS
+quant-1  | MARKET DATA WARNING: ccxt ticker failed DASH/USDT: mexc GET https://api.mexc.com/api/v3/ticker/24hr?symbol=DASHUSDT
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | INFO:     172.18.0.1:54534 - "GET /status HTTP/1.1" 200 OK
+quant-1  | INFO:     172.18.0.1:54550 - "GET /status HTTP/1.1" 200 OK
+quant-1  | INFO:     172.18.0.1:54556 - "GET /status HTTP/1.1" 200 OK
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | INFO:     172.18.0.1:56648 - "GET /status HTTP/1.1" 200 OK
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=99.8902 cash=95.1901 exposure=4.7001 realized=-0.0603 unrealized=-0.0495 drawdown=-0.1098% regime=SIDEWAYS
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | INFO:     172.18.0.1:57074 - "GET /status HTTP/1.1" 200 OK
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=99.8902 cash=95.1901 exposure=4.7001 realized=-0.0603 unrealized=-0.0495 drawdown=-0.1098% regime=SIDEWAYS
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | INFO:     172.18.0.1:33714 - "GET /status HTTP/1.1" 200 OK
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=default_sideways signal=0.002658 breakout=0.002683 trend_quality=0.000000 momentum=0.002658 one_tick=0.002335 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0471 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.021948 unrealized=-0.027480
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.1948% unreal=-0.027480 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04991000 pnl=-0.027480
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | INFO:     172.18.0.1:33724 - "GET /status HTTP/1.1" 200 OK
+quant-1  | INFO:     172.18.0.1:33732 - "GET /status HTTP/1.1" 200 OK
+quant-1  | INFO:     172.18.0.1:43244 - "GET /status HTTP/1.1" 200 OK
