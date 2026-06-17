@@ -1,0 +1,34 @@
+02103:     expected_move = max(float(globals().get('FULL_TAKE_PROFIT_PCT', 0.0) or 0.0), float(globals().get('TAKE_PROFIT_PCT', 0.0) or 0.0))
+02104:     if expected_move < ENTRY_MIN_EXPECTED_MOVE_PCT:
+02105:         return f'expected_move_too_small_{expected_move:.4f}_lt_{ENTRY_MIN_EXPECTED_MOVE_PCT:.4f}'
+02106:     
+02107:     pacing_reason = _sideways_pacing_reason(symbol, data, regime)
+02108:     if pacing_reason:
+02109:         return pacing_reason
+02110: 
+02111:     same_symbol_reason = _same_symbol_cooldown_reason(symbol, data)
+02112:     if same_symbol_reason:
+02113:         return same_symbol_reason
+02114: 
+02115:     return None
+02116: 
+02117: def _compute_quality_score(data: dict) -> float:
+02118:     """
+02119:     Cross-sectional composite quality score for SIDEWAYS candidate ranking.
+02120:     Higher is better. Used to select the BEST available symbol, not just the first.
+02121:     """
+02122:     try:
+02123:         signal   = float(_feature_value(data, 'signal_strength') or 0.0)
+02124:         one_tick = float(_feature_value(data, 'one_tick_momentum') or 0.0)
+02125:         trend    = float(_feature_value(data, 'trend') or 0.0)
+02126:         long_t   = float(_feature_value(data, 'long_trend') or 0.0)
+02127:         vol      = abs(float(_feature_value(data, 'volatility') or 0.0))
+02128:         score = (
+02129:             signal   * 2.0    # primary driver
+02130:             + one_tick * 1.5  # breakout confirmation
+02131:             + trend   * 1.0   # directional alignment
+02132:             + long_t  * 0.5   # macro backing
+02133:             - vol     * 2.0   # penalise choppiness
+02134:         )
+02135:         return round(score, 6)
+02136:     except Exception:

@@ -1,0 +1,34 @@
+01574:             continue
+01575: 
+01576:         peak_change = _qfos_record_peak_change(symbol, change)
+01577:         age_minutes = _qfos_position_age_minutes(symbol)
+01578: 
+01579:         reason = _qfos_exit_decision(symbol, change, peak_change, age_minutes, regime)
+01580: 
+01581:         if reason:
+01582:             # trailing_profit_exit is a true winning exit, but apply_sell can store any reason.
+01583:             sell = normalize_exit_order(apply_sell(symbol, qty, price, reason))
+01584:             if sell:
+01585:                 print(
+01586:                     f"[WIN_RATE_EXIT] {reason} {symbol} "
+01587:                     f"change={change:.4f} peak={peak_change:.4f} age_min={age_minutes:.1f}"
+01588:                 )
+01589:                 sells.append(sell)
+01590:             continue
+01591: 
+01592:         # Risk-off remains guarded by the winning-strategy logic.
+01593:         if regime == 'RISK_OFF':
+01594:             risk_position = {
+01595:                 'symbol': symbol,
+01596:                 'quantity': qty,
+01597:                 'entry_price': avg_entry,
+01598:                 'mark_price': price,
+01599:                 'price': price,
+01600:                 'side': 'long',
+01601:             }
+01602:             if allow_risk_off_exit(risk_position, {'regime': regime}, portfolio, reason='risk_off_exit'):
+01603:                 sell = normalize_exit_order(apply_sell(symbol, qty, price, 'risk_off_exit'))
+01604:                 if sell:
+01605:                     sells.append(sell)
+01606:             else:
+01607:                 print(f"[WINNING_STRATEGY] Suppressed false risk_off_exit for {symbol} at price={price}")

@@ -1,0 +1,34 @@
+01518:     """
+01519:     dynamic_stop_pct, dynamic_take_pct = adaptive_exit_thresholds(symbol, regime)
+01520:     tp_target = min(float(dynamic_take_pct), _qfos_take_profit_target(regime))
+01521: 
+01522:     # 1. Hard stop: keep capital protection.
+01523:     # Grace period: do NOT fire adaptive stop in the first 2 minutes unless catastrophic (>5% loss).
+01524:     # This prevents noise-triggered instant stops that hit within 60s of entry.
+01525:     STOP_GRACE_MINUTES = 2.0
+01526:     CATASTROPHIC_STOP_PCT = 0.05
+01527:     if change <= -float(dynamic_stop_pct):
+01528:         if age_minutes >= STOP_GRACE_MINUTES or change <= -CATASTROPHIC_STOP_PCT:
+01529:             return "adaptive_stop_loss"
+01530: 
+01531:     # 2. Full TP earlier, especially in SIDEWAYS.
+01532:     if change >= tp_target:
+01533:         return "adaptive_take_profit"
+01534: 
+01535:     # 3. Trailing profit lock: if trade was nicely positive and gives back gains, exit while still green.
+01536:     if peak_change >= WIN_RATE_TRAIL_TRIGGER_PCT:
+01537:         if change >= BREAKEVEN_EXIT_PCT and change <= (peak_change - WIN_RATE_TRAIL_GIVEBACK_PCT):
+01538:             return "trailing_profit_exit"
+01539: 
+01540:     # 4. Breakeven protection: once it has been sufficiently positive, do not let it become a loser.
+01541:     if age_minutes >= WIN_RATE_MIN_HOLD_BEFORE_BREAKEVEN_MIN:
+01542:         if peak_change >= BREAKEVEN_TRIGGER_PCT and change <= BREAKEVEN_EXIT_PCT:
+01543:             return "breakeven_protection_exit"
+01544: 
+01545:     # 5. Time stop: stale SIDEWAYS trades should not be allowed to drift into stop loss.
+01546:     if age_minutes >= TIME_STOP_MINUTES and change <= TIME_STOP_EXIT_BELOW_PCT:
+01547:         return "time_stop_exit"
+01548: 
+01549:     return None
+01550: 
+01551: 

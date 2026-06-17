@@ -398,7 +398,7 @@ def ensure_positions_table(conn):
             last_price REAL NOT NULL DEFAULT 0,
             exposure REAL NOT NULL DEFAULT 0,
             strategy TEXT,
-            updated_at DATETIME DEFAULT (DATETIME('now', '+3 hours'))
+            updated_at DATETIME DEFAULT (CURRENT_TIMESTAMP + interval '3 hours')
         )
     """))
     conn.execute(text("""
@@ -406,7 +406,7 @@ def ensure_positions_table(conn):
             symbol TEXT PRIMARY KEY,
             reason TEXT NOT NULL,
             blocked_until DATETIME,
-            created_at DATETIME DEFAULT (DATETIME('now', '+3 hours'))
+            created_at DATETIME DEFAULT (CURRENT_TIMESTAMP + interval '3 hours')
         )
     """))
 
@@ -415,7 +415,7 @@ def get_quarantine(conn):
     rows = conn.execute(text("""
         SELECT symbol, reason, blocked_until, created_at
         FROM symbol_quarantine
-        WHERE blocked_until IS NULL OR blocked_until > DATETIME('now', '+3 hours')
+        WHERE blocked_until IS NULL OR blocked_until > CURRENT_TIMESTAMP + interval '3 hours'
         ORDER BY created_at DESC
     """)).mappings().all()
     return [
@@ -533,9 +533,126 @@ def get_performance(conn, equity):
         ],
     }
 
+# ============================================================
+# QFO_API_TRADES_TABLE_GUARD_V1
+#
+# Fix:
+# - Fresh paper reset can leave SQLite without a trades table.
+# - /status must not crash with:
+#       sqlite3.OperationalError: no such table: trades
+# - Create a minimal trades table if missing.
+# - If query still fails, return [] for latest_trades.
+# ============================================================
+
+def qfo_api_ensure_trades_table(conn):
+    try:
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS trades (
+                id SERIAL PRIMARY KEY,
+                symbol TEXT,
+                side TEXT,
+                quantity REAL DEFAULT 0,
+                fill_price REAL DEFAULT 0,
+                slippage_bps REAL DEFAULT 0,
+                strategy TEXT,
+                confidence REAL DEFAULT 0,
+                live BOOLEAN DEFAULT 0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        try:
+            conn.commit()
+        except Exception:
+            pass
+        return True
+    except Exception as e:
+        try:
+            print(f"[API_DB_GUARD] trades table ensure failed: {e}")
+        except Exception:
+            pass
+        return False
+
+def qfo_api_fetch_latest_trades(conn, limit=10):
+    try:
+        qfo_api_ensure_trades_table(conn)
+        rows = conn.execute(text("""
+            SELECT symbol, side, quantity, fill_price, slippage_bps,
+                   strategy, confidence, live, created_at
+            FROM trades
+            ORDER BY id DESC
+            LIMIT :limit
+        """), {"limit": int(limit)}).mappings().all()
+        return [dict(r) for r in rows]
+    except Exception as e:
+        try:
+            print(f"[API_DB_GUARD] latest_trades fallback [] because: {e}")
+        except Exception:
+            pass
+        return []
+
+# ============================================================
+# End QFO_API_TRADES_TABLE_GUARD_V1
+# ============================================================
+
+
+
+
+
+# ============================================================
+# QFO_STATUS_PREENSURE_TRADES_TABLE_V1
+#
+# Fix:
+# - After a fresh reset, SQLite may not yet have a trades table.
+# - /status was crashing when latest_trades tried SELECT FROM trades.
+# - This guard creates the minimal trades table before status queries run.
+# ============================================================
+def qfo_status_preensure_trades_table(conn):
+    try:
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS trades (
+                id SERIAL PRIMARY KEY,
+                symbol TEXT,
+                side TEXT,
+                quantity REAL DEFAULT 0,
+                fill_price REAL DEFAULT 0,
+                slippage_bps REAL DEFAULT 0,
+                strategy TEXT,
+                confidence REAL DEFAULT 0,
+                live BOOLEAN DEFAULT 0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        # Do NOT call conn.commit() here.
+        # get_status_payload() runs this inside engine.begin().
+        # Committing here closes that transaction and breaks later status queries.
+        return True
+    except Exception as e:
+        try:
+            print(f"[STATUS_TRADES_GUARD] ensure failed: {e}")
+        except Exception:
+            pass
+        return False
+# ============================================================
+# End QFO_STATUS_PREENSURE_TRADES_TABLE_V1
+# ============================================================
+
+
+
+
+# ============================================================
+# ============================================================
+
+
 
 def get_status_payload():
     with engine.begin() as conn:
+        try:
+            qfo_status_preensure_trades_table(conn)
+        except Exception as e:
+            try:
+                print(f"[STATUS_TRADES_GUARD] preensure skipped: {e}")
+            except Exception:
+                pass
         ensure_positions_table(conn)
 
         latest = conn.execute(text("""
@@ -545,13 +662,7 @@ def get_status_payload():
             LIMIT 1
         """)).mappings().first()
 
-        latest_trades = conn.execute(text("""
-            SELECT symbol, side, quantity, fill_price, slippage_bps,
-                   strategy, confidence, live, created_at
-            FROM trades
-            ORDER BY id DESC
-            LIMIT 10
-        """)).mappings().all()
+        latest_trades = qfo_api_fetch_latest_trades(conn, 10)
 
         portfolio = dict(latest) if latest else {
             "equity": 100,
@@ -666,27 +777,39 @@ def portfolio(limit: int = 100):
             ORDER BY id DESC
             LIMIT :limit
         """), {"limit": limit}).mappings().all()
-    return qfos_normalize_trade_list([dict(r) for r in rows])
+    return [dict(r) for r in rows]
 
 
 @app.get("/portfolio/latest")
 def latest_portfolio():
-    with engine.begin() as conn:
-        row = conn.execute(text("""
-            SELECT equity, cash, exposure, drawdown, regime, created_at
-            FROM portfolio_snapshots
-            ORDER BY id DESC
-            LIMIT 1
-        """)).mappings().first()
+    try:
+        with engine.begin() as conn:
+            row = conn.execute(text("""
+                SELECT equity, cash, exposure, drawdown, regime, created_at
+                FROM portfolio_snapshots
+                ORDER BY id DESC
+                LIMIT 1
+            """)).mappings().first()
 
-    return normalize_trades_for_dashboard(dict)(row) if row else {
+        if row:
+            out = {}
+            for k, v in dict(row).items():
+                if hasattr(v, "isoformat"):
+                    out[k] = v.isoformat()
+                else:
+                    out[k] = v
+            return out
+    except Exception as e:
+        print("API /portfolio/latest ERROR:", e)
+        pass
+
+    return {
         "equity": 100,
         "cash": 100,
         "exposure": 0,
         "drawdown": 0,
         "regime": "UNKNOWN",
     }
-
 
 @app.get("/positions")
 def positions():
@@ -739,6 +862,63 @@ def metrics_summary():
         equity = float(latest["equity"] or 0) if latest else 100
         return get_performance(conn, equity)
 
+
+
+def _compute_anomaly_warnings(payload: dict) -> list:
+    """
+    Agent-6 anomaly detection.
+    Returns a list of human-readable warning strings for impossible or suspect states.
+    These are surfaced in /status and the dashboard for operator visibility.
+    Never silently hides data — only adds warnings.
+    """
+    warnings = []
+    try:
+        perf = payload.get("performance") or {}
+        buy_count = int(perf.get("buy_count") or 0)
+        sell_count = int(perf.get("sell_count") or 0)
+        positions = payload.get("positions") or []
+        portfolio = payload.get("portfolio") or {}
+        exposure = float(portfolio.get("exposure") or 0)
+
+        # Impossible in spot mode: you cannot sell what you haven't bought
+        if sell_count > buy_count:
+            warnings.append(
+                f"ANOMALY: sell_count ({sell_count}) > buy_count ({buy_count}) "
+                "in spot mode — possible duplicate sells or DB corruption."
+            )
+
+        # Negative position quantities are impossible in spot long-only mode
+        for pos in positions:
+            qty = float(pos.get("quantity") or 0)
+            if qty < 0:
+                warnings.append(
+                    f"ANOMALY: negative position quantity for {pos.get('symbol')} qty={qty:.6f}"
+                )
+
+        # Non-trivial exposure with zero open positions
+        if exposure > 0.05 and len(positions) == 0:
+            warnings.append(
+                f"ANOMALY: portfolio shows exposure={exposure:.2f} but no open positions found."
+            )
+
+        # Win rate of 100% with more than 5 closed trades is suspicious
+        win_rate = float(perf.get("win_rate") or 0)
+        closed_count = int(perf.get("closed_outcome_count") or 0)
+        if closed_count >= 5 and win_rate >= 1.0:
+            warnings.append(
+                f"ANOMALY: win_rate=100% over {closed_count} closed outcomes — verify trade history."
+            )
+
+        # Realized PnL wildly inconsistent with equity (equity shouldn't go negative)
+        equity = float(portfolio.get("equity") or 0)
+        realized_pnl = float(perf.get("realized_pnl") or 0)
+        if equity < 0:
+            warnings.append(f"ANOMALY: equity is negative ({equity:.2f}) — DB state may be corrupt.")
+
+    except Exception as e:
+        warnings.append(f"ANOMALY_CHECK_FAILED: {e}")
+
+    return warnings
 
 
 def _count_exit_strategies():
@@ -794,7 +974,6 @@ def _count_exit_strategies():
 
 
 @app.get("/status")
-
 def status():
     payload = get_status_payload()
     control = get_control_state()
@@ -810,18 +989,9 @@ def status():
         "kill_switch": "/kill-switch",
     }
 
-    return qfos_normalize_payload(payload)
+    # Anomaly detection — flag impossible states so they are visible in the dashboard
+    payload["anomaly_warnings"] = _compute_anomaly_warnings(payload)
 
-
-    payload["paused"] = paused
-    payload["pause_reason"] = control.get("reason") or ""
-    payload["bot_state"] = "PAUSED" if paused else "RUNNING"
-    payload["status_label"] = payload["bot_state"]
-    payload["controls"] = {
-        "pause": "/pause",
-        "resume": "/resume",
-        "kill_switch": "/kill-switch",
-    }
     return qfos_normalize_payload(payload)
 @app.post("/pause")
 def pause():
@@ -1305,18 +1475,41 @@ async function loadDashboard() {
     const tradeTable = document.getElementById('latestTrades');
     tradeTable.innerHTML = '';
     (t.latest_trades || []).slice(0, 15).forEach(trade => {
+        // Handle both 'YYYY-MM-DD HH:MM:SS' and ISO 'YYYY-MM-DDTHH:MM:SS' formats
+        const tsRaw = String(trade.created_at || '');
+        const tsPart = tsRaw.replace('T', ' ').split(' ');
+        const timeDisplay = tsPart.length > 1 ? tsPart[1].substring(0, 8) : tsRaw.substring(0, 19);
+        const qty = Number(trade.quantity ?? 0);
+        const price = Number(trade.fill_price ?? 0);
+        const conf = Number(trade.confidence ?? 0);
         tradeTable.innerHTML += `
             <tr>
-              <td style="font-size:12px; color:var(--text-dim)">${trade.created_at.split(' ')[1]}</td>
+              <td style="font-size:12px; color:var(--text-dim)">${timeDisplay}</td>
               <td>${trade.symbol}</td>
-              <td class="${trade.side}">${trade.side.toUpperCase()}</td>
-              <td>${trade.quantity.toFixed(5)}</td>
-              <td>${trade.fill_price.toFixed(4)}</td>
-              <td><span class="strategy-pill">${(trade.display_strategy || trade.strategy)}</span></td>
-              <td style="color:var(--accent)">${(trade.confidence * 100).toFixed(0)}%</td>
+              <td class="${trade.side}">${(trade.side || '').toUpperCase()}</td>
+              <td>${qty.toFixed(5)}</td>
+              <td>${price.toFixed(4)}</td>
+              <td><span class="strategy-pill">${(trade.display_strategy || trade.strategy || '')}</span></td>
+              <td style="color:var(--accent)">${(conf * 100).toFixed(0)}%</td>
             </tr>
         `;
     });
+
+    // Anomaly warnings banner
+    const anomalies = data.anomaly_warnings || [];
+    let anomalyBanner = document.getElementById('anomalyBanner');
+    if (!anomalyBanner) {
+      anomalyBanner = document.createElement('div');
+      anomalyBanner.id = 'anomalyBanner';
+      anomalyBanner.style = 'margin: 16px 0; padding: 14px 20px; border-radius: 12px; background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.3); color: #f43f5e; font-size: 13px; line-height: 1.8; display: none;';
+      document.querySelector('.footer').before(anomalyBanner);
+    }
+    if (anomalies.length > 0) {
+      anomalyBanner.innerHTML = '<strong>⚠ Anomaly Warnings</strong><br>' + anomalies.map(w => `• ${w}`).join('<br>');
+      anomalyBanner.style.display = 'block';
+    } else {
+      anomalyBanner.style.display = 'none';
+    }
 
     const stratTable = document.getElementById('strategyTable');
     stratTable.innerHTML = '';
@@ -1478,4 +1671,283 @@ def qfos_normalize_payload(payload):
 
 print("QFOS final helper override loaded.")
 # === QFOS_FINAL_HELPER_OVERRIDE_END ===
+
+
+# QFO_API_TRADES_TABLE_GUARD_V1 installed
+
+# QFO_STATUS_PREENSURE_TRADES_TABLE_V1 installed
+
+# QFO_FIX_STATUS_TRANSACTION_COMMIT_V1 installed
+
+# ============================================================
+# QFO_DASHBOARD_TRUTH_V2_START
+# Purpose:
+# - Count ALL stop-loss style exits correctly, including sideways_scalp_stop_loss.
+# - Calculate win rate from closed exits, not all BUY/SELL rows.
+# - Recompute realized PnL from actual trade fills using FIFO.
+# - Keep latest trades display defensive across DB schema differences.
+# ============================================================
+
+def qfo_api__safe_float(value, default=0.0):
+    try:
+        if value is None:
+            return default
+        return float(value)
+    except Exception:
+        return default
+
+
+def qfo_api__safe_upper(value):
+    try:
+        return str(value or "").upper()
+    except Exception:
+        return ""
+
+
+def qfo_api__safe_lower(value):
+    try:
+        return str(value or "").lower()
+    except Exception:
+        return ""
+
+
+def qfo_api__is_stop_loss_strategy(strategy):
+    s = qfo_api__safe_lower(strategy)
+
+    # Covers:
+    # - stop_loss
+    # - sideways_scalp_stop_loss
+    # - quality_initial_stop_loss
+    # - initial_stop_loss
+    # - initial_stop
+    # - hard_stop
+    # - emergency_stop
+    return (
+        "stop_loss" in s
+        or "stoploss" in s
+        or "initial_stop" in s
+        or "hard_stop" in s
+        or "emergency_stop" in s
+    )
+
+
+def qfo_api__is_take_profit_strategy(strategy):
+    s = qfo_api__safe_lower(strategy)
+
+    # Covers:
+    # - take_profit
+    # - adaptive_take_profit
+    # - full_take_profit
+    # - partial_take_profit
+    # - trailing_profit_exit
+    # - profit_exit
+    return (
+        "take_profit" in s
+        or "profit_exit" in s
+        or "trailing_profit" in s
+        or "adaptive_take_profit" in s
+    )
+
+
+def qfo_api__trade_sort_key(row):
+    try:
+        return (
+            str(row.get("created_at") or ""),
+            int(row.get("id") or 0),
+        )
+    except Exception:
+        return ("", 0)
+
+
+def qfo_api__fetch_all_trades_for_status(conn):
+    try:
+        rows = conn.execute(text("""
+            SELECT *
+            FROM trades
+            ORDER BY created_at ASC, id ASC
+        """)).mappings().all()
+        return [dict(r) for r in rows]
+    except Exception as e:
+        try:
+            print(f"[DASHBOARD_TRUTH] fetch trades failed: {e}")
+        except Exception:
+            pass
+        return []
+
+
+def qfo_api__compute_fifo_realized_pnl(trades):
+    # Spot-long FIFO matching:
+    # BUY opens inventory.
+    # SELL closes oldest inventory for that symbol.
+    inventory = {}
+    realized = 0.0
+
+    for row in sorted(trades, key=qfo_api__trade_sort_key):
+        symbol = str(row.get("symbol") or "")
+        side = qfo_api__safe_upper(row.get("side"))
+        qty = qfo_api__safe_float(row.get("quantity"))
+        price = qfo_api__safe_float(row.get("fill_price"))
+
+        if not symbol or qty <= 0 or price <= 0:
+            continue
+
+        if side == "BUY":
+            inventory.setdefault(symbol, []).append([qty, price])
+            continue
+
+        if side != "SELL":
+            continue
+
+        remaining = qty
+        lots = inventory.setdefault(symbol, [])
+
+        while remaining > 0 and lots:
+            lot_qty, lot_price = lots[0]
+            matched = min(remaining, lot_qty)
+
+            realized += matched * (price - lot_price)
+
+            lot_qty -= matched
+            remaining -= matched
+
+            if lot_qty <= 1e-12:
+                lots.pop(0)
+            else:
+                lots[0][0] = lot_qty
+
+        # If a SELL has no matching BUY, ignore unmatched quantity.
+        # This avoids inventing fake PnL from corrupted or reset history.
+
+    return realized
+
+
+def qfo_api__compute_unrealized_from_positions(conn):
+    try:
+        rows = conn.execute(text("SELECT * FROM positions")).mappings().all()
+    except Exception:
+        return 0.0
+
+    total = 0.0
+
+    for row in rows:
+        r = dict(row)
+
+        # Prefer stored unrealized_pnl if available.
+        if "unrealized_pnl" in r and r.get("unrealized_pnl") is not None:
+            total += qfo_api__safe_float(r.get("unrealized_pnl"))
+            continue
+
+        qty = qfo_api__safe_float(r.get("quantity"))
+        avg_entry = qfo_api__safe_float(r.get("avg_entry"))
+        mark_price = qfo_api__safe_float(r.get("mark_price"))
+
+        if qty and avg_entry and mark_price:
+            total += qty * (mark_price - avg_entry)
+
+    return total
+
+
+def qfo_api_fetch_latest_trades(conn, limit=10):
+    # Defensive latest-trades helper used by get_status_payload().
+    # Do not commit here. get_status_payload() runs inside engine.begin().
+    try:
+        rows = conn.execute(text("""
+            SELECT *
+            FROM trades
+            ORDER BY created_at DESC, id DESC
+            LIMIT :limit
+        """), {"limit": int(limit)}).mappings().all()
+    except Exception as e:
+        try:
+            print(f"[DASHBOARD_TRUTH] latest trades fetch failed: {e}")
+        except Exception:
+            pass
+        return []
+
+    out = []
+    for row in rows:
+        r = dict(row)
+        out.append({
+            "time": r.get("created_at"),
+            "created_at": r.get("created_at"),
+            "symbol": r.get("symbol"),
+            "side": r.get("side"),
+            "quantity": round(qfo_api__safe_float(r.get("quantity")), 8),
+            "fill_price": round(qfo_api__safe_float(r.get("fill_price")), 8),
+            "strategy": r.get("strategy"),
+            "confidence": round(qfo_api__safe_float(r.get("confidence")), 4),
+            "live": bool(r.get("live")) if r.get("live") is not None else False,
+        })
+
+    return out
+
+
+def get_performance(conn, equity=100.0):
+    # Dashboard truth source:
+    # - total_trades = all BUY + SELL trade rows.
+    # - win_rate = take-profit exits / closed outcome exits.
+    # - stop_loss_count includes sideways_scalp_stop_loss and quality_initial_stop_loss.
+    # - realized_pnl is recomputed from actual fills, not strategy labels.
+    trades = qfo_api__fetch_all_trades_for_status(conn)
+
+    buy_count = 0
+    sell_count = 0
+    take_profit_count = 0
+    stop_loss_count = 0
+    other_exit_count = 0
+
+    for row in trades:
+        side = qfo_api__safe_upper(row.get("side"))
+        strategy = row.get("strategy")
+
+        if side == "BUY":
+            buy_count += 1
+            continue
+
+        if side == "SELL":
+            sell_count += 1
+
+            if qfo_api__is_stop_loss_strategy(strategy):
+                stop_loss_count += 1
+            elif qfo_api__is_take_profit_strategy(strategy):
+                take_profit_count += 1
+            else:
+                other_exit_count += 1
+
+    total_trades = buy_count + sell_count
+    closed_outcome_count = take_profit_count + stop_loss_count
+
+    if closed_outcome_count > 0:
+        win_rate = take_profit_count / closed_outcome_count
+    else:
+        win_rate = 0.0
+
+    realized_pnl = qfo_api__compute_fifo_realized_pnl(trades)
+    unrealized_pnl = qfo_api__compute_unrealized_from_positions(conn)
+    total_pnl = realized_pnl + unrealized_pnl
+
+    return {
+        "total_trades": int(total_trades),
+        "buy_count": int(buy_count),
+        "sell_count": int(sell_count),
+
+        # Keep both names because dashboard/API code may use either.
+        "win_rate": round(win_rate, 4),
+        "win_rate_estimate": round(win_rate, 4),
+
+        "realized_pnl": round(realized_pnl, 4),
+        "unrealized_pnl": round(unrealized_pnl, 4),
+        "total_pnl": round(total_pnl, 4),
+
+        "take_profit_count": int(take_profit_count),
+        "stop_loss_count": int(stop_loss_count),
+
+        # Extra transparency for API consumers.
+        "closed_outcome_count": int(closed_outcome_count),
+        "other_exit_count": int(other_exit_count),
+    }
+
+# ============================================================
+# QFO_DASHBOARD_TRUTH_V2_END
+# ============================================================
 

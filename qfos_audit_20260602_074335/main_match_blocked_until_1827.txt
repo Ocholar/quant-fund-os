@@ -1,0 +1,34 @@
+01819:         print('TRADE_COUNT_REFRESH_ERROR:', e)
+01820: 
+01821: def is_trending_regime(regime: str):
+01822:     r = str(regime or '').upper()
+01823:     return r in {'BULL', 'BULLISH', 'TRENDING', 'UPTREND', 'TREND'}
+01824: 
+01825: def entry_policy_allows(symbol: str, regime: str, confidence: float, entries_this_cycle: int, strategy: str=None):
+01826:     with engine.begin() as conn:
+01827:         q = conn.execute(text("SELECT symbol FROM symbol_quarantine WHERE symbol = :sym AND blocked_until IS NOT NULL AND blocked_until > DATETIME('now', '+3 hours')"), {'sym': symbol}).first()
+01828:         if q:
+01829:             return (False, 'symbol_quarantined')
+01830:         if strategy and strategy != 'fallback_scout_breakout':
+01831:             s_score = conn.execute(text('SELECT status FROM strategy_scores WHERE strategy = :s'), {'s': strategy}).mappings().first()
+01832:             if s_score and s_score['status'] == 'blocked':
+01833:                 return (False, f'strategy_{strategy}_blocked')
+01834:     r = str(regime or '').upper()
+01835:     if r == 'RISK_OFF':
+01836:         if strategy == 'fallback_scout_breakout':
+01837:             if confidence >= QFOS_SCOUT_CONFIDENCE:
+01838:                 return (True, 'risk_off_scout_fallback_allowed')
+01839:             return (False, f'risk_off_scout_confidence_too_low_{confidence:.2f}')
+01840:         return (False, 'risk_off_blocks_new_buys')
+01841:     recent_entries = recent_buy_count() + entries_this_cycle
+01842:     if r == 'SIDEWAYS':
+01843:         if confidence < SIDEWAYS_MIN_CONFIDENCE:
+01844:             return (False, f'sideways_confidence_too_low_{confidence:.2f}')
+01845:         if recent_entries >= SIDEWAYS_MAX_ENTRIES_PER_HOUR:
+01846:             return (False, 'sideways_max_entries_per_hour_hit')
+01847:         return (True, 'ok')
+01848:     if is_trending_regime(r):
+01849:         if confidence < TRENDING_MIN_CONFIDENCE:
+01850:             return (False, f'trending_confidence_too_low_{confidence:.2f}')
+01851:         if recent_entries >= TRENDING_MAX_ENTRIES_PER_HOUR:
+01852:             return (False, 'trending_max_entries_per_hour_hit')

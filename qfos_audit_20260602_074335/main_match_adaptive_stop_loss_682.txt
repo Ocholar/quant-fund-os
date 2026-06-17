@@ -1,0 +1,34 @@
+00674:             f"regime={feature.get('symbol_regime')} signal={signal:.5f}"
+00675:         )
+00676:         return order
+00677:     except Exception as e:
+00678:         print(f"[SCOUT_FALLBACK] error: {e}")
+00679:         return None
+00680: 
+00681: 
+00682: EXIT_REASON_STRATEGIES = {'stop_loss', 'stop_loss_exit', 'adaptive_stop_loss', 'take_profit', 'adaptive_take_profit', 'risk_off_exit', 'emergency_exposure_reduction', 'breakeven_protection_exit', 'time_stop_exit', 'trailing_profit_exit'}
+00683: 
+00684: def normalize_exit_order(order):
+00685:     if not isinstance(order, dict):
+00686:         return order
+00687:     side = str(order.get('side') or '').lower()
+00688:     strategy = str(order.get('strategy') or '').strip()
+00689:     if side == 'sell' and strategy.lower() in EXIT_REASON_STRATEGIES:
+00690:         order.setdefault('exit_reason', strategy.lower())
+00691:         order.setdefault('raw_strategy', strategy)
+00692:         order.setdefault('display_strategy', strategy.lower())
+00693:     else:
+00694:         order.setdefault('entry_strategy', strategy)
+00695:         order.setdefault('display_strategy', strategy)
+00696:     return order
+00697: INITIAL_EQUITY = float(settings.starting_equity)
+00698: MAX_TOTAL_EXPOSURE_PCT = float(settings.max_total_exposure_pct)
+00699: MAX_SYMBOL_EXPOSURE_PCT = float(settings.max_symbol_exposure_pct)
+00700: MAX_TRADES_PER_SYMBOL = int(settings.max_trades_per_symbol)
+00701: ENTRY_QUALITY_LOCKDOWN_ENABLED = True
+00702: ENTRY_QUALITY_TOP_N = int(getattr(settings, 'entry_quality_top_n', 2))
+00703: ENTRY_MIN_SIGNAL_SIDEWAYS = float(getattr(settings, 'entry_min_signal_sideways', 0.025))
+00704: ENTRY_MIN_SIGNAL_TRENDING = float(getattr(settings, 'entry_min_signal_trending', 0.018))
+00705: ENTRY_MAX_VOLATILITY = float(getattr(settings, 'entry_max_volatility', 0.008))
+00706: ENTRY_MIN_EXPECTED_MOVE_PCT = float(getattr(settings, 'entry_min_expected_move_pct', 0.012))
+00707: ENTRY_STOP_LOSS_QUARANTINE_HOURS = float(getattr(settings, 'entry_stop_loss_quarantine_hours', 4))

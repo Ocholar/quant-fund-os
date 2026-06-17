@@ -1,0 +1,34 @@
+01688:     conn.execute(text("\n        INSERT INTO trades(\n            symbol, side, quantity, expected_price, fill_price,\n            slippage_bps, pnl, strategy, confidence, live, shadow_mode, created_at\n        )\n        VALUES(\n            :symbol, :side, :quantity, :expected_price, :fill_price,\n            :slippage_bps, 0, :strategy, :confidence, :live, :shadow_mode, DATETIME('now', '+3 hours')\n        )\n    "), fill | {'live': settings.live_trading, 'shadow_mode': fill.get('shadow_mode', False)})
+01689: 
+01690: def ensure_positions_table():
+01691:     with engine.begin() as conn:
+01692:         conn.execute(text("\n            CREATE TABLE IF NOT EXISTS positions (\n                symbol TEXT PRIMARY KEY,\n                quantity REAL NOT NULL DEFAULT 0,\n                avg_entry REAL NOT NULL DEFAULT 0,\n                realized_pnl REAL NOT NULL DEFAULT 0,\n                unrealized_pnl REAL NOT NULL DEFAULT 0,\n                last_price REAL NOT NULL DEFAULT 0,\n                exposure REAL NOT NULL DEFAULT 0,\n                strategy TEXT,\n                updated_at DATETIME DEFAULT (DATETIME('now', '+3 hours'))\n            )\n        "))
+01693:         cols = [r[1] for r in conn.execute(text('PRAGMA table_info(positions)'))]
+01694:         if 'strategy' not in cols:
+01695:             conn.execute(text('ALTER TABLE positions ADD COLUMN strategy TEXT'))
+01696:         conn.execute(text("\n            CREATE TABLE IF NOT EXISTS symbol_quarantine (\n                symbol TEXT PRIMARY KEY,\n                reason TEXT NOT NULL,\n                blocked_until DATETIME,\n                created_at DATETIME DEFAULT (DATETIME('now', '+3 hours'))\n            )\n        "))
+01697: 
+01698: def quarantine_symbol(symbol: str, reason: str, hours: int=24):
+01699:     with engine.begin() as conn:
+01700:         conn.execute(text("\n            INSERT INTO symbol_quarantine (symbol, reason, blocked_until, created_at)\n            VALUES (:symbol, :reason, datetime('now', '+' || :hours || ' hours', '+3 hours'), datetime('now', '+3 hours'))\n            ON CONFLICT (symbol) DO UPDATE SET\n            reason = EXCLUDED.reason,\n            blocked_until = EXCLUDED.blocked_until,\n            created_at = EXCLUDED.created_at\n        "), {'symbol': symbol, 'reason': reason, 'hours': hours})
+01701:     send_telegram_alert(f'<b>Symbol Quarantined</b>\nSymbol: {symbol}\nReason: {reason}')
+01702: 
+01703: def update_position_from_fill(conn, fill):
+01704:     symbol = fill['symbol']
+01705:     side = fill['side']
+01706:     qty = float(fill['quantity'])
+01707:     price = float(fill['fill_price'])
+01708:     existing = conn.execute(text('\n        SELECT symbol, quantity, avg_entry, realized_pnl, strategy\n        FROM positions\n        WHERE symbol = :symbol\n    '), {'symbol': symbol}).mappings().first()
+01709:     if not existing:
+01710:         existing_qty = 0.0
+01711:         avg_entry = 0.0
+01712:         realized_pnl = 0.0
+01713:     else:
+01714:         existing_qty = float(existing['quantity'] or 0)
+01715:         avg_entry = float(existing['avg_entry'] or 0)
+01716:         realized_pnl = float(existing['realized_pnl'] or 0)
+01717:         existing_strategy = existing['strategy'] or 'unknown'
+01718:     if side == 'buy':
+01719:         new_qty = existing_qty + qty
+01720:         new_strategy = fill.get('strategy', existing_strategy if existing else 'unknown')
+01721:         fee_adjusted_price = price * (1 + FEE_RATE)

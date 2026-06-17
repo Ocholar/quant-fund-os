@@ -1,0 +1,34 @@
+00966:     return sum((qty * prices.get(symbol, 0.0) for symbol, qty in portfolio.positions.items()))
+00967: 
+00968: def symbol_exposure(symbol, prices):
+00969:     return portfolio.positions.get(symbol, 0.0) * prices.get(symbol, 0.0)
+00970: 
+00971: def cleanup_expired_quarantines():
+00972:     try:
+00973:         with engine.begin() as conn:
+00974:             conn.execute(text("\n                DELETE FROM symbol_quarantine\n                WHERE blocked_until IS NOT NULL\n                  AND blocked_until <= DATETIME('now', '+3 hours')\n            "))
+00975:     except Exception:
+00976:         pass
+00977: LAST_GLOBAL_BUY_TS = 0.0
+00978: LAST_BUY_BY_SYMBOL_TS = {}
+00979: 
+00980: def _now_ts():
+00981:     import time
+00982:     return time.time()
+00983: 
+00984: def _entry_pacing_seconds(regime: str) -> int:
+00985:     r = str(regime or '').upper()
+00986:     if r == 'RISK_OFF':
+00987:         return int(float(getattr(settings, 'risk_off_min_seconds_between_buys', 1200)))
+00988:     if r == 'SIDEWAYS':
+00989:         return int(float(getattr(settings, 'sideways_min_seconds_between_buys', 900)))
+00990:     return int(float(getattr(settings, 'trend_min_seconds_between_buys', 600)))
+00991: 
+00992: def _same_symbol_pacing_seconds(regime: str) -> int:
+00993:     r = str(regime or '').upper()
+00994:     if r == 'RISK_OFF':
+00995:         return int(float(getattr(settings, 'risk_off_same_symbol_cooldown_seconds', 3600)))
+00996:     if r == 'SIDEWAYS':
+00997:         return int(float(getattr(settings, 'sideways_same_symbol_cooldown_seconds', 2400)))
+00998:     return int(float(getattr(settings, 'trend_same_symbol_cooldown_seconds', 1800)))
+00999: 

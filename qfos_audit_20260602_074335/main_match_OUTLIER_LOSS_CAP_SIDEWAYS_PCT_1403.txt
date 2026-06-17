@@ -1,0 +1,34 @@
+01395:     return default
+01396: 
+01397: 
+01398: def _qfos_outlier_loss_cap_pct(regime):
+01399:     regime_upper = str(regime or "").upper()
+01400:     if regime_upper == "RISK_OFF":
+01401:         return OUTLIER_LOSS_CAP_RISK_OFF_PCT
+01402:     if regime_upper == "SIDEWAYS":
+01403:         return OUTLIER_LOSS_CAP_SIDEWAYS_PCT
+01404:     return OUTLIER_LOSS_CAP_TREND_PCT
+01405: 
+01406: 
+01407: def _qfos_outlier_loss_cap_usd(regime, equity):
+01408:     equity = max(_qfos_float(equity, 100.0), 1.0)
+01409:     return equity * _qfos_outlier_loss_cap_pct(regime)
+01410: 
+01411: 
+01412: def _qfos_position_unrealized_loss_usd(position, mark_price):
+01413:     """
+01414:     Long spot position loss:
+01415:       loss = (entry - mark) * quantity
+01416: 
+01417:     Returns positive USD loss only.
+01418:     """
+01419:     qty = abs(_qfos_float(
+01420:         _qfos_get(position, "quantity", _qfos_get(position, "qty", 0.0)),
+01421:         0.0
+01422:     ))
+01423:     entry = _qfos_float(
+01424:         _qfos_get(position, "avg_entry", _qfos_get(position, "entry_price", 0.0)),
+01425:         0.0
+01426:     )
+01427:     mark = _qfos_float(mark_price, 0.0)
+01428: 

@@ -1,0 +1,499 @@
+﻿quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.4299% unreal=-0.030425 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | INFO:     172.18.0.1:53350 - "GET /status HTTP/1.1" 200 OK
+quant-1  | INFO:     172.18.0.1:53356 - "GET /status HTTP/1.1" 200 OK
+quant-1  | INFO:     172.18.0.1:53362 - "GET /status HTTP/1.1" 200 OK
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.024299 unrealized=-0.030425
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.4299% unreal=-0.030425 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | INFO:     172.18.0.1:37412 - "GET /status HTTP/1.1" 200 OK
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=99.8753 cash=95.1901 exposure=4.6852 realized=-0.0603 unrealized=-0.0644 drawdown=-0.1247% regime=SIDEWAYS
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.024299 unrealized=-0.030425
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.4299% unreal=-0.030425 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.024299 unrealized=-0.030425
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.4299% unreal=-0.030425 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | MARKET DATA WARNING: ccxt ticker failed NEAR/USDT: mexc GET https://api.mexc.com/api/v3/ticker/24hr?symbol=NEARUSDT
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.024299 unrealized=-0.030425
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.4299% unreal=-0.030425 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | INFO:     172.18.0.1:43636 - "GET /status HTTP/1.1" 200 OK
+quant-1  | MARKET DATA WARNING: ccxt ticker failed BEAT/USDT: mexc GET https://api.mexc.com/api/v3/ticker/24hr?symbol=BEATUSDT
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.024299 unrealized=-0.030425
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.4299% unreal=-0.030425 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=99.8753 cash=95.1901 exposure=4.6852 realized=-0.0603 unrealized=-0.0644 drawdown=-0.1247% regime=SIDEWAYS
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.024299 unrealized=-0.030425
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.4299% unreal=-0.030425 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.024299 unrealized=-0.030425
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.4299% unreal=-0.030425 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | INFO:     172.18.0.1:52366 - "GET /status HTTP/1.1" 200 OK
+quant-1  | INFO:     172.18.0.1:52380 - "GET /status HTTP/1.1" 200 OK
+quant-1  | INFO:     172.18.0.1:52388 - "GET /status HTTP/1.1" 200 OK
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.024299 unrealized=-0.030425
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.4299% unreal=-0.030425 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | INFO:     172.18.0.1:51194 - "GET /status HTTP/1.1" 200 OK
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.024299 unrealized=-0.030425
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.4299% unreal=-0.030425 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=99.8753 cash=95.1901 exposure=4.6852 realized=-0.0603 unrealized=-0.0644 drawdown=-0.1247% regime=SIDEWAYS
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.024299 unrealized=-0.030425
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.4299% unreal=-0.030425 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.024299 unrealized=-0.030425
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.4299% unreal=-0.030425 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | INFO:     172.18.0.1:57736 - "GET /status HTTP/1.1" 200 OK
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.024299 unrealized=-0.030425
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.4299% unreal=-0.030425 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=99.8753 cash=95.1901 exposure=4.6852 realized=-0.0603 unrealized=-0.0644 drawdown=-0.1247% regime=SIDEWAYS
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.024299 unrealized=-0.030425
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.4299% unreal=-0.030425 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.024299 unrealized=-0.030425
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.4299% unreal=-0.030425 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | INFO:     172.18.0.1:45008 - "GET /status HTTP/1.1" 200 OK
+quant-1  | INFO:     172.18.0.1:45022 - "GET /status HTTP/1.1" 200 OK
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.024299 unrealized=-0.030425
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.4299% unreal=-0.030425 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | INFO:     172.18.0.1:45024 - "GET /status HTTP/1.1" 200 OK
+quant-1  | INFO:     172.18.0.1:47350 - "GET /status HTTP/1.1" 200 OK
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.024299 unrealized=-0.030425
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.4299% unreal=-0.030425 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=99.8753 cash=95.1901 exposure=4.6852 realized=-0.0603 unrealized=-0.0644 drawdown=-0.1247% regime=SIDEWAYS
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.024299 unrealized=-0.030425
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.4299% unreal=-0.030425 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.024299 unrealized=-0.030425
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.4299% unreal=-0.030425 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.024299 unrealized=-0.030425
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.4299% unreal=-0.030425 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | INFO:     172.18.0.1:48852 - "GET /status HTTP/1.1" 200 OK
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.024299 unrealized=-0.030425
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.4299% unreal=-0.030425 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=99.8753 cash=95.1901 exposure=4.6852 realized=-0.0603 unrealized=-0.0644 drawdown=-0.1247% regime=SIDEWAYS
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.024299 unrealized=-0.030425
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.4299% unreal=-0.030425 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04979000 pnl=-0.030425
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | MARKET DATA REJECT invalid MOGU/USDT: 1.76e-09
+quant-1  | MARKET TICK DATA RAW: {'XRP/USDT': 1.2127, 'DOGE/USDT': 0.09232, 'BNB/USDT': 629.3, 'TRIA/USDT': 0.03033, 'TRX/USDT': 0.3341, 'BSB/USDT': 0.26288, 'ADA/USDT': 0.2039, 'USD1/USDT': 0.99969, 'INJ/USDT': 6.647, 'SUI/USDT': 0.8358, 'LTC/USDT': 47.71, 'HYPE/USDT': 75.44, 'BCH/USDT': 242.8, 'ZEC/USDT': 619.12, 'GOLD(PAXG)/USDT': 4435.0, 'FIL/USDT': 0.9456, 'TAO/USDT': 228.73, 'DOT/USDT': 1.114, 'TON/USDT': 1.921, 'TRUMP/USDT': 1.999, 'BILL/USDT': 0.08702, 'ULTIMA/USDT': 2342.23, 'MX/USDT': 1.7627, 'GUA/USDT': 1.0947, 'ONDO/USDT': 0.422, 'ASTER/USDT': 0.6916, 'EDEN/USDT': 0.0495, 'EUR/USDT': 1.161, 'ETHFI/USDT': 0.364, 'GENIUS/USDT': 0.49271, 'RAIN/USDT': 0.0143256, 'XMR/USDT': 359.35, 'UBOX/USDT': 0.0028, 'LINK/USDT': 8.381, 'DASH/USDT': 39.65, 'SHIB/USDT': 5.241e-06, 'PLAY/USDT': 0.09424, 'AVAX/USDT': 8.113, 'PENGU/USDT': 0.007138, 'WXT/USDT': 0.016722, 'ATOM/USDT': 1.873, 'IN/USDT': 0.11008, 'TTN/USDT': 0.04976, 'ATLA/USDT': 195.078, 'PENDLE/USDT': 1.354, 'AIXDROP/USDT': 0.00022428, 'SENS/USDT': 0.0054, 'TIA/USDT': 0.373, 'BDX/USDT': 0.0787, '9BIT/USDT': 0.050243, 'JGGL/USDT': 1.9638, 'CAKE/USDT': 1.299, 'BOB/USDT': 0.006618}
+quant-1  | MARKET TICK DATA VALIDATED: {'XRP/USDT': 1.2127, 'DOGE/USDT': 0.09232, 'BNB/USDT': 629.3, 'TRIA/USDT': 0.03033, 'TRX/USDT': 0.3341, 'BSB/USDT': 0.26288, 'ADA/USDT': 0.2039, 'USD1/USDT': 0.99969, 'INJ/USDT': 6.647, 'SUI/USDT': 0.8358, 'LTC/USDT': 47.71, 'HYPE/USDT': 75.44, 'BCH/USDT': 242.8, 'ZEC/USDT': 619.12, 'GOLD(PAXG)/USDT': 4435.0, 'FIL/USDT': 0.9456, 'TAO/USDT': 228.73, 'DOT/USDT': 1.114, 'TON/USDT': 1.921, 'TRUMP/USDT': 1.999, 'BILL/USDT': 0.08702, 'ULTIMA/USDT': 2342.23, 'MX/USDT': 1.7627, 'GUA/USDT': 1.0947, 'ONDO/USDT': 0.422, 'ASTER/USDT': 0.6916, 'EDEN/USDT': 0.0495, 'EUR/USDT': 1.161, 'ETHFI/USDT': 0.364, 'GENIUS/USDT': 0.49271, 'RAIN/USDT': 0.0143256, 'XMR/USDT': 359.35, 'UBOX/USDT': 0.0028, 'LINK/USDT': 8.381, 'DASH/USDT': 39.65, 'SHIB/USDT': 5.241e-06, 'PLAY/USDT': 0.09424, 'AVAX/USDT': 8.113, 'PENGU/USDT': 0.007138, 'WXT/USDT': 0.016722, 'ATOM/USDT': 1.873, 'IN/USDT': 0.11008, 'TTN/USDT': 0.04976, 'ATLA/USDT': 195.078, 'PENDLE/USDT': 1.354, 'AIXDROP/USDT': 0.00022428, 'SENS/USDT': 0.0054, 'TIA/USDT': 0.373, 'BDX/USDT': 0.0787, '9BIT/USDT': 0.050243, 'JGGL/USDT': 1.9638, 'CAKE/USDT': 1.299, 'BOB/USDT': 0.006618}
+quant-1  | [POLICY_V2] feature_snapshot_upserted count=59
+quant-1  | STRATEGY SCORE DEBUG: {'ready_features': 708, 'normal_features': 708, 'top_score': 0.9, 'top_matches': 3, 'top_strategy': 'evo_6141'}
+quant-1  | ALLOCATOR BEST: strategy=evo_6141 score=0.9000 matches=3 db=/app/data/quant.db
+quant-1  | ALLOCATOR SKIP UBOX/USDT: strategy_threshold trend_ok=True momentum_ok=True long_trend_ok=True one_tick_ok=False trend=0.02985 momentum=0.03704 one_tick=0.00000 signal=0.07065
+quant-1  | ALLOCATOR SKIP GUA/USDT: strict_filter trend=-0.00443 momentum=0.00908 one_tick=0.00000
+quant-1  | ALLOCATOR SKIP ATLA/USDT: symbol_quarantined
+quant-1  | ALLOCATOR SKIP SENS/USDT: strict_filter trend=0.00339 momentum=-0.01639 one_tick=-0.01639
+quant-1  | ALLOCATOR SKIP INJ/USDT: strict_filter trend=0.00322 momentum=0.00272 one_tick=-0.00165
+quant-1  | ALLOCATOR SKIP FIL/USDT: strategy_threshold trend_ok=True momentum_ok=False long_trend_ok=False one_tick_ok=True trend=0.00338 momentum=0.00063 one_tick=0.00053 signal=0.00402
+quant-1  | ALLOCATOR SKIP XMR/USDT: cooldown
+quant-1  | ALLOCATOR SKIP NEAR/USDT: strategy_threshold trend_ok=True momentum_ok=False long_trend_ok=False one_tick_ok=True trend=0.00322 momentum=0.00024 one_tick=0.00031 signal=0.00346
+quant-1  | ALLOCATOR SKIP BILL/USDT: strict_filter trend=-0.00002 momentum=0.00311 one_tick=0.00138
+quant-1  | ALLOCATOR SKIP ONDO/USDT: cooldown
+quant-1  | ALLOCATOR SKIP TON/USDT: strict_filter trend=0.00282 momentum=-0.00052 one_tick=-0.00156
+quant-1  | ALLOCATOR SKIP DOT/USDT: strict_filter trend=0.00171 momentum=-0.00090 one_tick=0.00000
+quant-1  | ALLOCATOR SKIP BNB/USDT: strategy_threshold trend_ok=False momentum_ok=False long_trend_ok=True one_tick_ok=True trend=0.00115 momentum=0.00052 one_tick=0.00046 signal=0.00168
+quant-1  | ALLOCATOR SKIP SUI/USDT: strategy_threshold trend_ok=True momentum_ok=False long_trend_ok=False one_tick_ok=False trend=0.00155 momentum=0.00012 one_tick=-0.00060 signal=0.00167
+quant-1  | ALLOCATOR SKIP BEAT/USDT: symbol_quarantined
+quant-1  | ALLOCATOR SKIP LINK/USDT: strict_filter trend=0.00148 momentum=-0.00107 one_tick=-0.00072
+quant-1  | ALLOCATOR SKIP 9BIT/USDT: strict_filter trend=0.00125 momentum=-0.00133 one_tick=-0.00113
+quant-1  | ALLOCATOR SKIP TRUMP/USDT: strict_filter trend=0.00140 momentum=0.00000 one_tick=0.00100
+quant-1  | ALLOCATOR SKIP GOLD(PAXG)/USDT: strategy_threshold trend_ok=False momentum_ok=False long_trend_ok=True one_tick_ok=True trend=0.00106 momentum=0.00034 one_tick=0.00010 signal=0.00140
+quant-1  | ALLOCATOR SKIP AVAX/USDT: strict_filter trend=0.00132 momentum=-0.00234 one_tick=-0.00148
+quant-1  | ALLOCATOR SKIP DASH/USDT: strict_filter trend=0.00125 momentum=-0.00226 one_tick=-0.00352
+quant-1  | ALLOCATOR SKIP TAO/USDT: strict_filter trend=0.00089 momentum=-0.00118 one_tick=-0.00031
+quant-1  | ALLOCATOR SKIP ASTER/USDT: strict_filter trend=0.00081 momentum=-0.00173 one_tick=-0.00101
+quant-1  | ALLOCATOR SKIP BCH/USDT: strict_filter trend=0.00080 momentum=-0.00206 one_tick=-0.00123
+quant-1  | ALLOCATOR SKIP CAKE/USDT: strict_filter trend=0.00073 momentum=-0.00154 one_tick=-0.00154
+quant-1  | ALLOCATOR SKIP BDX/USDT: strict_filter trend=0.00067 momentum=-0.00038 one_tick=-0.00102
+quant-1  | ALLOCATOR SKIP GENIUS/USDT: already_holding
+quant-1  | ALLOCATOR SKIP LTC/USDT: strict_filter trend=0.00060 momentum=-0.00042 one_tick=-0.00042
+quant-1  | ALLOCATOR SKIP XRP/USDT: strict_filter trend=-0.00001 momentum=0.00058 one_tick=0.00041
+quant-1  | ALLOCATOR SKIP BTC/USDT: strict_filter trend=0.00034 momentum=-0.00018 one_tick=-0.00034
+quant-1  | ALLOCATOR SKIP SOL/USDT: strict_filter trend=0.00026 momentum=-0.00041 one_tick=0.00055
+quant-1  | ALLOCATOR SKIP DOGE/USDT: strict_filter trend=-0.00004 momentum=0.00022 one_tick=0.00011
+quant-1  | ALLOCATOR SKIP ATOM/USDT: strict_filter trend=0.00021 momentum=-0.00266 one_tick=-0.00319
+quant-1  | ALLOCATOR SKIP ADA/USDT: strict_filter trend=0.00020 momentum=0.00000 one_tick=0.00049
+quant-1  | ALLOCATOR SKIP SHIB/USDT: strict_filter trend=0.00017 momentum=-0.00114 one_tick=-0.00038
+quant-1  | ALLOCATOR SKIP ZEC/USDT: symbol_quarantined
+quant-1  | ALLOCATOR SKIP ULTIMA/USDT: strict_filter trend=-0.00037 momentum=0.00015 one_tick=0.00006
+quant-1  | ALLOCATOR SKIP MX/USDT: strict_filter trend=0.00013 momentum=-0.00006 one_tick=0.00000
+quant-1  | ALLOCATOR SKIP EUR/USDT: strict_filter trend=0.00011 momentum=0.00000 one_tick=0.00000
+quant-1  | ALLOCATOR SKIP WXT/USDT: strict_filter trend=0.00008 momentum=-0.00280 one_tick=-0.00256
+quant-1  | ALLOCATOR SKIP PENGU/USDT: strict_filter trend=0.00006 momentum=-0.00265 one_tick=-0.00279
+quant-1  | ALLOCATOR SKIP RAIN/USDT: strict_filter trend=0.00004 momentum=-0.00036 one_tick=0.00004
+quant-1  | ALLOCATOR SKIP USD1/USDT: strict_filter trend=0.00001 momentum=-0.00002 one_tick=0.00001
+quant-1  | ALLOCATOR SKIP ETH/USDT: already_holding
+quant-1  | ALLOCATOR SKIP TRIA/USDT: strict_filter trend=-0.00506 momentum=-0.00132 one_tick=0.00066
+quant-1  | ALLOCATOR SKIP TRX/USDT: strict_filter trend=0.00000 momentum=-0.00030 one_tick=-0.00030
+quant-1  | ALLOCATOR SKIP BSB/USDT: strict_filter trend=-0.00652 momentum=-0.00152 one_tick=0.00072
+quant-1  | ALLOCATOR SKIP EDEN/USDT: already_holding
+quant-1  | ALLOCATOR SKIP ETHFI/USDT: strict_filter trend=-0.00041 momentum=-0.00192 one_tick=-0.00192
+quant-1  | ALLOCATOR SKIP MOGU/USDT: strict_filter trend=0.00000 momentum=0.00000 one_tick=0.00000
+quant-1  | ALLOCATOR SKIP PLAY/USDT: strict_filter trend=-0.00346 momentum=-0.00212 one_tick=0.00000
+quant-1  | ALLOCATOR SKIP IN/USDT: cooldown
+quant-1  | ALLOCATOR SKIP TTN/USDT: strict_filter trend=-0.00022 momentum=-0.00221 one_tick=-0.00201
+quant-1  | ALLOCATOR SKIP PENDLE/USDT: strict_filter trend=-0.00231 momentum=-0.00514 one_tick=-0.00587
+quant-1  | ALLOCATOR SKIP AIXDROP/USDT: strict_filter trend=-0.00634 momentum=-0.00470 one_tick=-0.00298
+quant-1  | ALLOCATOR SKIP TIA/USDT: cooldown
+quant-1  | ALLOCATOR SKIP JGGL/USDT: strict_filter trend=-0.00018 momentum=-0.00284 one_tick=-0.00335
+quant-1  | ALLOCATOR SKIP BOB/USDT: strict_filter trend=-0.00034 momentum=-0.00136 one_tick=-0.00136
+quant-1  | [BIG_LOSS_COOLDOWN] entry rejected symbol=ZEC/USDT reason=profit_giveback_exit
+quant-1  | [BIG_LOSS_COOLDOWN] entry rejected symbol=BEAT/USDT reason=profit_giveback_exit
+quant-1  | [BIG_LOSS_COOLDOWN] entry rejected symbol=ATLA/USDT reason=sideways_scalp_stop_loss
+quant-1  | [QUALITY_RANK] top-1: HYPE/USDT(qs=0.0151,sig=0.0067)
+quant-1  | ENTRY QUALITY TOP 10: [('HYPE/USDT', 0.015142, 0.00669892999428956)]
+quant-1  | FEATURES: {'BTC/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0003423434127018954, 'long_trend': -0.004487552136353101, 'volatility': 0.0009736375780011131, 'momentum': -0.00017643294283564703, 'one_tick_momentum': -0.0003387085304279447, 'signal_strength': 0.0003423434127018954, 'price': 65225.74, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0003423434127018954, 'breakout_score': 9.893401820161712e-05, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'ETH/USDT': {'ready': True, 'source': 'NORMAL', 'trend': -0.0005443349195899394, 'long_trend': -0.0049014292946854, 'volatility': 0.0010465667716048673, 'momentum': -0.0002619758436440689, 'one_tick_momentum': 0.00018564930845621497, 'signal_strength': 0.0, 'price': 1831.75, 'symbol_regime': 'SYMBOL_TREND_DOWN', 'symbol_trend_score': 4.641232711405374e-05, 'breakout_score': 0.0, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': True, 'is_choppy': False}, 'SOL/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.00025559017152154695, 'long_trend': -0.004047663821453162, 'volatility': 0.0013751647788591988, 'momentum': -0.0004141358365543635, 'one_tick_momentum': 0.0005527152134860991, 'signal_strength': 0.00025559017152154695, 'price': 72.41, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0003937689748930717, 'breakout_score': 4.9977780178272016e-05, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'USDC/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 1.4485145483300599e-05, 'long_trend': 1.3319691747337714e-06, 'volatility': 8.708875874173759e-06, 'momentum': 9.989610804783666e-06, 'one_tick_momentum': 9.989610804783666e-06, 'signal_strength': 2.514074087545115e-05, 'price': 1.00105, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 2.6639182496168703e-05, 'breakout_score': 2.4461963527625262e-05, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'XRP/USDT': {'ready': True, 'source': 'NORMAL', 'trend': -8.248034905400381e-06, 'long_trend': -0.002650199690421573, 'volatility': 0.0006657997246526541, 'momentum': 0.0005775577557756151, 'one_tick_momentum': 0.0004124731892427569, 'signal_strength': 0.0005775577557756151, 'price': 1.2127, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0006229202775087428, 'breakout_score': 0.0004564703463455792, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'DOGE/USDT': {'ready': True, 'source': 'NORMAL', 'trend': -4.3333188889271845e-05, 'long_trend': -0.0041731919614361734, 'volatility': 0.000811292984509877, 'momentum': 0.00021668472372704528, 'one_tick_momentum': 0.00010833062506776514, 'signal_strength': 0.00021668472372704528, 'price': 0.09232, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.00022209890762128203, 'breakout_score': 1.927566149381279e-05, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'BNB/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0011546287403088051, 'long_trend': -0.0006165886741199555, 'volatility': 0.00044965626530817294, 'momentum': 0.0005246673132262014, 'one_tick_momentum': 0.0004610419548178868, 'signal_strength': 0.0016792960535350065, 'price': 629.3, 'symbol_regime': 'SYMBOL_TREND_UP', 'symbol_trend_score': 0.001742089810916858, 'breakout_score': 0.0016296757445898149, 'trend_quality': 0.001742089810916858, 'is_symbol_uptrend': True, 'is_symbol_downtrend': False, 'is_choppy': False}, 'TRIA/USDT': {'ready': True, 'source': 'NORMAL', 'trend': -0.00506383048458714, 'long_trend': -0.004935560495947788, 'volatility': 0.0021186977335765126, 'momentum': -0.0013170892327956096, 'one_tick_momentum': 0.0006598482349058354, 'signal_strength': 0.0, 'price': 0.03033, 'symbol_regime': 'SYMBOL_TREND_DOWN', 'symbol_trend_score': 0.00016496205872645886, 'breakout_score': 0.0, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': True, 'is_choppy': False}, 'TRX/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0, 'long_trend': -0.00023436370254747985, 'volatility': 0.0003529274303619114, 'momentum': -0.0002992220227407971, 'one_tick_momentum': -0.0002992220227407971, 'signal_strength': 0.0, 'price': 0.3341, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0, 'breakout_score': 0.0, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'BSB/USDT': {'ready': True, 'source': 'NORMAL', 'trend': -0.006522712375397033, 'long_trend': -0.006831483608879085, 'volatility': 0.00199710776662953, 'momentum': -0.0015192950470981348, 'one_tick_momentum': 0.0007232860025125909, 'signal_strength': 0.0, 'price': 0.26288, 'symbol_regime': 'SYMBOL_TREND_DOWN', 'symbol_trend_score': 0.00018082150062814772, 'breakout_score': 0.0, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': True, 'is_choppy': False}, 'ADA/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.00019629011679245245, 'long_trend': -0.0051828648142875355, 'volatility': 0.0008542626131440271, 'momentum': 0.0, 'one_tick_momentum': 0.0004906771344455052, 'signal_strength': 0.00019629011679245245, 'price': 0.2039, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.00031895940040382875, 'breakout_score': 0.00010539374711782197, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'USD1/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 7.5023069592283775e-06, 'long_trend': -7.66896607817813e-06, 'volatility': 1.8026322457440845e-05, 'momentum': -2.0005801682487778e-05, 'one_tick_momentum': 1.0003201024177955e-05, 'signal_strength': 7.5023069592283775e-06, 'price': 0.99969, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 1.0003107215272866e-05, 'breakout_score': 5.496526600912655e-06, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'INJ/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.00321912735955987, 'long_trend': -0.006747577552108086, 'volatility': 0.0019313256327724002, 'momentum': 0.0027153416804948094, 'one_tick_momentum': -0.0016521477921297434, 'signal_strength': 0.00593446904005468, 'price': 6.647, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.005662934872005199, 'breakout_score': 0.005180103463812098, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'SUI/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0015460396217596983, 'long_trend': -0.0030349013657058332, 'volatility': 0.0015927390642471618, 'momentum': 0.00011966016513098587, 'one_tick_momentum': -0.0005978715771852716, 'signal_strength': 0.0016656997868906842, 'price': 0.8358, 'symbol_regime': 'SYMBOL_TREND_UP', 'symbol_trend_score': 0.0016537337703775856, 'breakout_score': 0.0012555490043157952, 'trend_quality': 0.0016537337703775856, 'is_symbol_uptrend': True, 'is_symbol_downtrend': False, 'is_choppy': False}, 'LTC/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0005976158273832688, 'long_trend': -0.0023360657166664467, 'volatility': 0.0007578903509054956, 'momentum': -0.00041902367483759306, 'one_tick_momentum': -0.00041902367483759306, 'signal_strength': 0.0005976158273832688, 'price': 47.71, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0005976158273832688, 'breakout_score': 0.0004081432396568949, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'HYPE/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0035239649601972456, 'long_trend': 0.0010336089623896871, 'volatility': 0.0015463946553174984, 'momentum': 0.0026581605528974706, 'one_tick_momentum': 0.0005305039787797394, 'signal_strength': 0.00669892999428956, 'price': 75.44, 'symbol_regime': 'SYMBOL_BREAKOUT_UP', 'symbol_trend_score': 0.0065657399336947475, 'breakout_score': 0.006179141269865373, 'trend_quality': 0.0065657399336947475, 'is_symbol_uptrend': True, 'is_symbol_downtrend': False, 'is_choppy': False}, 'BCH/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0008028490849576464, 'long_trend': -0.01012756245669777, 'volatility': 0.0013797426211392544, 'momentum': -0.002055076037813408, 'one_tick_momentum': -0.0012340600575894145, 'signal_strength': 0.0008028490849576464, 'price': 242.8, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0008028490849576464, 'breakout_score': 0.0004579134296728328, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'ZEC/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.00014740934124124472, 'long_trend': -0.006403128438203232, 'volatility': 0.002391106747542714, 'momentum': -0.004486179672299806, 'one_tick_momentum': -0.0033162690363500724, 'signal_strength': 0.00014740934124124472, 'price': 619.12, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.00014740934124124472, 'breakout_score': 0.0, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'GOLD(PAXG)/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0010581484997524981, 'long_trend': -0.0006479695562606747, 'volatility': 0.0003171699897229762, 'momentum': 0.00034284580059007475, 'one_tick_momentum': 9.922066676271157e-05, 'signal_strength': 0.0014009943003425729, 'price': 4435.0, 'symbol_regime': 'SYMBOL_TREND_UP', 'symbol_trend_score': 0.0013915148869742433, 'breakout_score': 0.0013122223895434993, 'trend_quality': 0.0013915148869742433, 'is_symbol_uptrend': True, 'is_symbol_downtrend': False, 'is_choppy': False}, 'FIL/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0033819118154547745, 'long_trend': -0.004118772933475734, 'volatility': 0.0012883840763944301, 'momentum': 0.0006349206349207659, 'one_tick_momentum': 0.0005290445455505832, 'signal_strength': 0.00401683245037554, 'price': 0.9456, 'symbol_regime': 'SYMBOL_TREND_UP', 'symbol_trend_score': 0.00408560152327111, 'breakout_score': 0.0037635055041725022, 'trend_quality': 0.00408560152327111, 'is_symbol_uptrend': True, 'is_symbol_downtrend': False, 'is_choppy': False}, 'TAO/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0008899579073962105, 'long_trend': -0.005001914608462443, 'volatility': 0.0015160193434076486, 'momentum': -0.0011790393013101363, 'one_tick_momentum': -0.00030594405594419616, 'signal_strength': 0.0008899579073962105, 'price': 228.73, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0008899579073962105, 'breakout_score': 0.0005109530715442983, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'DOT/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0017075581917855853, 'long_trend': -0.003596853872214756, 'volatility': 0.0012725835108126388, 'momentum': -0.0008968609865469546, 'one_tick_momentum': 0.0, 'signal_strength': 0.0017075581917855853, 'price': 1.114, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0017075581917855853, 'breakout_score': 0.0013894123140824257, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'TON/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0028171953255424764, 'long_trend': -0.003819868513369684, 'volatility': 0.001187670313760352, 'momentum': -0.0005202913631633388, 'one_tick_momentum': -0.0015592515592515177, 'signal_strength': 0.0028171953255424764, 'price': 1.921, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0028171953255424764, 'breakout_score': 0.0025202777471023882, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'TRUMP/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.00140350877192974, 'long_trend': -0.0033720494567252013, 'volatility': 0.0012098978339821773, 'momentum': 0.0, 'one_tick_momentum': 0.0010015022533800266, 'signal_strength': 0.00140350877192974, 'price': 1.999, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0016538843352747468, 'breakout_score': 0.0013514098767792024, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'BILL/USDT': {'ready': True, 'source': 'NORMAL', 'trend': -2.3031391787053934e-05, 'long_trend': -0.005079360229755192, 'volatility': 0.002011435567523302, 'momentum': 0.0031123919308357895, 'one_tick_momentum': 0.0013808975834290749, 'signal_strength': 0.0031123919308357895, 'price': 0.08702, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0031463771336094795, 'breakout_score': 0.002643518241728654, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'NEAR/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0032153221933786114, 'long_trend': -0.00707045462136402, 'volatility': 0.0018573848359885784, 'momentum': 0.00024288688410822878, 'one_tick_momentum': 0.00031230480949395734, 'signal_strength': 0.00345820907748684, 'price': 2.8827, 'symbol_regime': 'SYMBOL_TREND_UP', 'symbol_trend_score': 0.0035119965914495064, 'breakout_score': 0.0030476503824523617, 'trend_quality': 0.0035119965914495064, 'is_symbol_uptrend': True, 'is_symbol_downtrend': False, 'is_choppy': False}, 'BEAT/USDT': {'ready': True, 'source': 'NORMAL', 'trend': -0.001868675982646173, 'long_trend': 0.0009464077644874003, 'volatility': 0.0030116809005666743, 'momentum': 0.0010638702078347162, 'one_tick_momentum': -0.002022696625808673, 'signal_strength': 0.0015370740900784163, 'price': 1.31735, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0014306870692949447, 'breakout_score': 0.0006777668441532761, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'ULTIMA/USDT': {'ready': True, 'source': 'NORMAL', 'trend': -0.0003736768457149875, 'long_trend': -0.0003596048485287051, 'volatility': 0.00032862608474483067, 'momentum': 0.00014518188300916002, 'one_tick_momentum': 5.550574270962727e-05, 'signal_strength': 0.00014518188300916002, 'price': 2342.23, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.00014454013038565084, 'breakout_score': 6.238360919944317e-05, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'MX/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0001276526938973621, 'long_trend': -0.0001597767285665963, 'volatility': 0.0002008085144470672, 'momentum': -5.672793283406641e-05, 'one_tick_momentum': 0.0, 'signal_strength': 0.0001276526938973621, 'price': 1.7627, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0001276526938973621, 'breakout_score': 7.745056528559531e-05, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'GUA/USDT': {'ready': True, 'source': 'NORMAL', 'trend': -0.00442972492180882, 'long_trend': -0.0004501305607120809, 'volatility': 0.004150552064012291, 'momentum': 0.009079596257546951, 'one_tick_momentum': 0.0, 'signal_strength': 0.009079596257546951, 'price': 1.0947, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.008171636631792257, 'breakout_score': 0.007133998615789184, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'ONDO/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0029108122840793005, 'long_trend': -0.006371012659422859, 'volatility': 0.0020805632743958963, 'momentum': -0.002694143782199787, 'one_tick_momentum': 0.0006876763652747808, 'signal_strength': 0.0029108122840793005, 'price': 0.422, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0030827313753979957, 'breakout_score': 0.002562590556799022, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'ASTER/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0008093655152481283, 'long_trend': -0.0011044299914103606, 'volatility': 0.0009027074041897407, 'momentum': -0.0017321016166281789, 'one_tick_momentum': -0.0010111223458039165, 'signal_strength': 0.0008093655152481283, 'price': 0.6916, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0008093655152481283, 'breakout_score': 0.0005836886642006931, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'EDEN/USDT': {'ready': True, 'source': 'NORMAL', 'trend': -0.004712120454204438, 'long_trend': -0.011038481326597016, 'volatility': 0.002898549157954948, 'momentum': -0.007021063189568633, 'one_tick_momentum': -0.005824462743522774, 'signal_strength': 0.0, 'price': 0.0495, 'symbol_regime': 'SYMBOL_TREND_DOWN', 'symbol_trend_score': 0.0, 'breakout_score': 0.0, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': True, 'is_choppy': False}, 'EUR/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.00011199076506906991, 'long_trend': -1.4357769777539886e-06, 'volatility': 6.998636524201661e-05, 'momentum': 0.0, 'one_tick_momentum': 0.0, 'signal_strength': 0.00011199076506906991, 'price': 1.161, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.00011199076506906991, 'breakout_score': 9.449417375856576e-05, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'ETHFI/USDT': {'ready': True, 'source': 'NORMAL', 'trend': -0.0004112180277983102, 'long_trend': -0.010529361502050083, 'volatility': 0.0019112012023690807, 'momentum': -0.0019193857965451588, 'one_tick_momentum': -0.0019193857965451588, 'signal_strength': 0.0, 'price': 0.364, 'symbol_regime': 'SYMBOL_TREND_DOWN', 'symbol_trend_score': 0.0, 'breakout_score': 0.0, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': True, 'is_choppy': False}, 'GENIUS/USDT': {'ready': True, 'source': 'NORMAL', 'trend': -0.0034869656313739616, 'long_trend': -0.005667960507113712, 'volatility': 0.0012787618717344617, 'momentum': 0.0006295694557270082, 'one_tick_momentum': 0.002584242226924882, 'signal_strength': 0.0006295694557270082, 'price': 0.49271, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.001212673066885528, 'breakout_score': 0.0008929825989519125, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'RAIN/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 4.189113332264682e-05, 'long_trend': -0.004637501950197187, 'volatility': 0.0012994497126145223, 'momentum': -0.00036285483015596753, 'one_tick_momentum': 4.188481675404532e-05, 'signal_strength': 4.189113332264682e-05, 'price': 0.0143256, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 5.236233751115815e-05, 'breakout_score': 0.0, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'XMR/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0034943055503287024, 'long_trend': -0.0030126969613167853, 'volatility': 0.0018161349151208073, 'momentum': -0.001639162082569201, 'one_tick_momentum': -0.0031900138696254743, 'signal_strength': 0.0034943055503287024, 'price': 359.35, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0034943055503287024, 'breakout_score': 0.0030402718215485004, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'UBOX/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.029850746268657025, 'long_trend': 0.007518796992480814, 'volatility': 0.018700616848403493, 'momentum': 0.03703703703703698, 'one_tick_momentum': 0.0, 'signal_strength': 0.07064718180193441, 'price': 0.0028, 'symbol_regime': 'SYMBOL_BREAKOUT_UP', 'symbol_trend_score': 0.06694347809823072, 'breakout_score': 0.062268323886129844, 'trend_quality': 0.06694347809823072, 'is_symbol_uptrend': True, 'is_symbol_downtrend': False, 'is_choppy': False}, 'LINK/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0014809153011989817, 'long_trend': -0.00423563363057422, 'volatility': 0.0012678198155882492, 'momentum': -0.0010727056019070869, 'one_tick_momentum': -0.0007153928699177303, 'signal_strength': 0.0014809153011989817, 'price': 8.381, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0014809153011989817, 'breakout_score': 0.0011639603473019193, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'DASH/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.001247967325946453, 'long_trend': -0.0038091729908704686, 'volatility': 0.0020384238544814636, 'momentum': -0.002264720684449051, 'one_tick_momentum': -0.003518471977883908, 'signal_strength': 0.001247967325946453, 'price': 39.65, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.001247967325946453, 'breakout_score': 0.0007383613623260871, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'SHIB/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0001716214412386119, 'long_trend': -0.0030638788643051473, 'volatility': 0.0009440453904179473, 'momentum': -0.0011435105774727505, 'one_tick_momentum': -0.0003814609956130921, 'signal_strength': 0.0001716214412386119, 'price': 5.241e-06, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0001716214412386119, 'breakout_score': 0.0, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'PLAY/USDT': {'ready': True, 'source': 'NORMAL', 'trend': -0.0034623260920052523, 'long_trend': -0.006923879259286281, 'volatility': 0.0015503314155939426, 'momentum': -0.0021177467174925413, 'one_tick_momentum': 0.0, 'signal_strength': 0.0, 'price': 0.09424, 'symbol_regime': 'SYMBOL_TREND_DOWN', 'symbol_trend_score': 0.0, 'breakout_score': 0.0, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': True, 'is_choppy': False}, 'AVAX/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0013184971596857942, 'long_trend': -0.003854321381663528, 'volatility': 0.0012702601375287911, 'momentum': -0.002336448598130869, 'one_tick_momentum': -0.0014769230769231534, 'signal_strength': 0.0013184971596857942, 'price': 8.113, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0013184971596857942, 'breakout_score': 0.0010009321253035964, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'PENGU/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 6.291286568105292e-05, 'long_trend': -0.0070727542790510745, 'volatility': 0.0015945927154936727, 'momentum': -0.0026547436076568287, 'one_tick_momentum': -0.0027940765576977, 'signal_strength': 6.291286568105292e-05, 'price': 0.007138, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 6.291286568105292e-05, 'breakout_score': 0.0, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'WXT/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 8.355016590688713e-05, 'long_trend': -0.0026635081527158766, 'volatility': 0.0009662858346413915, 'momentum': -0.0028027908640944066, 'one_tick_momentum': -0.002564867283029959, 'signal_strength': 8.355016590688713e-05, 'price': 0.016722, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 8.355016590688713e-05, 'breakout_score': 0.0, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'ATOM/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.00021310602024526837, 'long_trend': -0.0030628684737002976, 'volatility': 0.0011162676701353088, 'momentum': -0.0026624068157613534, 'one_tick_momentum': -0.0031931878658860713, 'signal_strength': 0.00021310602024526837, 'price': 1.873, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.00021310602024526837, 'breakout_score': 0.0, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'IN/USDT': {'ready': True, 'source': 'NORMAL', 'trend': -0.0006980897725317181, 'long_trend': -0.008305998810217763, 'volatility': 0.0017397919267274574, 'momentum': -0.00425146992311165, 'one_tick_momentum': 0.0022762451060729383, 'signal_strength': 0.0, 'price': 0.11008, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0005690612765182346, 'breakout_score': 0.0001341132948363702, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'TTN/USDT': {'ready': True, 'source': 'NORMAL', 'trend': -0.00022075498203855126, 'long_trend': -0.0029580372239137454, 'volatility': 0.0013178453212691198, 'momentum': -0.0022057349107680313, 'one_tick_momentum': -0.0020056157240273542, 'signal_strength': 0.0, 'price': 0.04976, 'symbol_regime': 'SYMBOL_TREND_DOWN', 'symbol_trend_score': 0.0, 'breakout_score': 0.0, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': True, 'is_choppy': False}, 'ATLA/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.006451943131757121, 'long_trend': 0.0034895961673315767, 'volatility': 0.0021392888492420895, 'momentum': 0.0005539313740574592, 'one_tick_momentum': -0.00026648900732839653, 'signal_strength': 0.008750672589480368, 'price': 195.078, 'symbol_regime': 'SYMBOL_BREAKOUT_UP', 'symbol_trend_score': 0.008695279452074623, 'breakout_score': 0.0081604572397641, 'trend_quality': 0.008695279452074623, 'is_symbol_uptrend': True, 'is_symbol_downtrend': False, 'is_choppy': False}, 'PENDLE/USDT': {'ready': True, 'source': 'NORMAL', 'trend': -0.002310485201892365, 'long_trend': -0.009253315569551224, 'volatility': 0.0019310214427772701, 'momentum': -0.005143277002204183, 'one_tick_momentum': -0.005873715124816492, 'signal_strength': 0.0, 'price': 1.354, 'symbol_regime': 'SYMBOL_TREND_DOWN', 'symbol_trend_score': 0.0, 'breakout_score': 0.0, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': True, 'is_choppy': False}, 'AIXDROP/USDT': {'ready': True, 'source': 'NORMAL', 'trend': -0.006338713843830557, 'long_trend': -0.007736308289767568, 'volatility': 0.002180253330081941, 'momentum': -0.00470400284015271, 'one_tick_momentum': -0.002978439653256282, 'signal_strength': 0.0, 'price': 0.00022428, 'symbol_regime': 'SYMBOL_TREND_DOWN', 'symbol_trend_score': 0.0, 'breakout_score': 0.0, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': True, 'is_choppy': False}, 'SENS/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0033923168607319365, 'long_trend': 0.00878653348131686, 'volatility': 0.007817253214808542, 'momentum': -0.016393442622950838, 'one_tick_momentum': -0.016393442622950838, 'signal_strength': 0.007785583601390367, 'price': 0.0054, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.007785583601390367, 'breakout_score': 0.005831270297688231, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'TIA/USDT': {'ready': True, 'source': 'NORMAL', 'trend': -3.99706881623052e-05, 'long_trend': -0.0051737240209244195, 'volatility': 0.0020051077067915696, 'momentum': -0.007978723404255317, 'one_tick_momentum': -0.006922257720979763, 'signal_strength': 0.0, 'price': 0.373, 'symbol_regime': 'SYMBOL_TREND_DOWN', 'symbol_trend_score': 0.0, 'breakout_score': 0.0, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': True, 'is_choppy': False}, 'BDX/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0006734691284293604, 'long_trend': 8.471381555352764e-06, 'volatility': 0.0004892093192439678, 'momentum': -0.00038104915534087347, 'one_tick_momentum': -0.0010154861640009338, 'signal_strength': 0.0006777048192070367, 'price': 0.0787, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0006777048192070367, 'breakout_score': 0.0005554024893960447, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, '9BIT/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0012453796018567775, 'long_trend': 0.0004219412084183194, 'volatility': 0.0005300072540190963, 'momentum': -0.0013317431922083012, 'one_tick_momentum': -0.001133200795228495, 'signal_strength': 0.0014563502060659372, 'price': 0.050243, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0014563502060659372, 'breakout_score': 0.0013238483925611631, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'JGGL/USDT': {'ready': True, 'source': 'NORMAL', 'trend': -0.00018283206874480928, 'long_trend': -0.004885395363254275, 'volatility': 0.0012412172952163587, 'momentum': -0.002843505636234367, 'one_tick_momentum': -0.003349573690621166, 'signal_strength': 0.0, 'price': 1.9638, 'symbol_regime': 'SYMBOL_TREND_DOWN', 'symbol_trend_score': 0.0, 'breakout_score': 0.0, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': True, 'is_choppy': False}, 'CAKE/USDT': {'ready': True, 'source': 'NORMAL', 'trend': 0.0007309660293157716, 'long_trend': -0.0019454505893949925, 'volatility': 0.000842867424132317, 'momentum': -0.001537279016141424, 'one_tick_momentum': -0.001537279016141424, 'signal_strength': 0.0007309660293157716, 'price': 1.299, 'symbol_regime': 'SYMBOL_NEUTRAL', 'symbol_trend_score': 0.0007309660293157716, 'breakout_score': 0.0005202491732826923, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': False, 'is_choppy': False}, 'BOB/USDT': {'ready': True, 'source': 'NORMAL', 'trend': -0.00033950733713061787, 'long_trend': -0.004229648105298134, 'volatility': 0.0006120254008580411, 'momentum': -0.0013580805794477513, 'one_tick_momentum': -0.0013580805794477513, 'signal_strength': 0.0, 'price': 0.006618, 'symbol_regime': 'SYMBOL_TREND_DOWN', 'symbol_trend_score': 0.0, 'breakout_score': 0.0, 'trend_quality': 0.0, 'is_symbol_uptrend': False, 'is_symbol_downtrend': True, 'is_choppy': False}}
+quant-1  | ORDERS: [{'symbol': 'HYPE/USDT', 'side': 'buy', 'quantity': 0.02840491364229179, 'expected_price': 75.44, 'fill_price': 75.485264, 'slippage_bps': 6, 'strategy': 'evo_6141', 'confidence': 0.9, 'shadow_mode': False, 'live': False}]
+quant-1  | [EXPECTANCY_PATCH] before=1 after=1 exits=0
+quant-1  | [EXPECTANCY_PATCH] before=1 after=1 exits=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=1 proposed_fills=1 symbols=['HYPE/USDT']
+quant-1  | [PROFIT_ENGINE_GUARD] ENTRY_BLOCKED regime=SIDEWAYS exposure_pct=0.0478 limit=0.0450 blocked=['HYPE/USDT']
+quant-1  | [PROFIT_ENGINE_GUARD] execution_filter before=1 after=0
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=default_sideways signal=0.000630 breakout=0.000893 trend_quality=0.000000 momentum=0.000630 one_tick=0.002584 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=default_sideways signal=0.000630 breakout=0.000893 trend_quality=0.000000 momentum=0.000630 one_tick=0.002584 regime=SYMBOL_NEUTRAL
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.029982 unrealized=-0.037540
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04950000 pnl=-0.037540
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.9982% unreal=-0.037540 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04950000 pnl=-0.037540
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | INFO:     172.18.0.1:37526 - "GET /status HTTP/1.1" 200 OK
+quant-1  | INFO:     172.18.0.1:37532 - "GET /status HTTP/1.1" 200 OK
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=ETH/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=default_sideways signal=0.000630 breakout=0.000893 trend_quality=0.000000 momentum=0.000630 one_tick=0.002584 regime=SYMBOL_NEUTRAL
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=GENIUS/USDT reason=default_sideways signal=0.000630 breakout=0.000893 trend_quality=0.000000 momentum=0.000630 one_tick=0.002584 regime=SYMBOL_NEUTRAL
+quant-1  | [PROFIT_ENGINE_GUARD] WATCHDOG action=CLOSE_WEAKEST regime=SIDEWAYS exposure_pct=0.0469 symbol=EDEN/USDT reason=sideways_hard_exposure_guard class=SIDEWAYS_SCALP effective=SIDEWAYS_SCALP ret_pct=-0.029982 unrealized=-0.037540
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_hard_exposure_guard qty=24.53614305 mark=0.04950000 pnl=-0.037540
+quant-1  | [SELL_VALIDATION_REJECT] symbol=EDEN/USDT requested_qty=24.536143045463472 strategy=sideways_hard_exposure_guard reason=duplicate_latest_sell latest_id=869 source=profit_engine
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=AttributeError("'sqlite3.Cursor' object has no attribute 'rollback'") source=profit_engine
+quant-1  | [PROFIT_ENGINE_GUARD] reducer_error='sqlite3.Cursor' object has no attribute 'rollback'
+quant-1  | [POLICY_V2] class SIDEWAYS_SCALP symbol=EDEN/USDT reason=downtrend_or_choppy regime=SYMBOL_TREND_DOWN
+quant-1  | [PROFIT_ENGINE] track symbol=EDEN/USDT class=SIDEWAYS_SCALP ret=-2.9982% unreal=-0.037540 peak=0.004907 age_min=0.0
+quant-1  | [PROFIT_ENGINE] selling symbol=EDEN/USDT reason=sideways_scalp_stop_loss qty=24.53614305 mark=0.04950000 pnl=-0.037540
+quant-1  | [FILL_PERSISTENCE_ERROR] symbol=EDEN/USDT side=sell qty=24.536143045463472 error=OperationalError('cannot start a transaction within a transaction') source=profit_engine
+quant-1  | [PROFIT_ENGINE] error=cannot start a transaction within a transaction
+quant-1  | {'regime': 'SIDEWAYS', 'equity': 97.92, 'cash': 95.23, 'exposure': 2.69, 'exposure_pct': 0.0275, 'positions': {'EDEN/USDT': 24.536143, 'ETH/USDT': 0.001086, 'GENIUS/USDT': 2.998921}, 'orders': 0, 'rejected': [], 'status': 'ok', 'paused': False, 'risk_status': 'CAUTION', 'shadow_positions': {}}
+quant-1  | 
+quant-1  | ========================================================================
+quant-1  | QUANT FUND OS ├óΓé¼ΓÇ¥ CYCLE DIAGNOSTIC
+quant-1  | Time: 2026-06-03T22:38:27.248607Z
+quant-1  | Market symbols: 53
+quant-1  | Feature symbols: 59
+quant-1  | Orders/applied fills: 0
+quant-1  | Empty feature cycles: 0
+quant-1  | No-trade reason: features_exist_but_no_orders
+quant-1  | Note: main_loop_after_execution
+quant-1  | Top features/signals:
+quant-1  |   UBOX/USDT | source=NORMAL direction=None strength=0.0706 momentum=0.03704
+quant-1  |   GUA/USDT | source=NORMAL direction=None strength=0.0091 momentum=0.00908
+quant-1  |   ATLA/USDT | source=NORMAL direction=None strength=0.0088 momentum=0.00055
+quant-1  |   SENS/USDT | source=NORMAL direction=None strength=0.0078 momentum=-0.01639
+quant-1  |   HYPE/USDT | source=NORMAL direction=None strength=0.0067 momentum=0.00266
+quant-1  | ========================================================================
+quant-1  | 
+quant-1  | INFO:     172.18.0.1:33572 - "GET /status HTTP/1.1" 200 OK
+quant-1  | INFO:     172.18.0.1:33584 - "GET /status HTTP/1.1" 200 OK

@@ -1,0 +1,34 @@
+00628:             print("[SCOUT_FALLBACK] skipped: hard risk regime")
+00629:             return None
+00630:         if r == "RISK_OFF" and not QFOS_SCOUT_ALLOW_RISK_OFF:
+00631:             print("[SCOUT_FALLBACK] skipped: risk_off entries disabled")
+00632:             return None
+00633: 
+00634:         exposure_pct = _qfos_exposure_pct(prices or {})
+00635:         if exposure_pct >= QFOS_SCOUT_MAX_EXPOSURE_PCT:
+00636:             print(f"[SCOUT_FALLBACK] skipped: exposure cap reached {exposure_pct:.4f}")
+00637:             return None
+00638: 
+00639:         candidate = qfos_select_scout_candidate(feature_map or {}, prices or {}, regime=regime)
+00640:         if not candidate:
+00641:             print("[SCOUT_FALLBACK] skipped: no clean uptrend/breakout candidate")
+00642:             return None
+00643: 
+00644:         score, symbol, price, feature = candidate
+00645:         cash = _qfos_float(cash)
+00646:         equity = _qfos_float(equity)
+00647:         if cash < QFOS_SCOUT_MIN_VALUE_USD:
+00648:             print(f"[SCOUT_FALLBACK] skipped: insufficient cash {cash:.2f}")
+00649:             return None
+00650: 
+00651:         value = min(QFOS_SCOUT_MAX_VALUE_USD, max(QFOS_SCOUT_MIN_VALUE_USD, equity * 0.015))
+00652:         value = min(value, cash * 0.50)
+00653:         qty = value / price if price > 0 else 0.0
+00654:         if qty <= 0:
+00655:             return None
+00656: 
+00657:         signal = _qfos_float(feature.get("signal_strength"))
+00658:         confidence = max(QFOS_SCOUT_CONFIDENCE, min(0.95, signal))
+00659:         order = {
+00660:             "symbol": symbol,
+00661:             "side": "buy",

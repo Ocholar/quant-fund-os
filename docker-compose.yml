@@ -6,6 +6,19 @@ services:
       - "6379:6379"
     restart: unless-stopped
 
+  postgres:
+    image: postgres:16
+    container_name: quant-fund-os-postgres-1
+    environment:
+      POSTGRES_DB: quant_fund_os
+      POSTGRES_USER: qfos
+      POSTGRES_PASSWORD: qfos_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
   quant:
     build: .
     image: quant-fund-os-quant
@@ -15,8 +28,12 @@ services:
       - .env
     ports:
       - "8080:8080"
-    volumes:
-      - ./data:/app/data
+    environment:
+      DATABASE_URL: postgresql+psycopg2://qfos:qfos_password@postgres:5432/quant_fund_os
     depends_on:
       - redis
+      - postgres
     restart: unless-stopped
+
+volumes:
+  postgres_data:

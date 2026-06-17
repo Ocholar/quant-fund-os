@@ -1,0 +1,34 @@
+00026: # At $100:
+00027: #   SIDEWAYS cap = $0.04
+00028: #   TREND cap    = $0.07
+00029: #
+00030: # At $1000:
+00031: #   SIDEWAYS cap = $0.40
+00032: #   TREND cap    = $0.70
+00033: # ============================================================
+00034: OUTLIER_LOSS_CAP_SIDEWAYS_PCT = 0.0004
+00035: OUTLIER_LOSS_CAP_TREND_PCT = 0.0007
+00036: OUTLIER_LOSS_CAP_RISK_OFF_PCT = 0.0003
+00037: 
+00038: BIG_LOSS_COOLDOWN_HOURS = 6.0
+00039: CATASTROPHIC_LOSS_COOLDOWN_HOURS = 24.0
+00040: CATASTROPHIC_LOSS_MULTIPLIER = 2.5
+00041: 
+00042: 
+00043: from datetime import datetime
+00044: from sqlalchemy import text
+00045: from sqlalchemy.exc import OperationalError
+00046: from datetime import datetime, timezone, timedelta
+00047: from core.config import settings
+00048: from core.db import engine
+00049: from core.portfolio import Portfolio
+00050: from core.regime import detect_regime
+00051: from core.risk_engine import RiskEngine
+00052: from core.telegram_alerts import send_telegram_alert, send_startup_alert
+00053: from data.ingestion import build_market_data
+00054: from data.feature_store import FeatureStore
+00055: from execution.executor import PaperExecutor, RealMEXCExecutor
+00056: from ai.autonomous_agent import AutonomousFundAgent
+00057: from services.metrics import trades_total, equity_gauge, drawdown_gauge
+00058: from core.control import is_paused, pause_bot, pause_reason
+00059: from services.telegram import send_telegram_alert

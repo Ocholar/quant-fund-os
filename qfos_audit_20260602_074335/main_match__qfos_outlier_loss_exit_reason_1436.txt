@@ -1,0 +1,34 @@
+01428: 
+01429:     if qty <= 0 or entry <= 0 or mark <= 0:
+01430:         return 0.0
+01431: 
+01432:     loss = (entry - mark) * qty
+01433:     return max(loss, 0.0)
+01434: 
+01435: 
+01436: def _qfos_outlier_loss_exit_reason(position, mark_price, regime, portfolio=None):
+01437:     """
+01438:     Percentage-based kill guard for individual losing trades.
+01439: 
+01440:     This does NOT reduce trade frequency.
+01441:     It only prevents one position from becoming large enough to wipe out
+01442:     several normal small wins.
+01443:     """
+01444:     try:
+01445:         equity = _qfos_current_equity(portfolio=portfolio, default=100.0)
+01446:         cap_usd = _qfos_outlier_loss_cap_usd(regime, equity)
+01447:         loss_usd = _qfos_position_unrealized_loss_usd(position, mark_price)
+01448: 
+01449:         if loss_usd <= 0:
+01450:             return None
+01451: 
+01452:         symbol = _qfos_get(position, "symbol", "UNKNOWN")
+01453:         loss_pct_equity = loss_usd / max(equity, 1.0)
+01454: 
+01455:         if loss_usd >= cap_usd:
+01456:             catastrophic_cap = cap_usd * CATASTROPHIC_LOSS_MULTIPLIER
+01457:             reason = "catastrophic_outlier_loss_cap" if loss_usd >= catastrophic_cap else "outlier_loss_cap"
+01458: 
+01459:             print(
+01460:                 "[OUTLIER_LOSS_CAP] "
+01461:                 f"exit {symbol} reason={reason} "

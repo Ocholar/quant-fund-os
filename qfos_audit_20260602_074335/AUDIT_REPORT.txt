@@ -1,0 +1,277 @@
+
+==========================================================================================
+MAIN.PY BASIC SIZE
+==========================================================================================
+chars=132722 lines=2582
+
+==========================================================================================
+MAIN.PY MATCH SUMMARY
+==========================================================================================
+OUTLIER_LOSS_CAP_SIDEWAYS_PCT at line 34
+adaptive_stop_loss at line 65
+trailing_profit_exit at line 65
+breakeven_protection at line 65
+stop_loss at line 65
+_filter_and_resize_orders at line 65
+adaptive_stop_loss at line 123
+stop_loss at line 124
+adaptive_take_profit at line 126
+take_profit at line 127
+trailing_profit_exit at line 128
+blocked_until at line 413
+blocked_until at line 414
+SCOUT_FALLBACK at line 421
+quarantine at line 421
+adaptive_stop_loss at line 434
+stop_loss at line 434
+stop_loss at line 435
+SCOUT_FALLBACK at line 443
+adaptive_stop_loss at line 456
+stop_loss at line 456
+stop_loss at line 457
+SCOUT_FALLBACK at line 465
+SCOUT_FALLBACK at line 471
+cooldown at line 471
+SCOUT_FALLBACK at line 478
+SCOUT_FALLBACK at line 481
+SCOUT_FALLBACK at line 600
+SCOUT_FALLBACK at line 609
+SCOUT_FALLBACK at line 628
+SCOUT_FALLBACK at line 631
+SCOUT_FALLBACK at line 636
+SCOUT_FALLBACK at line 641
+SCOUT_FALLBACK at line 648
+SCOUT_FALLBACK at line 672
+SCOUT_FALLBACK at line 678
+adaptive_stop_loss at line 682
+adaptive_take_profit at line 682
+trailing_profit_exit at line 682
+stop_loss at line 682
+take_profit at line 682
+FULL_TAKE_PROFIT_PCT at line 724
+blocked_until at line 974
+stop_loss at line 1127
+take_profit at line 1127
+cooldown at line 1143
+FULL_TAKE_PROFIT_PCT at line 1348
+FULL_TAKE_PROFIT_PCT at line 1349
+OUTLIER_LOSS_CAP_SIDEWAYS_PCT at line 1403
+_qfos_outlier_loss_exit_reason at line 1436
+_qfos_exit_decision at line 1478
+_qfos_outlier_loss_exit_reason at line 1498
+decision_hook_error at line 1507
+STOP_GRACE_MINUTES at line 1525
+CATASTROPHIC_STOP_PCT at line 1526
+STOP_GRACE_MINUTES at line 1528
+CATASTROPHIC_STOP_PCT at line 1528
+adaptive_stop_loss at line 1529
+adaptive_take_profit at line 1533
+trailing_profit_exit at line 1538
+_qfos_exit_decision at line 1579
+trailing_profit_exit at line 1582
+_qfos_exit_decision at line 1633
+blocked_until at line 1696
+blocked_until at line 1700
+blocked_until at line 1827
+quarantine at line 2063
+adaptive_stop_loss at line 2069
+stop_loss at line 2069
+quarantine at line 2072
+_entry_quality_reason at line 2075
+FULL_TAKE_PROFIT_PCT at line 2103
+_sideways_pacing_reason at line 2107
+_same_symbol_cooldown_reason at line 2111
+_entry_quality_reason at line 2149
+_sideways_pacing_reason at line 2239
+_same_symbol_cooldown_reason at line 2295
+cooldown at line 2298
+cooldown at line 2304
+cooldown at line 2306
+cooldown at line 2307
+build_entry_quality_top_symbols at line 2310
+ENTRY QUALITY TOP 10 at line 2313
+_entry_quality_reason at line 2380
+SCOUT_FALLBACK at line 2444
+adaptive_stop_loss at line 2538
+adaptive_take_profit at line 2538
+trailing_profit_exit at line 2538
+stop_loss at line 2538
+take_profit at line 2538
+
+==========================================================================================
+CONFIG: qfos_expectancy_config.json
+==========================================================================================
+{
+  "enabled": true,
+  "sideways_scout_notional_usd": 1.0,
+  "trend_scout_notional_usd": 1.5,
+  "max_entry_notional_sideways_usd": 1.50,
+  "max_entry_notional_trend_usd": 2.50,
+  "min_trade_price": 0.01,
+  "min_scout_signal_sideways": 0.0016,
+  "min_scout_trend_quality": 0.001,
+  "max_scout_volatility_sideways": 0.006,
+  "require_positive_one_tick_for_scout": true,
+  "fallback_stop_loss_pct": -0.006,
+  "breakeven_arm_pct": 0.005,
+  "breakeven_exit_floor_pct": 0.0004,
+  "trailing_arm_pct": 0.005,
+  "trailing_giveback_pct": 0.0025,
+  "sideways_time_stop_minutes": 45,
+  "sideways_time_stop_min_pnl": -0.0015,
+  "sideways_time_stop_max_pnl": 0.002,
+  "symbol_cooldown_after_losses": 2,
+  "cooldown_minutes": 180,
+  "state_file": "qfos_expectancy_state.json",
+  "decision_log": "qfos_expectancy_decisions.jsonl"
+}
+
+==========================================================================================
+INTERESTING DOCKER LOG LINES
+==========================================================================================
+
+==========================================================================================
+SQLITE TABLES
+==========================================================================================
+portfolio_snapshots
+positions
+sqlite_sequence
+strategy_quarantine
+strategy_scores
+symbol_quarantine
+trades
+
+==========================================================================================
+TABLE SCHEMA: portfolio_snapshots
+==========================================================================================
+id, equity, cash, exposure, drawdown, regime, created_at
+
+==========================================================================================
+TABLE SCHEMA: positions
+==========================================================================================
+symbol, quantity, avg_entry, realized_pnl, unrealized_pnl, last_price, exposure, strategy, updated_at
+
+==========================================================================================
+TABLE SCHEMA: sqlite_sequence
+==========================================================================================
+name, seq
+
+==========================================================================================
+TABLE SCHEMA: strategy_quarantine
+==========================================================================================
+strategy, reason, blocked_until, created_at
+
+==========================================================================================
+TABLE SCHEMA: strategy_scores
+==========================================================================================
+id, strategy, sharpe, drawdown, score, status, created_at
+
+==========================================================================================
+TABLE SCHEMA: symbol_quarantine
+==========================================================================================
+symbol, reason, blocked_until, created_at
+
+==========================================================================================
+TABLE SCHEMA: trades
+==========================================================================================
+id, symbol, side, quantity, expected_price, fill_price, slippage_bps, pnl, strategy, confidence, live, shadow_mode, created_at
+
+==========================================================================================
+RECENT ROWS: positions
+==========================================================================================
+COLUMNS: symbol, quantity, avg_entry, realized_pnl, unrealized_pnl, last_price, exposure, strategy, updated_at
+('TAO/USDT', 0.005879517353712963, 255.250543491, 0.0, -0.0029429541416225798, 254.75, 1.4978070458583774, 'evo_7099', '2026-06-02 07:43:22')
+('ZEC/USDT', 0.002608583106557031, 575.3123204039998, 0.0, -0.004492815909952328, 573.59, 1.4962571840900474, 'evo_1026', '2026-06-02 07:43:22')
+('EDEN/USDT', 0.0, 0.0, 0.01003146985452634, 0.0, 0.04757, 0.0, 'evo_4811', '2026-06-02 07:43:22')
+('BILL/USDT', 0.0, 0.0, 0.014741486623486812, 0.0, 0.0904, 0.0, 'evo_7403', '2026-06-02 07:43:22')
+('DOT/USDT', 1.2912149351216144, 1.1622774482999998, 0.0, -0.014561609675021564, 1.151, 1.4861883903249782, 'evo_6800', '2026-06-02 07:43:22')
+('BCH/USDT', 0.005104189784392899, 294.02315811, 0.0, -0.021045381504498833, 289.9, 1.4797046184955014, 'evo_2647', '2026-06-02 07:43:22')
+('IN/USDT', 0.0, 0.0, 0.01053713815799417, 0.0, 0.08527, 0.0, 'evo_9101', '2026-06-02 07:43:22')
+('9BIT/USDT', 0.0, 0.0, 0.013946179355406204, 0.0, 0.048162, 0.0, 'evo_3407', '2026-06-02 07:43:22')
+('INJ/USDT', 0.0, 0.0, 0.011938430235454718, 0.0, 7.15, 0.0, 'evo_4811', '2026-06-02 07:43:22')
+('JGGL/USDT', 0.0, 0.0, 0.009931159461925654, 0.0, 2.1138, 0.0, 'evo_2218_m', '2026-06-02 07:43:22')
+('NEAR/USDT', 0.0, 0.0, 0.010044491542174657, 0.0, 2.72, 0.0, 'evo_8716', '2026-06-02 07:43:22')
+('TON/USDT', 0.0, 0.0, -0.15851588582068654, 0.0, 2.091, 0.0, 'evo_3407_m_m', '2026-06-02 07:43:22')
+('DASH/USDT', 0.0, 0.0, 0.009844573050669096, 0.0, 40.18, 0.0, 'evo_2848', '2026-06-02 07:43:22')
+('GUA/USDT', 0.0, 0.0, 0.03965187254856296, 0.0, 0.75115, 0.0, 'evo_2009', '2026-06-02 07:43:22')
+('PENDLE/USDT', 0.0, 0.0, 0.019316221136883225, 0.0, 1.425, 0.0, 'evo_9089', '2026-06-02 07:43:22')
+('PLAY/USDT', 0.0, 0.0, 0.0190416289153983, 0.0, 0.11489, 0.0, 'evo_4811', '2026-06-02 07:43:22')
+('HYPE/USDT', 0.0, 0.0, 0.0048688374485245985, 0.0, 74.02, 0.0, 'evo_9693', '2026-06-02 07:43:22')
+('ATLA/USDT', 0.0, 0.0, 0.004222660778225134, 0.0, 197.3508, 0.0, 'evo_1898', '2026-06-02 07:43:22')
+('GENIUS/USDT', 0.0, 0.0, -0.09283075072763862, 0.0, 0.4516, 0.0, 'evo_2218_m_m_m_m_m_m', '2026-06-02 07:43:22')
+('BSB/USDT', 0.0, 0.0, -0.09521081426820535, 0.0, 0.26418, 0.0, 'evo_7211', '2026-06-02 07:43:22')
+('SENS/USDT', 0.0, 0.0, -0.11420020481811928, 0.0, 0.00869, 0.0, 'evo_5098', '2026-06-02 07:43:22')
+
+
+==========================================================================================
+RECENT ROWS: strategy_quarantine
+==========================================================================================
+COLUMNS: strategy, reason, blocked_until, created_at
+
+
+==========================================================================================
+RECENT ROWS: symbol_quarantine
+==========================================================================================
+COLUMNS: symbol, reason, blocked_until, created_at
+
+
+==========================================================================================
+RECENT ROWS: trades
+==========================================================================================
+COLUMNS: id, symbol, side, quantity, expected_price, fill_price, slippage_bps, pnl, strategy, confidence, live, shadow_mode, created_at
+(62, 'TAO/USDT', 'buy', 0.005879517353712963, 254.97, 255.122982, 6.0, 0.0, 'evo_7099', 0.739383788018608, 0, 0, '2026-06-02 07:35:49')
+(61, 'ZEC/USDT', 'buy', 0.002608583106557031, 574.68, 575.0248079999999, 6.0, 0.0, 'evo_1026', 0.7684973822059833, 0, 0, '2026-06-02 06:51:19')
+(60, 'GUA/USDT', 'sell', 1.9530473307661769, 0.76937, 0.76937, 0.0, 0.0011147168591377318, 'trailing_profit_exit', 1.0, 0, 0, '2026-06-02 06:36:07')
+(59, 'GUA/USDT', 'buy', 1.9530473307661769, 0.76757, 0.768030542, 6.0, 0.0, 'evo_2009', 0.9, 0, 0, '2026-06-02 06:35:44')
+(58, 'INJ/USDT', 'sell', 0.2103705500527918, 7.14, 7.14, 0.0, 0.0005447045132448779, 'trailing_profit_exit', 1.0, 0, 0, '2026-06-02 06:08:27')
+(57, 'INJ/USDT', 'buy', 0.2103705500527918, 7.126, 7.1302756, 6.0, 0.0, 'evo_4811', 0.9, 0, 0, '2026-06-02 05:51:48')
+(56, 'EDEN/USDT', 'sell', 31.888971275817784, 0.0474, 0.0474, 0.0, 0.01003146985452634, 'adaptive_take_profit', 1.0, 0, 0, '2026-06-02 05:48:19')
+(55, 'EDEN/USDT', 'buy', 31.888971275817784, 0.04701, 0.047038206000000006, 6.0, 0.0, 'evo_4811', 0.9, 0, 0, '2026-06-02 05:35:41')
+(54, 'TON/USDT', 'sell', 0.6966080574703505, 2.041, 2.041, 0.0, -0.07968384322566319, 'adaptive_stop_loss', 1.0, 0, 0, '2026-06-02 05:10:35')
+(53, 'SENS/USDT', 'sell', 157.80005680802043, 0.0096, 0.0096, 0.0, 0.013373105084317808, 'adaptive_take_profit', 1.0, 0, 0, '2026-06-02 05:02:16')
+(52, 'SENS/USDT', 'buy', 157.80005680802043, 0.0095, 0.0095057, 6.0, 0.0, 'evo_5098', 0.9, 0, 0, '2026-06-02 04:56:56')
+(51, 'PLAY/USDT', 'sell', 12.09732520719976, 0.12415, 0.12415, 0.0, 0.00038198301161346065, 'trailing_profit_exit', 1.0, 0, 0, '2026-06-02 04:38:26')
+(50, 'PLAY/USDT', 'buy', 12.09732520719976, 0.12392, 0.123994352, 6.0, 0.0, 'evo_4811', 0.7351605580856877, 0, 0, '2026-06-02 04:38:12')
+(49, '9BIT/USDT', 'sell', 31.44878198531917, 0.048188, 0.048188, 0.0, 0.013946179355406204, 'adaptive_take_profit', 1.0, 0, 0, '2026-06-02 04:15:01')
+(48, 'BILL/USDT', 'sell', 16.979278963372913, 0.0893, 0.0893, 0.0, 0.014741486623486812, 'adaptive_take_profit', 1.0, 0, 0, '2026-06-02 04:08:52')
+(47, 'IN/USDT', 'sell', 17.25682674889138, 0.08762, 0.08762, 0.0, 0.01053713815799417, 'adaptive_take_profit', 1.0, 0, 0, '2026-06-02 04:03:49')
+(46, 'BILL/USDT', 'buy', 16.979278963372913, 0.08829, 0.08834297399999999, 6.0, 0.0, 'evo_7403', 0.7968833978798537, 0, 0, '2026-06-02 03:51:27')
+(45, 'GENIUS/USDT', 'sell', 3.2903152689277984, 0.43288, 0.43288, 0.0, -0.07715048222334134, 'adaptive_stop_loss', 1.0, 0, 0, '2026-06-02 03:40:07')
+(44, 'DOT/USDT', 'buy', 1.2912149351216144, 1.161, 1.1616966, 6.0, 0.0, 'evo_6800', 0.9, 0, 0, '2026-06-02 03:35:52')
+(43, 'BCH/USDT', 'buy', 0.005104189784392899, 293.7, 293.87622, 6.0, 0.0, 'evo_2647', 0.6012588926588753, 0, 0, '2026-06-02 02:55:05')
+(42, 'GUA/USDT', 'sell', 2.1194691639703014, 0.71341, 0.71341, 0.0, 0.01054447101991878, 'adaptive_take_profit', 1.0, 0, 0, '2026-06-02 02:45:01')
+(41, 'GUA/USDT', 'buy', 2.1194691639703014, 0.7073, 0.70772438, 6.0, 0.0, 'evo_2647', 0.8530710257062357, 0, 0, '2026-06-02 02:37:09')
+(40, 'INJ/USDT', 'sell', 0.21333435885530017, 7.045, 7.045, 0.0, 0.0014390878565218835, 'trailing_profit_exit', 1.0, 0, 0, '2026-06-02 02:12:13')
+(39, 'IN/USDT', 'buy', 17.25682674889138, 0.08687, 0.086922122, 6.0, 0.0, 'evo_9101', 0.8436636980740736, 0, 0, '2026-06-02 01:51:05')
+(38, 'INJ/USDT', 'buy', 0.21333435885530017, 7.027, 7.0312162, 6.0, 0.0, 'evo_1482_m', 0.9, 0, 0, '2026-06-02 01:35:58')
+(37, 'BSB/USDT', 'sell', 5.417391369168091, 0.2628, 0.2628, 0.0, -0.07777139340853421, 'adaptive_stop_loss', 1.0, 0, 0, '2026-06-02 01:01:13')
+(36, 'PLAY/USDT', 'sell', 11.380963708443623, 0.13282, 0.13282, 0.0, 0.010113789955604453, 'adaptive_take_profit', 1.0, 0, 0, '2026-06-02 00:54:04')
+(35, 'PLAY/USDT', 'buy', 11.380963708443623, 0.13172, 0.131799032, 6.0, 0.0, 'evo_1482', 0.7188782091660113, 0, 0, '2026-06-02 00:53:19')
+(34, 'TON/USDT', 'buy', 0.6966080574703505, 2.152, 2.1532912, 6.0, 0.0, 'evo_3407_m_m', 0.8578861142857356, 0, 0, '2026-06-02 00:35:41')
+(33, '9BIT/USDT', 'buy', 31.44878198531917, 0.047668, 0.0476966008, 6.0, 0.0, 'evo_3407', 0.9, 0, 0, '2026-06-02 00:07:37')
+
+
+==========================================================================================
+PNL SUMMARY FROM trades
+==========================================================================================
+(62, 22, 7, 0.008704057008797712, -0.06773296581699538, -0.1275733099024371, 0.019316221136883225, -0.282641506525418)
+
+==========================================================================================
+WORST 15 TRADES FROM trades
+==========================================================================================
+COLUMNS: id, symbol, side, quantity, expected_price, fill_price, slippage_bps, pnl, strategy, confidence, live, shadow_mode, created_at
+(2, 'SENS/USDT', 'sell', 205.99779300565524, 0.0179, 0.0179, 0.0, -0.1275733099024371, 'adaptive_stop_loss', 1.0, 0, 0, '2026-06-01 16:04:30')
+(54, 'TON/USDT', 'sell', 0.6966080574703505, 2.041, 2.041, 0.0, -0.07968384322566319, 'adaptive_stop_loss', 1.0, 0, 0, '2026-06-02 05:10:35')
+(20, 'TON/USDT', 'sell', 0.6592350658206659, 2.158, 2.158, 0.0, -0.07883204259502337, 'adaptive_stop_loss', 1.0, 0, 0, '2026-06-01 20:16:33')
+(37, 'BSB/USDT', 'sell', 5.417391369168091, 0.2628, 0.2628, 0.0, -0.07777139340853421, 'adaptive_stop_loss', 1.0, 0, 0, '2026-06-02 01:01:13')
+(45, 'GENIUS/USDT', 'sell', 3.2903152689277984, 0.43288, 0.43288, 0.0, -0.07715048222334134, 'adaptive_stop_loss', 1.0, 0, 0, '2026-06-02 03:40:07')
+(4, 'BSB/USDT', 'sell', 3.0159635771979443, 0.28527, 0.28527, 0.0, -0.017439420859671144, 'adaptive_stop_loss', 1.0, 0, 0, '2026-06-01 16:29:43')
+(6, 'GENIUS/USDT', 'sell', 2.3805247023768414, 0.44394, 0.44394, 0.0, -0.01568026850429728, 'adaptive_stop_loss', 1.0, 0, 0, '2026-06-01 16:55:33')
+(1, 'SENS/USDT', 'buy', 205.99779300565524, 0.01849, 0.018501094, 6.0, 0.0, 'evo_1582', 0.9, 0, 0, '2026-06-01 16:03:32')
+(3, 'BSB/USDT', 'buy', 3.0159635771979443, 0.29059, 0.290764354, 6.0, 0.0, 'evo_1582_m_m', 0.8020516619604107, 0, 0, '2026-06-01 16:19:28')
+(5, 'GENIUS/USDT', 'buy', 2.3805247023768414, 0.44981, 0.450079886, 6.0, 0.0, 'evo_4333', 0.8901618223700556, 0, 0, '2026-06-01 16:35:30')
+(7, 'ATLA/USDT', 'buy', 0.0029461360373713055, 197.736, 197.85464159999998, 6.0, 0.0, 'evo_1898', 0.710228446324313, 0, 0, '2026-06-01 17:19:43')
+(8, 'HYPE/USDT', 'buy', 0.008608899877811752, 71.3, 71.34277999999999, 6.0, 0.0, 'evo_9693', 0.7662028491267275, 0, 0, '2026-06-01 17:35:23')
+(9, 'PLAY/USDT', 'buy', 5.207913731903341, 0.11727, 0.117340362, 6.0, 0.0, 'evo_6314', 0.9, 0, 0, '2026-06-01 17:58:54')
+(13, 'PENDLE/USDT', 'buy', 1.086304738895793, 1.38, 1.380828, 6.0, 0.0, 'evo_9089', 0.9, 0, 0, '2026-06-01 18:35:01')
+(14, 'GUA/USDT', 'buy', 1.490885759143315, 1.00551, 1.0061133059999998, 6.0, 0.0, 'evo_6965', 0.9, 0, 0, '2026-06-01 18:51:38')

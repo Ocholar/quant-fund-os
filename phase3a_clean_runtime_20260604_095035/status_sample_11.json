@@ -1,0 +1,1628 @@
+﻿{
+    "name":  "Quant Fund OS",
+    "mode":  "paper",
+    "live_trading":  false,
+    "exchange":  "mexc",
+    "exchange_type":  "spot",
+    "leverage":  1,
+    "risk_status":  "SAFE",
+    "portfolio":  {
+                      "equity":  99.99,
+                      "cash":  97.99,
+                      "exposure":  2.0,
+                      "exposure_pct":  0.02,
+                      "drawdown":  -0.0001,
+                      "regime":  "SIDEWAYS",
+                      "realized_pnl":  0.0,
+                      "unrealized_pnl":  0.0,
+                      "total_pnl":  0.0,
+                      "updated_at":  "2026-06-04 10:00:49"
+                  },
+    "positions":  [
+                      {
+                          "symbol":  "ULTIMA/USDT",
+                          "quantity":  0.000856,
+                          "avg_entry":  2332.02,
+                          "mark_price":  2331.98,
+                          "exposure":  2.0,
+                          "realized_pnl":  0.0,
+                          "unrealized_pnl":  0.0,
+                          "updated_at":  "2026-06-04 10:00:40"
+                      }
+                  ],
+    "performance":  {
+                        "total_trades":  3,
+                        "buy_count":  0,
+                        "sell_count":  3,
+                        "win_rate":  0.0,
+                        "win_rate_estimate":  0.0,
+                        "realized_pnl":  0.0,
+                        "unrealized_pnl":  0.0,
+                        "total_pnl":  0.0,
+                        "take_profit_count":  0,
+                        "stop_loss_count":  0,
+                        "closed_outcome_count":  0,
+                        "other_exit_count":  3
+                    },
+    "trading":  {
+                    "total_trades":  3,
+                    "buy_count":  0,
+                    "sell_count":  3,
+                    "latest_trades":  [
+                                          {
+                                              "time":  "2026-06-04 09:58:54",
+                                              "created_at":  "2026-06-04 09:58:54",
+                                              "symbol":  "TRIA/USDT",
+                                              "side":  "sell",
+                                              "quantity":  39.87240829,
+                                              "fill_price":  0.03135,
+                                              "strategy":  "sideways_hard_exposure_guard",
+                                              "confidence":  1.0,
+                                              "live":  false,
+                                              "raw_strategy":  "sideways_hard_exposure_guard",
+                                              "is_exit":  false,
+                                              "exit_reason":  null,
+                                              "entry_strategy":  "sideways_hard_exposure_guard",
+                                              "display_strategy":  "sideways_hard_exposure_guard"
+                                          },
+                                          {
+                                              "time":  "2026-06-04 09:58:38",
+                                              "created_at":  "2026-06-04 09:58:38",
+                                              "symbol":  "CAKE/USDT",
+                                              "side":  "sell",
+                                              "quantity":  1.00161083,
+                                              "fill_price":  1.246,
+                                              "strategy":  "sideways_hard_exposure_guard",
+                                              "confidence":  1.0,
+                                              "live":  false,
+                                              "raw_strategy":  "sideways_hard_exposure_guard",
+                                              "is_exit":  false,
+                                              "exit_reason":  null,
+                                              "entry_strategy":  "sideways_hard_exposure_guard",
+                                              "display_strategy":  "sideways_hard_exposure_guard"
+                                          },
+                                          {
+                                              "time":  "2026-06-04 09:57:33",
+                                              "created_at":  "2026-06-04 09:57:33",
+                                              "symbol":  "BEAT/USDT",
+                                              "side":  "sell",
+                                              "quantity":  1.44057969,
+                                              "fill_price":  1.37934,
+                                              "strategy":  "sideways_hard_exposure_guard",
+                                              "confidence":  1.0,
+                                              "live":  false,
+                                              "raw_strategy":  "sideways_hard_exposure_guard",
+                                              "is_exit":  false,
+                                              "exit_reason":  null,
+                                              "entry_strategy":  "sideways_hard_exposure_guard",
+                                              "display_strategy":  "sideways_hard_exposure_guard"
+                                          }
+                                      ]
+                },
+    "take_profit_count":  0,
+    "stop_loss_count":  0,
+    "breakeven_protection_exit_count":  0,
+    "time_stop_exit_count":  0,
+    "risk_rules":  {
+                       "max_total_exposure_pct":  0.12,
+                       "max_symbol_exposure_pct":  0.04,
+                       "caution_exposure_pct":  0.09,
+                       "blocked_drawdown":  -0.05,
+                       "caution_drawdown":  -0.02,
+                       "sideways_max_entries_per_hour":  3,
+                       "sideways_min_confidence":  0.5,
+                       "max_trades_per_symbol":  3,
+                       "trade_count_window_hours":  1.0,
+                       "entry_quality_top_n":  10,
+                       "entry_min_signal_sideways":  0.0016
+                   },
+    "quarantine":  [
+
+                   ],
+    "strategy_scores":  [
+                            {
+                                "strategy":  "sideways_hard_exposure_guard",
+                                "score":  0.06108691067719474,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_allocator_rescue",
+                                "score":  0.05626428399721607,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "sideways_hard_exposure_guard",
+                                "score":  0.039209790759778894,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_allocator_rescue",
+                                "score":  0.03261922334737548,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_allocator_rescue",
+                                "score":  0.03261922334737548,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_allocator_rescue",
+                                "score":  0.03261922334737548,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_allocator_rescue",
+                                "score":  0.03261922334737548,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_allocator_rescue",
+                                "score":  0.03261922334737548,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_allocator_rescue",
+                                "score":  0.03261922334737548,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_allocator_rescue",
+                                "score":  0.01794832539506976,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "sideways_hard_exposure_guard",
+                                "score":  0.015967730678166214,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_allocator_rescue",
+                                "score":  0.00897416269753488,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_allocator_rescue",
+                                "score":  0.00897416269753488,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_allocator_rescue",
+                                "score":  0.00897416269753488,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_allocator_rescue",
+                                "score":  0.00897416269753488,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1814",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4323",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8881",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3390",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2081",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_7219",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1503",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6839",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4323_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2081_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3927",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1850",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3813",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2845",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4526",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9244",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4323_m_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1835",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8303",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5633",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3813_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8818",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1835_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3425",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5983",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1722",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8005",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6353",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4371",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5122",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2938",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4002",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5122_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6330",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3292",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8064",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5832",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6916",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4100",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9495",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3282",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1200",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_7574",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6231",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8250",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3282_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6010",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6916_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3750",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6968",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5592",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6231_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8665",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1315",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_7355",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5746",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8997",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8783",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1360",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9220",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3035",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8783_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9105",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6770",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4289_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4289",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6401",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6770_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6679",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9402",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9853",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6401",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1607",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5273",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3682",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6567",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6387",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6770_m_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9439",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6257",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6770_m_m_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_7154",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8548",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2016",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6257_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5943",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4896",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6257_m_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_7154_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6087",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6257_m_m_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6257",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5394",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3055",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4629",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1302",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3608",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3878",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3055_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5620",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4484",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2303",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6257",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6257",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6257",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1302_m_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2906",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1811",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5620_m_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6257",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3402",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5620",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5423",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5620_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5620_m_m_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4499",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4995",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_7639",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4948",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6944",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_7920",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8647",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_7639_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4948_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6559",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3743",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8501",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9763",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_7639",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_7639",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_7639",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9204",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9377",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4948_m_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6170",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_7378",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5237",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9686",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4809",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9363",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6050",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8709",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8899",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4809_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5419",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8602",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4377",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1827",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5659",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1827_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6269",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5659_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1602",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6141",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3444",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_7405",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4255",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4636",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1694",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6141_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1688",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4255_m_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6083",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4255_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9150",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2423",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6083_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5847",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1688_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2560",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6645",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1377",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2007",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_7695",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2560_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2897",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9056",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5966",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6645_m_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4667",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2560_m_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1209",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5966_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6794",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6195",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_7241",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8661",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9826",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4658",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4606",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6645_m_m_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5533",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8343",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6645_m_m_m_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5776",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8289",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8842",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8950",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1294",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6645_m_m_m_m_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5974",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4131",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_7086",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3820",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_7914",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9349",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6224",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2231",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1647",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9141",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1557",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2963",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8391",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9349_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5802",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8748",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5802_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8196",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8748_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2214",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5410",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3907",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8748_m_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4105",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9438",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8123",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4241",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_7631",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3698",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5103",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3585",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5666_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1543",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3476",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1079",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8588",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2366",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1079_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3478",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_7891",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2271",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6217",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6851",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2030",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_7479",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1091",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5861",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4617",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2923",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8945",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1390",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9068",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2036",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6867",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2036_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2622",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2923_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_4561",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_3320",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6778",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1042",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5970",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6373",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6883",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2704",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9276",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_5517",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6883_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_6373_m",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8824",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9410",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8940",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8749",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1149",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_8599",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2169",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_9553",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_2431",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_7408",
+                                "score":  0.0,
+                                "status":  "RUNNING"
+                            },
+                            {
+                                "strategy":  "evo_1429",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_7929",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_1492",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4762",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_2908",
+                                "score":  0.0,
+                                "status":  "active"
+                            }
+                        ],
+    "paused":  false,
+    "pause_reason":  "",
+    "bot_state":  "RUNNING",
+    "status_label":  "RUNNING",
+    "controls":  {
+                     "pause":  "/pause",
+                     "resume":  "/resume",
+                     "kill_switch":  "/kill-switch"
+                 }
+}

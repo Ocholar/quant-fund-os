@@ -1,0 +1,34 @@
+00405: def _qfos_symbol_db_quarantined(symbol):
+00406:     try:
+00407:         with engine.begin() as conn:
+00408:             row = conn.execute(
+00409:                 text("""
+00410:                     SELECT symbol
+00411:                     FROM symbol_quarantine
+00412:                     WHERE symbol = :symbol
+00413:                       AND blocked_until IS NOT NULL
+00414:                       AND blocked_until > DATETIME('now', '+3 hours')
+00415:                     LIMIT 1
+00416:                 """),
+00417:                 {"symbol": symbol},
+00418:             ).first()
+00419:         return row is not None
+00420:     except Exception as e:
+00421:         print(f"[SCOUT_FALLBACK] quarantine check error {symbol}: {e}")
+00422:         return True
+00423: 
+00424: def _qfos_symbol_recent_stop_loss(symbol):
+00425:     try:
+00426:         with engine.begin() as conn:
+00427:             row = conn.execute(
+00428:                 text("""
+00429:                     SELECT COUNT(*) AS count
+00430:                     FROM trades
+00431:                     WHERE symbol = :symbol
+00432:                       AND side = 'sell'
+00433:                       AND (
+00434:                             strategy IN ('stop_loss', 'adaptive_stop_loss')
+00435:                          OR strategy LIKE '%stop_loss%'
+00436:                       )
+00437:                       AND created_at >= DATETIME('now', '+3 hours', '-' || :hours || ' hours')
+00438:                 """),

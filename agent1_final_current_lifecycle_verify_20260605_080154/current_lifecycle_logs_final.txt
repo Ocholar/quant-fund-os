@@ -1,0 +1,417 @@
+﻿quant-1  | [STARTUP_DB_INIT] db= /app/data/quant.db
+quant-1  | [STARTUP_DB_INIT] parent= /app/data exists= True writable= True
+quant-1  | [STARTUP_DB_INIT] DB_OK
+quant-1  | QFOS final helper override loaded.
+quant-1  | INFO:     Started server process [12]
+quant-1  | INFO:     Waiting for application startup.
+quant-1  | INFO:     Application startup complete.
+quant-1  | INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
+quant-1  | QFOS expectancy patch helper loaded.
+quant-1  | [QFOS_CLEAN_BASELINE_RUNTIME_GUARD] cleared in-memory positions for clean paper baseline
+quant-1  | Quant Fund OS starting. LIVE_TRADING= False
+quant-1  | Safety mode enabled. Paper trading only.
+quant-1  | TELEGRAM ALERT SENT
+quant-1  | Database connected.
+quant-1  | [QFOS_SCHEMA_GUARD] execution accounting schema/triggers ensured source=startup
+quant-1  | [QFOS_AUTO_STALE_RECONCILER_STARTED] interval_seconds=10[BIG_LOSS_COOLDOWN] wrapped _qfos_exit_decision
+quant-1  | [BIG_LOSS_COOLDOWN] wrapped _entry_quality_reason
+quant-1  | [BASKET_LOSS_GUARD] wrapped _qfos_exit_decision
+quant-1  | 
+quant-1  | [EMERGENCY_BASKET_WATCHDOG] started
+quant-1  | [ACTIVE_POSITION_WATCHDOG] started
+quant-1  | [PROFIT_ENGINE] started
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=100.0000 cash=100.0000 exposure=0.0000 realized=0.0000 unrealized=0.0000 drawdown=0.0000% regime=SIDEWAYS
+quant-1  | [PORTFOLIO_RECONCILER] started
+quant-1  | [POLICY_V2_FINAL_WIRING_READY] feature_snapshot=result_f_by_symbol fallback_filter=result_orders classifier=profit_engine
+quant-1  | Recovering state from database...
+quant-1  | Recovered cash: $100.00
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=100.0000 cash=100.0000 exposure=0.0000 realized=0.0000 unrealized=0.0000 drawdown=0.0000% regime=SIDEWAYS
+quant-1  | MARKET DATA WARNING: ccxt fetch_tickers failed: mexc does not have market symbol MOGU/USDT
+quant-1  | MARKET DATA WARNING: ccxt ticker failed MOGU/USDT: mexc does not have market symbol MOGU/USDT
+quant-1  | MARKET TICK DATA RAW: {'BTC/USDT': 63515.53, 'ETH/USDT': 1742.79, 'SOL/USDT': 67.95, 'USDC/USDT': 1.00076, 'XRP/USDT': 1.1453, 'DOGE/USDT': 0.08679, 'BNB/USDT': 601.53, 'TRIA/USDT': 0.03047, 'TRX/USDT': 0.3287, 'BSB/USDT': 0.2306, 'ADA/USDT': 0.1681, 'USD1/USDT': 0.99982, 'INJ/USDT': 5.359, 'SUI/USDT': 0.7436, 'LTC/USDT': 45.39, 'HYPE/USDT': 63.7, 'BCH/USDT': 241.0, 'ZEC/USDT': 397.57, 'GOLD(PAXG)/USDT': 4440.0, 'FIL/USDT': 0.8493, 'TAO/USDT': 207.89, 'DOT/USDT': 1.024, 'TON/USDT': 1.656, 'TRUMP/USDT': 1.774, 'BILL/USDT': 0.08103, 'NEAR/USDT': 2.1969, 'BEAT/USDT': 1.60428, 'ULTIMA/USDT': 2323.81, 'MX/USDT': 1.7438, 'GUA/USDT': 0.87828, 'ONDO/USDT': 0.36809, 'ASTER/USDT': 0.6754, 'EDEN/USDT': 0.04444, 'EUR/USDT': 1.1624, 'ETHFI/USDT': 0.3209, 'GENIUS/USDT': 0.43512, 'RAIN/USDT': 0.014121, 'XMR/USDT': 333.97, 'UBOX/USDT': 0.001435, 'LINK/USDT': 7.882, 'DASH/USDT': 33.72, 'SHIB/USDT': 4.899e-06, 'PLAY/USDT': 0.08172, 'AVAX/USDT': 7.486, 'PENGU/USDT': 0.006739, 'WXT/USDT': 0.015805, 'ATOM/USDT': 1.81, 'IN/USDT': 0.09005, 'TTN/USDT': 0.05037, 'ATLA/USDT': 189.0, 'PENDLE/USDT': 1.294, 'AIXDROP/USDT': 0.00022634, 'SENS/USDT': 0.00407, 'TIA/USDT': 0.3341, 'BDX/USDT': 0.08019, '9BIT/USDT': 0.04562, 'JGGL/USDT': 2.1226, 'CAKE/USDT': 1.243, 'BOB/USDT': 0.006115}
+quant-1  | PRICE VALIDATION PENDING BTC/USDT: first_seen price=63515.529999999999
+quant-1  | PRICE VALIDATION PENDING ETH/USDT: first_seen price=1742.790000000000
+quant-1  | PRICE VALIDATION PENDING SOL/USDT: first_seen price=67.950000000000
+quant-1  | PRICE VALIDATION PENDING USDC/USDT: first_seen price=1.000760000000
+quant-1  | PRICE VALIDATION PENDING XRP/USDT: first_seen price=1.145300000000
+quant-1  | PRICE VALIDATION PENDING DOGE/USDT: first_seen price=0.086790000000
+quant-1  | PRICE VALIDATION PENDING BNB/USDT: first_seen price=601.530000000000
+quant-1  | PRICE VALIDATION PENDING TRIA/USDT: first_seen price=0.030470000000
+quant-1  | PRICE VALIDATION PENDING TRX/USDT: first_seen price=0.328700000000
+quant-1  | PRICE VALIDATION PENDING BSB/USDT: first_seen price=0.230600000000
+quant-1  | PRICE VALIDATION PENDING ADA/USDT: first_seen price=0.168100000000
+quant-1  | PRICE VALIDATION PENDING USD1/USDT: first_seen price=0.999820000000
+quant-1  | PRICE VALIDATION PENDING INJ/USDT: first_seen price=5.359000000000
+quant-1  | PRICE VALIDATION PENDING SUI/USDT: first_seen price=0.743600000000
+quant-1  | PRICE VALIDATION PENDING LTC/USDT: first_seen price=45.390000000000
+quant-1  | PRICE VALIDATION PENDING HYPE/USDT: first_seen price=63.700000000000
+quant-1  | PRICE VALIDATION PENDING BCH/USDT: first_seen price=241.000000000000
+quant-1  | PRICE VALIDATION PENDING ZEC/USDT: first_seen price=397.570000000000
+quant-1  | PRICE VALIDATION PENDING GOLD(PAXG)/USDT: first_seen price=4440.000000000000
+quant-1  | PRICE VALIDATION PENDING FIL/USDT: first_seen price=0.849300000000
+quant-1  | PRICE VALIDATION PENDING TAO/USDT: first_seen price=207.890000000000
+quant-1  | PRICE VALIDATION PENDING DOT/USDT: first_seen price=1.024000000000
+quant-1  | PRICE VALIDATION PENDING TON/USDT: first_seen price=1.656000000000
+quant-1  | PRICE VALIDATION PENDING TRUMP/USDT: first_seen price=1.774000000000
+quant-1  | PRICE VALIDATION PENDING BILL/USDT: first_seen price=0.081030000000
+quant-1  | PRICE VALIDATION PENDING NEAR/USDT: first_seen price=2.196900000000
+quant-1  | PRICE VALIDATION PENDING BEAT/USDT: first_seen price=1.604280000000
+quant-1  | PRICE VALIDATION PENDING ULTIMA/USDT: first_seen price=2323.810000000000
+quant-1  | PRICE VALIDATION PENDING MX/USDT: first_seen price=1.743800000000
+quant-1  | PRICE VALIDATION PENDING GUA/USDT: first_seen price=0.878280000000
+quant-1  | PRICE VALIDATION PENDING ONDO/USDT: first_seen price=0.368090000000
+quant-1  | PRICE VALIDATION PENDING ASTER/USDT: first_seen price=0.675400000000
+quant-1  | PRICE VALIDATION PENDING EDEN/USDT: first_seen price=0.044440000000
+quant-1  | PRICE VALIDATION PENDING EUR/USDT: first_seen price=1.162400000000
+quant-1  | PRICE VALIDATION PENDING ETHFI/USDT: first_seen price=0.320900000000
+quant-1  | PRICE VALIDATION PENDING GENIUS/USDT: first_seen price=0.435120000000
+quant-1  | PRICE VALIDATION PENDING RAIN/USDT: first_seen price=0.014121000000
+quant-1  | PRICE VALIDATION PENDING XMR/USDT: first_seen price=333.970000000000
+quant-1  | PRICE VALIDATION PENDING UBOX/USDT: first_seen price=0.001435000000
+quant-1  | PRICE VALIDATION PENDING LINK/USDT: first_seen price=7.882000000000
+quant-1  | PRICE VALIDATION PENDING DASH/USDT: first_seen price=33.720000000000
+quant-1  | PRICE VALIDATION PENDING SHIB/USDT: first_seen price=0.000004899000
+quant-1  | PRICE VALIDATION PENDING PLAY/USDT: first_seen price=0.081720000000
+quant-1  | PRICE VALIDATION PENDING AVAX/USDT: first_seen price=7.486000000000
+quant-1  | PRICE VALIDATION PENDING PENGU/USDT: first_seen price=0.006739000000
+quant-1  | PRICE VALIDATION PENDING WXT/USDT: first_seen price=0.015805000000
+quant-1  | PRICE VALIDATION PENDING ATOM/USDT: first_seen price=1.810000000000
+quant-1  | PRICE VALIDATION PENDING IN/USDT: first_seen price=0.090050000000
+quant-1  | PRICE VALIDATION PENDING TTN/USDT: first_seen price=0.050370000000
+quant-1  | PRICE VALIDATION PENDING ATLA/USDT: first_seen price=189.000000000000
+quant-1  | PRICE VALIDATION PENDING PENDLE/USDT: first_seen price=1.294000000000
+quant-1  | PRICE VALIDATION PENDING AIXDROP/USDT: first_seen price=0.000226340000
+quant-1  | PRICE VALIDATION PENDING SENS/USDT: first_seen price=0.004070000000
+quant-1  | PRICE VALIDATION PENDING TIA/USDT: first_seen price=0.334100000000
+quant-1  | PRICE VALIDATION PENDING BDX/USDT: first_seen price=0.080190000000
+quant-1  | PRICE VALIDATION PENDING 9BIT/USDT: first_seen price=0.045620000000
+quant-1  | PRICE VALIDATION PENDING JGGL/USDT: first_seen price=2.122600000000
+quant-1  | PRICE VALIDATION PENDING CAKE/USDT: first_seen price=1.243000000000
+quant-1  | PRICE VALIDATION PENDING BOB/USDT: first_seen price=0.006115000000
+quant-1  | PRICE VALIDATION ENTRY BLOCK: {'sane_for_entries': False, 'reject_count': 0, 'large_tick_count': 0, 'trusted_count': 0, 'total_count': 59, 'reason': 'bad_ticks_0_of_59'}
+quant-1  | MARKET TICK DATA VALIDATED: {}
+quant-1  | MARKET DATA BLOCK: no_valid_prices_this_cycle
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=100.0000 cash=100.0000 exposure=0.0000 realized=0.0000 unrealized=0.0000 drawdown=0.0000% regime=SIDEWAYS
+quant-1  | MARKET DATA WARNING: ccxt fetch_tickers failed: mexc does not have market symbol MOGU/USDT
+quant-1  | MARKET DATA WARNING: ccxt ticker failed MOGU/USDT: mexc does not have market symbol MOGU/USDT
+quant-1  | INFO:     172.18.0.1:49334 - "GET /status HTTP/1.1" 200 OK
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=100.0000 cash=100.0000 exposure=0.0000 realized=0.0000 unrealized=0.0000 drawdown=0.0000% regime=SIDEWAYS
+quant-1  | MARKET TICK DATA RAW: {'BTC/USDT': 63522.9, 'ETH/USDT': 1743.41, 'SOL/USDT': 67.97, 'USDC/USDT': 1.00076, 'XRP/USDT': 1.1458, 'DOGE/USDT': 0.08683, 'BNB/USDT': 601.66, 'TRIA/USDT': 0.03046, 'TRX/USDT': 0.3288, 'BSB/USDT': 0.2306, 'ADA/USDT': 0.1683, 'USD1/USDT': 0.99983, 'INJ/USDT': 5.362, 'SUI/USDT': 0.7439, 'LTC/USDT': 45.39, 'HYPE/USDT': 63.68, 'BCH/USDT': 241.3, 'ZEC/USDT': 399.46, 'GOLD(PAXG)/USDT': 4440.47, 'FIL/USDT': 0.8498, 'TAO/USDT': 207.89, 'DOT/USDT': 1.026, 'TON/USDT': 1.656, 'TRUMP/USDT': 1.775, 'BILL/USDT': 0.08083, 'NEAR/USDT': 2.1978, 'BEAT/USDT': 1.60428, 'ULTIMA/USDT': 2323.41, 'MX/USDT': 1.7437, 'GUA/USDT': 0.87966, 'ONDO/USDT': 0.36843, 'ASTER/USDT': 0.6762, 'EDEN/USDT': 0.04445, 'EUR/USDT': 1.1623, 'ETHFI/USDT': 0.321, 'GENIUS/USDT': 0.43512, 'RAIN/USDT': 0.0141209, 'XMR/USDT': 333.92, 'UBOX/USDT': 0.001435, 'LINK/USDT': 7.881, 'DASH/USDT': 33.77, 'SHIB/USDT': 4.891e-06, 'PLAY/USDT': 0.082, 'AVAX/USDT': 7.487, 'PENGU/USDT': 0.006726, 'WXT/USDT': 0.015808, 'ATOM/USDT': 1.81, 'IN/USDT': 0.09001, 'TTN/USDT': 0.05036, 'ATLA/USDT': 189.0, 'PENDLE/USDT': 1.293, 'AIXDROP/USDT': 0.00022634, 'SENS/USDT': 0.00407, 'TIA/USDT': 0.3336, 'BDX/USDT': 0.08011, '9BIT/USDT': 0.045611, 'JGGL/USDT': 2.121, 'CAKE/USDT': 1.242, 'BOB/USDT': 0.006117}
+quant-1  | PRICE VALIDATION TRUSTED BTC/USDT: price=63522.900000000001
+quant-1  | PRICE VALIDATION TRUSTED ETH/USDT: price=1743.410000000000
+quant-1  | PRICE VALIDATION TRUSTED SOL/USDT: price=67.970000000000
+quant-1  | PRICE VALIDATION TRUSTED USDC/USDT: price=1.000760000000
+quant-1  | PRICE VALIDATION TRUSTED XRP/USDT: price=1.145800000000
+quant-1  | PRICE VALIDATION TRUSTED DOGE/USDT: price=0.086830000000
+quant-1  | PRICE VALIDATION TRUSTED BNB/USDT: price=601.660000000000
+quant-1  | PRICE VALIDATION TRUSTED TRIA/USDT: price=0.030460000000
+quant-1  | PRICE VALIDATION TRUSTED TRX/USDT: price=0.328800000000
+quant-1  | PRICE VALIDATION TRUSTED BSB/USDT: price=0.230600000000
+quant-1  | PRICE VALIDATION TRUSTED ADA/USDT: price=0.168300000000
+quant-1  | PRICE VALIDATION TRUSTED USD1/USDT: price=0.999830000000
+quant-1  | PRICE VALIDATION TRUSTED INJ/USDT: price=5.362000000000
+quant-1  | PRICE VALIDATION TRUSTED SUI/USDT: price=0.743900000000
+quant-1  | PRICE VALIDATION TRUSTED LTC/USDT: price=45.390000000000
+quant-1  | PRICE VALIDATION TRUSTED HYPE/USDT: price=63.680000000000
+quant-1  | PRICE VALIDATION TRUSTED BCH/USDT: price=241.300000000000
+quant-1  | PRICE VALIDATION TRUSTED ZEC/USDT: price=399.460000000000
+quant-1  | PRICE VALIDATION TRUSTED GOLD(PAXG)/USDT: price=4440.470000000000
+quant-1  | PRICE VALIDATION TRUSTED FIL/USDT: price=0.849800000000
+quant-1  | PRICE VALIDATION TRUSTED TAO/USDT: price=207.890000000000
+quant-1  | PRICE VALIDATION TRUSTED DOT/USDT: price=1.026000000000
+quant-1  | PRICE VALIDATION TRUSTED TON/USDT: price=1.656000000000
+quant-1  | PRICE VALIDATION TRUSTED TRUMP/USDT: price=1.775000000000
+quant-1  | PRICE VALIDATION TRUSTED BILL/USDT: price=0.080830000000
+quant-1  | PRICE VALIDATION TRUSTED NEAR/USDT: price=2.197800000000
+quant-1  | PRICE VALIDATION TRUSTED BEAT/USDT: price=1.604280000000
+quant-1  | PRICE VALIDATION TRUSTED ULTIMA/USDT: price=2323.410000000000
+quant-1  | PRICE VALIDATION TRUSTED MX/USDT: price=1.743700000000
+quant-1  | PRICE VALIDATION TRUSTED GUA/USDT: price=0.879660000000
+quant-1  | PRICE VALIDATION TRUSTED ONDO/USDT: price=0.368430000000
+quant-1  | PRICE VALIDATION TRUSTED ASTER/USDT: price=0.676200000000
+quant-1  | PRICE VALIDATION TRUSTED EDEN/USDT: price=0.044450000000
+quant-1  | PRICE VALIDATION TRUSTED EUR/USDT: price=1.162300000000
+quant-1  | PRICE VALIDATION TRUSTED ETHFI/USDT: price=0.321000000000
+quant-1  | PRICE VALIDATION TRUSTED GENIUS/USDT: price=0.435120000000
+quant-1  | PRICE VALIDATION TRUSTED RAIN/USDT: price=0.014120900000
+quant-1  | PRICE VALIDATION TRUSTED XMR/USDT: price=333.920000000000
+quant-1  | PRICE VALIDATION TRUSTED UBOX/USDT: price=0.001435000000
+quant-1  | PRICE VALIDATION TRUSTED LINK/USDT: price=7.881000000000
+quant-1  | PRICE VALIDATION TRUSTED DASH/USDT: price=33.770000000000
+quant-1  | PRICE VALIDATION TRUSTED SHIB/USDT: price=0.000004891000
+quant-1  | PRICE VALIDATION TRUSTED PLAY/USDT: price=0.082000000000
+quant-1  | PRICE VALIDATION TRUSTED AVAX/USDT: price=7.487000000000
+quant-1  | PRICE VALIDATION TRUSTED PENGU/USDT: price=0.006726000000
+quant-1  | PRICE VALIDATION TRUSTED WXT/USDT: price=0.015808000000
+quant-1  | PRICE VALIDATION TRUSTED ATOM/USDT: price=1.810000000000
+quant-1  | PRICE VALIDATION TRUSTED IN/USDT: price=0.090010000000
+quant-1  | PRICE VALIDATION TRUSTED TTN/USDT: price=0.050360000000
+quant-1  | PRICE VALIDATION TRUSTED ATLA/USDT: price=189.000000000000
+quant-1  | PRICE VALIDATION TRUSTED PENDLE/USDT: price=1.293000000000
+quant-1  | PRICE VALIDATION TRUSTED AIXDROP/USDT: price=0.000226340000
+quant-1  | PRICE VALIDATION TRUSTED SENS/USDT: price=0.004070000000
+quant-1  | PRICE VALIDATION TRUSTED TIA/USDT: price=0.333600000000
+quant-1  | PRICE VALIDATION TRUSTED BDX/USDT: price=0.080110000000
+quant-1  | PRICE VALIDATION TRUSTED 9BIT/USDT: price=0.045611000000
+quant-1  | PRICE VALIDATION TRUSTED JGGL/USDT: price=2.121000000000
+quant-1  | PRICE VALIDATION TRUSTED CAKE/USDT: price=1.242000000000
+quant-1  | PRICE VALIDATION TRUSTED BOB/USDT: price=0.006117000000
+quant-1  | MARKET TICK DATA VALIDATED: {'BTC/USDT': 63522.9, 'ETH/USDT': 1743.41, 'SOL/USDT': 67.97, 'USDC/USDT': 1.00076, 'XRP/USDT': 1.1458, 'DOGE/USDT': 0.08683, 'BNB/USDT': 601.66, 'TRIA/USDT': 0.03046, 'TRX/USDT': 0.3288, 'BSB/USDT': 0.2306, 'ADA/USDT': 0.1683, 'USD1/USDT': 0.99983, 'INJ/USDT': 5.362, 'SUI/USDT': 0.7439, 'LTC/USDT': 45.39, 'HYPE/USDT': 63.68, 'BCH/USDT': 241.3, 'ZEC/USDT': 399.46, 'GOLD(PAXG)/USDT': 4440.47, 'FIL/USDT': 0.8498, 'TAO/USDT': 207.89, 'DOT/USDT': 1.026, 'TON/USDT': 1.656, 'TRUMP/USDT': 1.775, 'BILL/USDT': 0.08083, 'NEAR/USDT': 2.1978, 'BEAT/USDT': 1.60428, 'ULTIMA/USDT': 2323.41, 'MX/USDT': 1.7437, 'GUA/USDT': 0.87966, 'ONDO/USDT': 0.36843, 'ASTER/USDT': 0.6762, 'EDEN/USDT': 0.04445, 'EUR/USDT': 1.1623, 'ETHFI/USDT': 0.321, 'GENIUS/USDT': 0.43512, 'RAIN/USDT': 0.0141209, 'XMR/USDT': 333.92, 'UBOX/USDT': 0.001435, 'LINK/USDT': 7.881, 'DASH/USDT': 33.77, 'SHIB/USDT': 4.891e-06, 'PLAY/USDT': 0.082, 'AVAX/USDT': 7.487, 'PENGU/USDT': 0.006726, 'WXT/USDT': 0.015808, 'ATOM/USDT': 1.81, 'IN/USDT': 0.09001, 'TTN/USDT': 0.05036, 'ATLA/USDT': 189.0, 'PENDLE/USDT': 1.293, 'AIXDROP/USDT': 0.00022634, 'SENS/USDT': 0.00407, 'TIA/USDT': 0.3336, 'BDX/USDT': 0.08011, '9BIT/USDT': 0.045611, 'JGGL/USDT': 2.121, 'CAKE/USDT': 1.242, 'BOB/USDT': 0.006117}
+quant-1  | WARNING: Normal FEATURES is empty. Trying RAW_MOMENTUM_FALLBACK...
+quant-1  | FALLBACK FEATURES: {}
+quant-1  | STRATEGY SCORE DEBUG: {'ready_features': 0, 'normal_features': 0, 'top_score': 0.0, 'top_matches': 0, 'top_strategy': 'evo_2300'}
+quant-1  | ALLOCATOR BLOCK: no_allowed_positive_strategy top_scores=[{'strategy': 'evo_2300', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_8371', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_9041', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_9937', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_7779', 'score': 0.0, 'matches': 0}]
+quant-1  | [QUALITY_RANK] top-0: 
+quant-1  | ENTRY QUALITY TOP 10: []
+quant-1  | [ALLOCATOR_RESCUE] no_candidate_passed
+quant-1  | FEATURES: {}
+quant-1  | ORDERS: []
+quant-1  | [EXPECTANCY_PATCH] before=0 after=0 exits=0
+quant-1  | [EXPECTANCY_PATCH] before=0 after=0 exits=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | {'regime': 'SIDEWAYS', 'equity': 100.0, 'cash': 100.0, 'exposure': 0, 'exposure_pct': 0.0, 'positions': {}, 'orders': 0, 'rejected': [], 'status': 'ok', 'paused': False, 'risk_status': 'SAFE', 'shadow_positions': {}}
+quant-1  | 
+quant-1  | ========================================================================
+quant-1  | QUANT FUND OS ├â┬ó├óΓÇÜ┬¼├óΓé¼┬¥ CYCLE DIAGNOSTIC
+quant-1  | Time: 2026-06-05T05:03:27.537837Z
+quant-1  | Market symbols: 59
+quant-1  | Feature symbols: 0
+quant-1  | Orders/applied fills: 0
+quant-1  | Empty feature cycles: 1
+quant-1  | No-trade reason: features_empty
+quant-1  | Note: main_loop_after_execution
+quant-1  | ========================================================================
+quant-1  | 
+quant-1  | MARKET DATA WARNING: ccxt fetch_tickers failed: mexc does not have market symbol MOGU/USDT
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=100.0000 cash=100.0000 exposure=0.0000 realized=0.0000 unrealized=0.0000 drawdown=0.0000% regime=SIDEWAYS
+quant-1  | MARKET DATA WARNING: ccxt ticker failed MOGU/USDT: mexc does not have market symbol MOGU/USDT
+quant-1  | MARKET TICK DATA RAW: {'BTC/USDT': 63454.88, 'ETH/USDT': 1739.5, 'SOL/USDT': 67.81, 'USDC/USDT': 1.00075, 'XRP/USDT': 1.1433, 'DOGE/USDT': 0.08665, 'BNB/USDT': 600.15, 'TRIA/USDT': 0.03036, 'TRX/USDT': 0.3288, 'BSB/USDT': 0.23127, 'ADA/USDT': 0.1678, 'USD1/USDT': 0.99983, 'INJ/USDT': 5.352, 'SUI/USDT': 0.742, 'LTC/USDT': 45.25, 'HYPE/USDT': 63.4, 'BCH/USDT': 240.2, 'ZEC/USDT': 391.64, 'GOLD(PAXG)/USDT': 4443.0, 'FIL/USDT': 0.8476, 'TAO/USDT': 206.89, 'DOT/USDT': 1.022, 'TON/USDT': 1.657, 'TRUMP/USDT': 1.769, 'BILL/USDT': 0.08085, 'NEAR/USDT': 2.18, 'BEAT/USDT': 1.59716, 'ULTIMA/USDT': 2323.52, 'MX/USDT': 1.7437, 'GUA/USDT': 0.87759, 'ONDO/USDT': 0.36707, 'ASTER/USDT': 0.6747, 'EDEN/USDT': 0.04451, 'EUR/USDT': 1.1624, 'ETHFI/USDT': 0.3199, 'GENIUS/USDT': 0.43599, 'RAIN/USDT': 0.0141194, 'XMR/USDT': 333.75, 'UBOX/USDT': 0.001438, 'LINK/USDT': 7.865, 'DASH/USDT': 33.68, 'SHIB/USDT': 4.888e-06, 'PLAY/USDT': 0.08185, 'AVAX/USDT': 7.487, 'PENGU/USDT': 0.006724, 'WXT/USDT': 0.015776, 'ATOM/USDT': 1.804, 'IN/USDT': 0.09001, 'TTN/USDT': 0.05036, 'ATLA/USDT': 189.0, 'PENDLE/USDT': 1.292, 'AIXDROP/USDT': 0.00022621, 'SENS/USDT': 0.00407, 'TIA/USDT': 0.3327, 'BDX/USDT': 0.08023, '9BIT/USDT': 0.045608, 'JGGL/USDT': 2.1177, 'CAKE/USDT': 1.24, 'BOB/USDT': 0.006099}
+quant-1  | MARKET TICK DATA VALIDATED: {'BTC/USDT': 63454.88, 'ETH/USDT': 1739.5, 'SOL/USDT': 67.81, 'USDC/USDT': 1.00075, 'XRP/USDT': 1.1433, 'DOGE/USDT': 0.08665, 'BNB/USDT': 600.15, 'TRIA/USDT': 0.03036, 'TRX/USDT': 0.3288, 'BSB/USDT': 0.23127, 'ADA/USDT': 0.1678, 'USD1/USDT': 0.99983, 'INJ/USDT': 5.352, 'SUI/USDT': 0.742, 'LTC/USDT': 45.25, 'HYPE/USDT': 63.4, 'BCH/USDT': 240.2, 'ZEC/USDT': 391.64, 'GOLD(PAXG)/USDT': 4443.0, 'FIL/USDT': 0.8476, 'TAO/USDT': 206.89, 'DOT/USDT': 1.022, 'TON/USDT': 1.657, 'TRUMP/USDT': 1.769, 'BILL/USDT': 0.08085, 'NEAR/USDT': 2.18, 'BEAT/USDT': 1.59716, 'ULTIMA/USDT': 2323.52, 'MX/USDT': 1.7437, 'GUA/USDT': 0.87759, 'ONDO/USDT': 0.36707, 'ASTER/USDT': 0.6747, 'EDEN/USDT': 0.04451, 'EUR/USDT': 1.1624, 'ETHFI/USDT': 0.3199, 'GENIUS/USDT': 0.43599, 'RAIN/USDT': 0.0141194, 'XMR/USDT': 333.75, 'UBOX/USDT': 0.001438, 'LINK/USDT': 7.865, 'DASH/USDT': 33.68, 'SHIB/USDT': 4.888e-06, 'PLAY/USDT': 0.08185, 'AVAX/USDT': 7.487, 'PENGU/USDT': 0.006724, 'WXT/USDT': 0.015776, 'ATOM/USDT': 1.804, 'IN/USDT': 0.09001, 'TTN/USDT': 0.05036, 'ATLA/USDT': 189.0, 'PENDLE/USDT': 1.292, 'AIXDROP/USDT': 0.00022621, 'SENS/USDT': 0.00407, 'TIA/USDT': 0.3327, 'BDX/USDT': 0.08023, '9BIT/USDT': 0.045608, 'JGGL/USDT': 2.1177, 'CAKE/USDT': 1.24, 'BOB/USDT': 0.006099}
+quant-1  | WARNING: Normal FEATURES is empty. Trying RAW_MOMENTUM_FALLBACK...
+quant-1  | FALLBACK FEATURES: {}
+quant-1  | STRATEGY SCORE DEBUG: {'ready_features': 0, 'normal_features': 0, 'top_score': 0.0, 'top_matches': 0, 'top_strategy': 'evo_2300'}
+quant-1  | ALLOCATOR BLOCK: no_allowed_positive_strategy top_scores=[{'strategy': 'evo_2300', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_8371', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_9041', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_9937', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_7779', 'score': 0.0, 'matches': 0}]
+quant-1  | [QUALITY_RANK] top-0: 
+quant-1  | ENTRY QUALITY TOP 10: []
+quant-1  | [ALLOCATOR_RESCUE] no_candidate_passed
+quant-1  | FEATURES: {}
+quant-1  | ORDERS: []
+quant-1  | [EXPECTANCY_PATCH] before=0 after=0 exits=0
+quant-1  | [EXPECTANCY_PATCH] before=0 after=0 exits=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | {'regime': 'SIDEWAYS', 'equity': 100.0, 'cash': 100.0, 'exposure': 0, 'exposure_pct': 0.0, 'positions': {}, 'orders': 0, 'rejected': [], 'status': 'ok', 'paused': False, 'risk_status': 'SAFE', 'shadow_positions': {}}
+quant-1  | 
+quant-1  | ========================================================================
+quant-1  | QUANT FUND OS ├â┬ó├óΓÇÜ┬¼├óΓé¼┬¥ CYCLE DIAGNOSTIC
+quant-1  | Time: 2026-06-05T05:04:08.144920Z
+quant-1  | Market symbols: 59
+quant-1  | Feature symbols: 0
+quant-1  | Orders/applied fills: 0
+quant-1  | Empty feature cycles: 2
+quant-1  | No-trade reason: features_empty
+quant-1  | Note: main_loop_after_execution
+quant-1  | ========================================================================
+quant-1  | 
+quant-1  | MARKET DATA WARNING: ccxt fetch_tickers failed: mexc does not have market symbol MOGU/USDT
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=100.0000 cash=100.0000 exposure=0.0000 realized=0.0000 unrealized=0.0000 drawdown=0.0000% regime=SIDEWAYS
+quant-1  | MARKET DATA WARNING: ccxt ticker failed MOGU/USDT: mexc does not have market symbol MOGU/USDT
+quant-1  | MARKET TICK DATA RAW: {'BTC/USDT': 63420.23, 'ETH/USDT': 1739.6, 'SOL/USDT': 67.81, 'USDC/USDT': 1.00076, 'XRP/USDT': 1.1429, 'DOGE/USDT': 0.08664, 'BNB/USDT': 599.51, 'TRIA/USDT': 0.03035, 'TRX/USDT': 0.3288, 'BSB/USDT': 0.23127, 'ADA/USDT': 0.1677, 'USD1/USDT': 0.99983, 'INJ/USDT': 5.349, 'SUI/USDT': 0.7416, 'LTC/USDT': 45.22, 'HYPE/USDT': 63.13, 'BCH/USDT': 240.2, 'ZEC/USDT': 389.94, 'GOLD(PAXG)/USDT': 4442.75, 'FIL/USDT': 0.8459, 'TAO/USDT': 206.49, 'DOT/USDT': 1.022, 'TON/USDT': 1.655, 'TRUMP/USDT': 1.767, 'BILL/USDT': 0.08085, 'NEAR/USDT': 2.1862, 'BEAT/USDT': 1.59701, 'ULTIMA/USDT': 2323.31, 'MX/USDT': 1.7439, 'GUA/USDT': 0.87944, 'ONDO/USDT': 0.36713, 'ASTER/USDT': 0.674, 'EDEN/USDT': 0.04435, 'EUR/USDT': 1.1623, 'ETHFI/USDT': 0.3202, 'GENIUS/USDT': 0.43502, 'RAIN/USDT': 0.0141086, 'XMR/USDT': 334.3, 'UBOX/USDT': 0.001438, 'LINK/USDT': 7.858, 'DASH/USDT': 33.65, 'SHIB/USDT': 4.884e-06, 'PLAY/USDT': 0.0815, 'AVAX/USDT': 7.463, 'PENGU/USDT': 0.006712, 'WXT/USDT': 0.015783, 'ATOM/USDT': 1.804, 'IN/USDT': 0.09031, 'TTN/USDT': 0.05026, 'ATLA/USDT': 188.3964, 'PENDLE/USDT': 1.29, 'AIXDROP/USDT': 0.00022638, 'SENS/USDT': 0.00407, 'TIA/USDT': 0.3325, 'BDX/USDT': 0.08019, '9BIT/USDT': 0.045591, 'JGGL/USDT': 2.1192, 'CAKE/USDT': 1.239, 'BOB/USDT': 0.006099}
+quant-1  | MARKET TICK DATA VALIDATED: {'BTC/USDT': 63420.23, 'ETH/USDT': 1739.6, 'SOL/USDT': 67.81, 'USDC/USDT': 1.00076, 'XRP/USDT': 1.1429, 'DOGE/USDT': 0.08664, 'BNB/USDT': 599.51, 'TRIA/USDT': 0.03035, 'TRX/USDT': 0.3288, 'BSB/USDT': 0.23127, 'ADA/USDT': 0.1677, 'USD1/USDT': 0.99983, 'INJ/USDT': 5.349, 'SUI/USDT': 0.7416, 'LTC/USDT': 45.22, 'HYPE/USDT': 63.13, 'BCH/USDT': 240.2, 'ZEC/USDT': 389.94, 'GOLD(PAXG)/USDT': 4442.75, 'FIL/USDT': 0.8459, 'TAO/USDT': 206.49, 'DOT/USDT': 1.022, 'TON/USDT': 1.655, 'TRUMP/USDT': 1.767, 'BILL/USDT': 0.08085, 'NEAR/USDT': 2.1862, 'BEAT/USDT': 1.59701, 'ULTIMA/USDT': 2323.31, 'MX/USDT': 1.7439, 'GUA/USDT': 0.87944, 'ONDO/USDT': 0.36713, 'ASTER/USDT': 0.674, 'EDEN/USDT': 0.04435, 'EUR/USDT': 1.1623, 'ETHFI/USDT': 0.3202, 'GENIUS/USDT': 0.43502, 'RAIN/USDT': 0.0141086, 'XMR/USDT': 334.3, 'UBOX/USDT': 0.001438, 'LINK/USDT': 7.858, 'DASH/USDT': 33.65, 'SHIB/USDT': 4.884e-06, 'PLAY/USDT': 0.0815, 'AVAX/USDT': 7.463, 'PENGU/USDT': 0.006712, 'WXT/USDT': 0.015783, 'ATOM/USDT': 1.804, 'IN/USDT': 0.09031, 'TTN/USDT': 0.05026, 'ATLA/USDT': 188.3964, 'PENDLE/USDT': 1.29, 'AIXDROP/USDT': 0.00022638, 'SENS/USDT': 0.00407, 'TIA/USDT': 0.3325, 'BDX/USDT': 0.08019, '9BIT/USDT': 0.045591, 'JGGL/USDT': 2.1192, 'CAKE/USDT': 1.239, 'BOB/USDT': 0.006099}
+quant-1  | WARNING: Normal FEATURES is empty. Trying RAW_MOMENTUM_FALLBACK...
+quant-1  | FALLBACK FEATURES: {}
+quant-1  | STRATEGY SCORE DEBUG: {'ready_features': 0, 'normal_features': 0, 'top_score': 0.0, 'top_matches': 0, 'top_strategy': 'evo_2300'}
+quant-1  | ALLOCATOR BLOCK: no_allowed_positive_strategy top_scores=[{'strategy': 'evo_2300', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_8371', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_9041', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_9937', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_7779', 'score': 0.0, 'matches': 0}]
+quant-1  | [QUALITY_RANK] top-0: 
+quant-1  | ENTRY QUALITY TOP 10: []
+quant-1  | [ALLOCATOR_RESCUE] no_candidate_passed
+quant-1  | FEATURES: {}
+quant-1  | ORDERS: []
+quant-1  | [EXPECTANCY_PATCH] before=0 after=0 exits=0
+quant-1  | [EXPECTANCY_PATCH] before=0 after=0 exits=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | {'regime': 'SIDEWAYS', 'equity': 100.0, 'cash': 100.0, 'exposure': 0, 'exposure_pct': 0.0, 'positions': {}, 'orders': 0, 'rejected': [], 'status': 'ok', 'paused': False, 'risk_status': 'SAFE', 'shadow_positions': {}}
+quant-1  | 
+quant-1  | ========================================================================
+quant-1  | QUANT FUND OS ├â┬ó├óΓÇÜ┬¼├óΓé¼┬¥ CYCLE DIAGNOSTIC
+quant-1  | Time: 2026-06-05T05:04:45.266197Z
+quant-1  | Market symbols: 59
+quant-1  | Feature symbols: 0
+quant-1  | Orders/applied fills: 0
+quant-1  | Empty feature cycles: 3
+quant-1  | No-trade reason: features_empty
+quant-1  | Note: main_loop_after_execution
+quant-1  | ========================================================================
+quant-1  | 
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=100.0000 cash=100.0000 exposure=0.0000 realized=0.0000 unrealized=0.0000 drawdown=0.0000% regime=SIDEWAYS
+quant-1  | MARKET DATA WARNING: ccxt fetch_tickers failed: mexc does not have market symbol MOGU/USDT
+quant-1  | MARKET DATA WARNING: ccxt ticker failed MOGU/USDT: mexc does not have market symbol MOGU/USDT
+quant-1  | MARKET TICK DATA RAW: {'BTC/USDT': 63425.64, 'ETH/USDT': 1738.32, 'SOL/USDT': 67.77, 'USDC/USDT': 1.00075, 'XRP/USDT': 1.1419, 'DOGE/USDT': 0.08659, 'BNB/USDT': 599.22, 'TRIA/USDT': 0.0303, 'TRX/USDT': 0.3289, 'BSB/USDT': 0.23116, 'ADA/USDT': 0.1677, 'USD1/USDT': 0.99982, 'INJ/USDT': 5.348, 'SUI/USDT': 0.7405, 'LTC/USDT': 45.2, 'HYPE/USDT': 62.96, 'BCH/USDT': 240.0, 'ZEC/USDT': 389.9, 'GOLD(PAXG)/USDT': 4441.32, 'FIL/USDT': 0.8458, 'TAO/USDT': 206.66, 'DOT/USDT': 1.021, 'TON/USDT': 1.654, 'TRUMP/USDT': 1.767, 'BILL/USDT': 0.08117, 'NEAR/USDT': 2.1775, 'BEAT/USDT': 1.59974, 'ULTIMA/USDT': 2323.69, 'MX/USDT': 1.7438, 'GUA/USDT': 0.87944, 'ONDO/USDT': 0.36695, 'ASTER/USDT': 0.6726, 'EDEN/USDT': 0.04435, 'EUR/USDT': 1.1623, 'ETHFI/USDT': 0.3196, 'GENIUS/USDT': 0.4332, 'RAIN/USDT': 0.0141133, 'XMR/USDT': 333.22, 'UBOX/USDT': 0.001438, 'LINK/USDT': 7.858, 'DASH/USDT': 33.34, 'SHIB/USDT': 4.881e-06, 'PLAY/USDT': 0.0815, 'AVAX/USDT': 7.45, 'PENGU/USDT': 0.006704, 'WXT/USDT': 0.015776, 'ATOM/USDT': 1.802, 'IN/USDT': 0.08982, 'TTN/USDT': 0.05026, 'ATLA/USDT': 187.9017, 'PENDLE/USDT': 1.29, 'AIXDROP/USDT': 0.00022637, 'SENS/USDT': 0.00407, 'TIA/USDT': 0.3323, 'BDX/USDT': 0.08021, '9BIT/USDT': 0.045594, 'JGGL/USDT': 2.1168, 'CAKE/USDT': 1.238, 'BOB/USDT': 0.006103}
+quant-1  | MARKET TICK DATA VALIDATED: {'BTC/USDT': 63425.64, 'ETH/USDT': 1738.32, 'SOL/USDT': 67.77, 'USDC/USDT': 1.00075, 'XRP/USDT': 1.1419, 'DOGE/USDT': 0.08659, 'BNB/USDT': 599.22, 'TRIA/USDT': 0.0303, 'TRX/USDT': 0.3289, 'BSB/USDT': 0.23116, 'ADA/USDT': 0.1677, 'USD1/USDT': 0.99982, 'INJ/USDT': 5.348, 'SUI/USDT': 0.7405, 'LTC/USDT': 45.2, 'HYPE/USDT': 62.96, 'BCH/USDT': 240.0, 'ZEC/USDT': 389.9, 'GOLD(PAXG)/USDT': 4441.32, 'FIL/USDT': 0.8458, 'TAO/USDT': 206.66, 'DOT/USDT': 1.021, 'TON/USDT': 1.654, 'TRUMP/USDT': 1.767, 'BILL/USDT': 0.08117, 'NEAR/USDT': 2.1775, 'BEAT/USDT': 1.59974, 'ULTIMA/USDT': 2323.69, 'MX/USDT': 1.7438, 'GUA/USDT': 0.87944, 'ONDO/USDT': 0.36695, 'ASTER/USDT': 0.6726, 'EDEN/USDT': 0.04435, 'EUR/USDT': 1.1623, 'ETHFI/USDT': 0.3196, 'GENIUS/USDT': 0.4332, 'RAIN/USDT': 0.0141133, 'XMR/USDT': 333.22, 'UBOX/USDT': 0.001438, 'LINK/USDT': 7.858, 'DASH/USDT': 33.34, 'SHIB/USDT': 4.881e-06, 'PLAY/USDT': 0.0815, 'AVAX/USDT': 7.45, 'PENGU/USDT': 0.006704, 'WXT/USDT': 0.015776, 'ATOM/USDT': 1.802, 'IN/USDT': 0.08982, 'TTN/USDT': 0.05026, 'ATLA/USDT': 187.9017, 'PENDLE/USDT': 1.29, 'AIXDROP/USDT': 0.00022637, 'SENS/USDT': 0.00407, 'TIA/USDT': 0.3323, 'BDX/USDT': 0.08021, '9BIT/USDT': 0.045594, 'JGGL/USDT': 2.1168, 'CAKE/USDT': 1.238, 'BOB/USDT': 0.006103}
+quant-1  | WARNING: Normal FEATURES is empty. Trying RAW_MOMENTUM_FALLBACK...
+quant-1  | FALLBACK FEATURES: {}
+quant-1  | STRATEGY SCORE DEBUG: {'ready_features': 0, 'normal_features': 0, 'top_score': 0.0, 'top_matches': 0, 'top_strategy': 'evo_2300'}
+quant-1  | ALLOCATOR BLOCK: no_allowed_positive_strategy top_scores=[{'strategy': 'evo_2300', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_8371', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_9041', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_9937', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_7779', 'score': 0.0, 'matches': 0}]
+quant-1  | [QUALITY_RANK] top-0: 
+quant-1  | ENTRY QUALITY TOP 10: []
+quant-1  | [ALLOCATOR_RESCUE] no_candidate_passed
+quant-1  | FEATURES: {}
+quant-1  | ORDERS: []
+quant-1  | [EXPECTANCY_PATCH] before=0 after=0 exits=0
+quant-1  | [EXPECTANCY_PATCH] before=0 after=0 exits=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | {'regime': 'SIDEWAYS', 'equity': 100.0, 'cash': 100.0, 'exposure': 0, 'exposure_pct': 0.0, 'positions': {}, 'orders': 0, 'rejected': [], 'status': 'ok', 'paused': False, 'risk_status': 'SAFE', 'shadow_positions': {}}
+quant-1  | 
+quant-1  | ========================================================================
+quant-1  | QUANT FUND OS ├â┬ó├óΓÇÜ┬¼├óΓé¼┬¥ CYCLE DIAGNOSTIC
+quant-1  | Time: 2026-06-05T05:05:21.621514Z
+quant-1  | Market symbols: 59
+quant-1  | Feature symbols: 0
+quant-1  | Orders/applied fills: 0
+quant-1  | Empty feature cycles: 4
+quant-1  | No-trade reason: features_empty
+quant-1  | Note: main_loop_after_execution
+quant-1  | ========================================================================
+quant-1  | 
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=100.0000 cash=100.0000 exposure=0.0000 realized=0.0000 unrealized=0.0000 drawdown=0.0000% regime=SIDEWAYS
+quant-1  | MARKET DATA WARNING: ccxt fetch_tickers failed: mexc does not have market symbol MOGU/USDT
+quant-1  | MARKET DATA WARNING: ccxt ticker failed MOGU/USDT: mexc does not have market symbol MOGU/USDT
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=100.0000 cash=100.0000 exposure=0.0000 realized=0.0000 unrealized=0.0000 drawdown=0.0000% regime=SIDEWAYS
+quant-1  | MARKET TICK DATA RAW: {'BTC/USDT': 63440.97, 'ETH/USDT': 1738.03, 'SOL/USDT': 67.78, 'USDC/USDT': 1.00076, 'XRP/USDT': 1.1425, 'DOGE/USDT': 0.08667, 'BNB/USDT': 599.46, 'TRIA/USDT': 0.03018, 'TRX/USDT': 0.3288, 'BSB/USDT': 0.23053, 'ADA/USDT': 0.1679, 'USD1/USDT': 0.99981, 'INJ/USDT': 5.349, 'SUI/USDT': 0.7407, 'LTC/USDT': 45.22, 'HYPE/USDT': 63.05, 'BCH/USDT': 240.2, 'ZEC/USDT': 388.04, 'GOLD(PAXG)/USDT': 4442.63, 'FIL/USDT': 0.8463, 'TAO/USDT': 206.5, 'DOT/USDT': 1.022, 'TON/USDT': 1.655, 'TRUMP/USDT': 1.768, 'BILL/USDT': 0.08121, 'NEAR/USDT': 2.1809, 'BEAT/USDT': 1.60578, 'ULTIMA/USDT': 2322.8, 'MX/USDT': 1.7438, 'GUA/USDT': 0.87736, 'ONDO/USDT': 0.36696, 'ASTER/USDT': 0.6739, 'EDEN/USDT': 0.04435, 'EUR/USDT': 1.1624, 'ETHFI/USDT': 0.3201, 'GENIUS/USDT': 0.434, 'RAIN/USDT': 0.0141132, 'XMR/USDT': 332.89, 'UBOX/USDT': 0.001435, 'LINK/USDT': 7.861, 'DASH/USDT': 33.39, 'SHIB/USDT': 4.884e-06, 'PLAY/USDT': 0.08142, 'AVAX/USDT': 7.458, 'PENGU/USDT': 0.006704, 'WXT/USDT': 0.015792, 'ATOM/USDT': 1.806, 'IN/USDT': 0.08988, 'TTN/USDT': 0.05026, 'ATLA/USDT': 187.5522, 'PENDLE/USDT': 1.293, 'AIXDROP/USDT': 0.00022637, 'SENS/USDT': 0.00407, 'TIA/USDT': 0.3329, 'BDX/USDT': 0.08018, '9BIT/USDT': 0.045588, 'JGGL/USDT': 2.1177, 'CAKE/USDT': 1.239, 'BOB/USDT': 0.006103}
+quant-1  | MARKET TICK DATA VALIDATED: {'BTC/USDT': 63440.97, 'ETH/USDT': 1738.03, 'SOL/USDT': 67.78, 'USDC/USDT': 1.00076, 'XRP/USDT': 1.1425, 'DOGE/USDT': 0.08667, 'BNB/USDT': 599.46, 'TRIA/USDT': 0.03018, 'TRX/USDT': 0.3288, 'BSB/USDT': 0.23053, 'ADA/USDT': 0.1679, 'USD1/USDT': 0.99981, 'INJ/USDT': 5.349, 'SUI/USDT': 0.7407, 'LTC/USDT': 45.22, 'HYPE/USDT': 63.05, 'BCH/USDT': 240.2, 'ZEC/USDT': 388.04, 'GOLD(PAXG)/USDT': 4442.63, 'FIL/USDT': 0.8463, 'TAO/USDT': 206.5, 'DOT/USDT': 1.022, 'TON/USDT': 1.655, 'TRUMP/USDT': 1.768, 'BILL/USDT': 0.08121, 'NEAR/USDT': 2.1809, 'BEAT/USDT': 1.60578, 'ULTIMA/USDT': 2322.8, 'MX/USDT': 1.7438, 'GUA/USDT': 0.87736, 'ONDO/USDT': 0.36696, 'ASTER/USDT': 0.6739, 'EDEN/USDT': 0.04435, 'EUR/USDT': 1.1624, 'ETHFI/USDT': 0.3201, 'GENIUS/USDT': 0.434, 'RAIN/USDT': 0.0141132, 'XMR/USDT': 332.89, 'UBOX/USDT': 0.001435, 'LINK/USDT': 7.861, 'DASH/USDT': 33.39, 'SHIB/USDT': 4.884e-06, 'PLAY/USDT': 0.08142, 'AVAX/USDT': 7.458, 'PENGU/USDT': 0.006704, 'WXT/USDT': 0.015792, 'ATOM/USDT': 1.806, 'IN/USDT': 0.08988, 'TTN/USDT': 0.05026, 'ATLA/USDT': 187.5522, 'PENDLE/USDT': 1.293, 'AIXDROP/USDT': 0.00022637, 'SENS/USDT': 0.00407, 'TIA/USDT': 0.3329, 'BDX/USDT': 0.08018, '9BIT/USDT': 0.045588, 'JGGL/USDT': 2.1177, 'CAKE/USDT': 1.239, 'BOB/USDT': 0.006103}
+quant-1  | WARNING: Normal FEATURES is empty. Trying RAW_MOMENTUM_FALLBACK...
+quant-1  | FALLBACK FEATURES DIAGNOSTIC ONLY: {'ZEC/USDT': {'ready': True, 'source': 'RAW_MOMENTUM_FALLBACK', 'direction': 'SELL', 'price': 388.04, 'trend': -0.02858859460271356, 'long_trend': -0.02858859460271356, 'momentum': -0.02858859460271356, 'one_tick_momentum': -0.02858859460271356, 'volatility': 0.007376101487245359, 'signal_strength': 1.0, 'confidence': 1.0, 'reason': 'normal_features_empty'}, 'DASH/USDT': {'ready': True, 'source': 'RAW_MOMENTUM_FALLBACK', 'direction': 'SELL', 'price': 33.39, 'trend': -0.011252591057151392, 'long_trend': -0.011252591057151392, 'momentum': -0.011252591057151392, 'one_tick_momentum': -0.011252591057151392, 'volatility': 0.003977111109961153, 'signal_strength': 0.9797495067713344, 'confidence': 0.9797495067713344, 'reason': 'normal_features_empty'}, 'HYPE/USDT': {'ready': True, 'source': 'RAW_MOMENTUM_FALLBACK', 'direction': 'SELL', 'price': 63.05, 'trend': -0.00989321608040205, 'long_trend': -0.00989321608040205, 'momentum': -0.00989321608040205, 'one_tick_momentum': -0.00989321608040205, 'volatility': 0.002354137315814136, 'signal_strength': 0.8385400327484467, 'confidence': 0.8385400327484467, 'reason': 'normal_features_empty'}, 'TRIA/USDT': {'ready': True, 'source': 'RAW_MOMENTUM_FALLBACK', 'direction': 'SELL', 'price': 0.03018, 'trend': -0.009192383453709863, 'long_trend': -0.009192383453709863, 'momentum': -0.009192383453709863, 'one_tick_momentum': -0.009192383453709863, 'volatility': 0.0014170617932021004, 'signal_strength': 0.763731912160831, 'confidence': 0.763731912160831, 'reason': 'normal_features_empty'}, 'NEAR/USDT': {'ready': True, 'source': 'RAW_MOMENTUM_FALLBACK', 'direction': 'SELL', 'price': 2.1809, 'trend': -0.007689507689507752, 'long_trend': -0.007689507689507752, 'momentum': -0.007689507689507752, 'one_tick_momentum': -0.007689507689507752, 'volatility': 0.0043942592603774585, 'signal_strength': 0.7030458003681693, 'confidence': 0.7030458003681693, 'reason': 'normal_features_empty'}}
+quant-1  | STRATEGY SCORE DEBUG: {'ready_features': 0, 'normal_features': 0, 'top_score': 0.0, 'top_matches': 0, 'top_strategy': 'evo_2300'}
+quant-1  | ALLOCATOR BLOCK: no_allowed_positive_strategy top_scores=[{'strategy': 'evo_2300', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_8371', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_9041', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_9937', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_7779', 'score': 0.0, 'matches': 0}]
+quant-1  | FALLBACK TRADING DISABLED: diagnostic fallback ignored; waiting for normal MEXC ranked signals
+quant-1  | [QUALITY_RANK] top-0: 
+quant-1  | ENTRY QUALITY TOP 10: []
+quant-1  | [ALLOCATOR_RESCUE] no_candidate_passed
+quant-1  | FEATURES: {}
+quant-1  | ORDERS: []
+quant-1  | [EXPECTANCY_PATCH] before=0 after=0 exits=0
+quant-1  | [EXPECTANCY_PATCH] before=0 after=0 exits=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | {'regime': 'SIDEWAYS', 'equity': 100.0, 'cash': 100.0, 'exposure': 0, 'exposure_pct': 0.0, 'positions': {}, 'orders': 0, 'rejected': [], 'status': 'ok', 'paused': False, 'risk_status': 'SAFE', 'shadow_positions': {}}
+quant-1  | 
+quant-1  | ========================================================================
+quant-1  | QUANT FUND OS ├â┬ó├óΓÇÜ┬¼├óΓé¼┬¥ CYCLE DIAGNOSTIC
+quant-1  | Time: 2026-06-05T05:06:02.018537Z
+quant-1  | Market symbols: 59
+quant-1  | Feature symbols: 0
+quant-1  | Orders/applied fills: 0
+quant-1  | Empty feature cycles: 5
+quant-1  | No-trade reason: features_empty
+quant-1  | Note: main_loop_after_execution
+quant-1  | ========================================================================
+quant-1  | 
+quant-1  | MARKET DATA WARNING: ccxt fetch_tickers failed: mexc does not have market symbol MOGU/USDT
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=100.0000 cash=100.0000 exposure=0.0000 realized=0.0000 unrealized=0.0000 drawdown=0.0000% regime=SIDEWAYS
+quant-1  | MARKET DATA WARNING: ccxt ticker failed MOGU/USDT: mexc does not have market symbol MOGU/USDT
+quant-1  | MARKET TICK DATA RAW: {'BTC/USDT': 63525.71, 'ETH/USDT': 1739.16, 'SOL/USDT': 67.91, 'USDC/USDT': 1.00076, 'XRP/USDT': 1.1432, 'DOGE/USDT': 0.08677, 'BNB/USDT': 600.04, 'TRIA/USDT': 0.03019, 'TRX/USDT': 0.3289, 'BSB/USDT': 0.23108, 'ADA/USDT': 0.1681, 'USD1/USDT': 0.99982, 'INJ/USDT': 5.345, 'SUI/USDT': 0.7417, 'LTC/USDT': 45.22, 'HYPE/USDT': 63.24, 'BCH/USDT': 240.2, 'ZEC/USDT': 387.74, 'GOLD(PAXG)/USDT': 4442.28, 'FIL/USDT': 0.8472, 'TAO/USDT': 206.5, 'DOT/USDT': 1.023, 'TON/USDT': 1.656, 'TRUMP/USDT': 1.767, 'BILL/USDT': 0.08117, 'NEAR/USDT': 2.1862, 'BEAT/USDT': 1.60961, 'ULTIMA/USDT': 2323.72, 'MX/USDT': 1.744, 'GUA/USDT': 0.87738, 'ONDO/USDT': 0.36713, 'ASTER/USDT': 0.6736, 'EDEN/USDT': 0.04451, 'EUR/USDT': 1.1623, 'ETHFI/USDT': 0.3199, 'GENIUS/USDT': 0.43502, 'RAIN/USDT': 0.0141132, 'XMR/USDT': 333.36, 'UBOX/USDT': 0.001435, 'LINK/USDT': 7.853, 'DASH/USDT': 33.39, 'SHIB/USDT': 4.882e-06, 'PLAY/USDT': 0.08145, 'AVAX/USDT': 7.451, 'PENGU/USDT': 0.006715, 'WXT/USDT': 0.015788, 'ATOM/USDT': 1.807, 'IN/USDT': 0.09046, 'TTN/USDT': 0.05027, 'ATLA/USDT': 187.9047, 'PENDLE/USDT': 1.29, 'AIXDROP/USDT': 0.00022619, 'SENS/USDT': 0.00407, 'TIA/USDT': 0.3328, 'BDX/USDT': 0.08016, '9BIT/USDT': 0.04558, 'JGGL/USDT': 2.1168, 'CAKE/USDT': 1.24, 'BOB/USDT': 0.006107}
+quant-1  | MARKET TICK DATA VALIDATED: {'BTC/USDT': 63525.71, 'ETH/USDT': 1739.16, 'SOL/USDT': 67.91, 'USDC/USDT': 1.00076, 'XRP/USDT': 1.1432, 'DOGE/USDT': 0.08677, 'BNB/USDT': 600.04, 'TRIA/USDT': 0.03019, 'TRX/USDT': 0.3289, 'BSB/USDT': 0.23108, 'ADA/USDT': 0.1681, 'USD1/USDT': 0.99982, 'INJ/USDT': 5.345, 'SUI/USDT': 0.7417, 'LTC/USDT': 45.22, 'HYPE/USDT': 63.24, 'BCH/USDT': 240.2, 'ZEC/USDT': 387.74, 'GOLD(PAXG)/USDT': 4442.28, 'FIL/USDT': 0.8472, 'TAO/USDT': 206.5, 'DOT/USDT': 1.023, 'TON/USDT': 1.656, 'TRUMP/USDT': 1.767, 'BILL/USDT': 0.08117, 'NEAR/USDT': 2.1862, 'BEAT/USDT': 1.60961, 'ULTIMA/USDT': 2323.72, 'MX/USDT': 1.744, 'GUA/USDT': 0.87738, 'ONDO/USDT': 0.36713, 'ASTER/USDT': 0.6736, 'EDEN/USDT': 0.04451, 'EUR/USDT': 1.1623, 'ETHFI/USDT': 0.3199, 'GENIUS/USDT': 0.43502, 'RAIN/USDT': 0.0141132, 'XMR/USDT': 333.36, 'UBOX/USDT': 0.001435, 'LINK/USDT': 7.853, 'DASH/USDT': 33.39, 'SHIB/USDT': 4.882e-06, 'PLAY/USDT': 0.08145, 'AVAX/USDT': 7.451, 'PENGU/USDT': 0.006715, 'WXT/USDT': 0.015788, 'ATOM/USDT': 1.807, 'IN/USDT': 0.09046, 'TTN/USDT': 0.05027, 'ATLA/USDT': 187.9047, 'PENDLE/USDT': 1.29, 'AIXDROP/USDT': 0.00022619, 'SENS/USDT': 0.00407, 'TIA/USDT': 0.3328, 'BDX/USDT': 0.08016, '9BIT/USDT': 0.04558, 'JGGL/USDT': 2.1168, 'CAKE/USDT': 1.24, 'BOB/USDT': 0.006107}
+quant-1  | WARNING: Normal FEATURES is empty. Trying RAW_MOMENTUM_FALLBACK...
+quant-1  | FALLBACK FEATURES DIAGNOSTIC ONLY: {'ZEC/USDT': {'ready': True, 'source': 'RAW_MOMENTUM_FALLBACK', 'direction': 'SELL', 'price': 387.74, 'trend': -0.009958124808497542, 'long_trend': -0.009958124808497542, 'momentum': -0.009958124808497542, 'one_tick_momentum': -0.009958124808497542, 'volatility': 0.007080199561461917, 'signal_strength': 0.9382539759090418, 'confidence': 0.9382539759090418, 'reason': 'normal_features_empty'}, 'DASH/USDT': {'ready': True, 'source': 'RAW_MOMENTUM_FALLBACK', 'direction': 'SELL', 'price': 33.39, 'trend': -0.008610451306413277, 'long_trend': -0.008610451306413277, 'momentum': -0.008610451306413277, 'one_tick_momentum': -0.008610451306413277, 'volatility': 0.003731453446808337, 'signal_strength': 0.7634651734492288, 'confidence': 0.7634651734492288, 'reason': 'normal_features_empty'}, 'BEAT/USDT': {'ready': True, 'source': 'RAW_MOMENTUM_FALLBACK', 'direction': 'BUY', 'price': 1.60961, 'trend': 0.007795086278143751, 'long_trend': 0.007795086278143751, 'momentum': 0.007795086278143751, 'one_tick_momentum': 0.007795086278143751, 'volatility': 0.002840544889887457, 'signal_strength': 0.6804178000492492, 'confidence': 0.6804178000492492, 'reason': 'normal_features_empty'}, 'ATLA/USDT': {'ready': True, 'source': 'RAW_MOMENTUM_FALLBACK', 'direction': 'SELL', 'price': 187.9047, 'trend': -0.005795238095238142, 'long_trend': -0.005795238095238142, 'momentum': -0.005795238095238142, 'one_tick_momentum': -0.005795238095238142, 'volatility': 0.0018632488381593142, 'signal_strength': 0.5008840243822377, 'confidence': 0.5008840243822377, 'reason': 'normal_features_empty'}, 'TRIA/USDT': {'ready': True, 'source': 'RAW_MOMENTUM_FALLBACK', 'direction': 'SELL', 'price': 0.03019, 'trend': -0.005599472990777339, 'long_trend': -0.005599472990777339, 'momentum': -0.005599472990777339, 'one_tick_momentum': -0.005599472990777339, 'volatility': 0.0016488019155195491, 'signal_strength': 0.4809338775725781, 'confidence': 0.4809338775725781, 'reason': 'normal_features_empty'}}
+quant-1  | STRATEGY SCORE DEBUG: {'ready_features': 0, 'normal_features': 0, 'top_score': 0.0, 'top_matches': 0, 'top_strategy': 'evo_2300'}
+quant-1  | ALLOCATOR BLOCK: no_allowed_positive_strategy top_scores=[{'strategy': 'evo_2300', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_8371', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_9041', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_9937', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_7779', 'score': 0.0, 'matches': 0}]
+quant-1  | FALLBACK TRADING DISABLED: diagnostic fallback ignored; waiting for normal MEXC ranked signals
+quant-1  | [QUALITY_RANK] top-0: 
+quant-1  | ENTRY QUALITY TOP 10: []
+quant-1  | [ALLOCATOR_RESCUE] no_candidate_passed
+quant-1  | FEATURES: {}
+quant-1  | ORDERS: []
+quant-1  | [EXPECTANCY_PATCH] before=0 after=0 exits=0
+quant-1  | [EXPECTANCY_PATCH] before=0 after=0 exits=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | {'regime': 'SIDEWAYS', 'equity': 100.0, 'cash': 100.0, 'exposure': 0, 'exposure_pct': 0.0, 'positions': {}, 'orders': 0, 'rejected': [], 'status': 'ok', 'paused': False, 'risk_status': 'SAFE', 'shadow_positions': {}}
+quant-1  | 
+quant-1  | ========================================================================
+quant-1  | QUANT FUND OS ├â┬ó├óΓÇÜ┬¼├óΓé¼┬¥ CYCLE DIAGNOSTIC
+quant-1  | Time: 2026-06-05T05:06:39.395324Z
+quant-1  | Market symbols: 59
+quant-1  | Feature symbols: 0
+quant-1  | Orders/applied fills: 0
+quant-1  | Empty feature cycles: 6
+quant-1  | No-trade reason: features_empty
+quant-1  | Note: main_loop_after_execution
+quant-1  | ========================================================================
+quant-1  | 
+quant-1  | MARKET DATA WARNING: ccxt fetch_tickers failed: mexc does not have market symbol MOGU/USDT
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=100.0000 cash=100.0000 exposure=0.0000 realized=0.0000 unrealized=0.0000 drawdown=0.0000% regime=SIDEWAYS
+quant-1  | MARKET DATA WARNING: ccxt ticker failed MOGU/USDT: mexc does not have market symbol MOGU/USDT
+quant-1  | MARKET TICK DATA RAW: {'BTC/USDT': 63495.48, 'ETH/USDT': 1737.58, 'SOL/USDT': 67.86, 'USDC/USDT': 1.00077, 'XRP/USDT': 1.1423, 'DOGE/USDT': 0.08674, 'BNB/USDT': 599.77, 'TRIA/USDT': 0.03013, 'TRX/USDT': 0.3288, 'BSB/USDT': 0.23094, 'ADA/USDT': 0.1681, 'USD1/USDT': 0.99981, 'INJ/USDT': 5.335, 'SUI/USDT': 0.7408, 'LTC/USDT': 45.19, 'HYPE/USDT': 63.14, 'BCH/USDT': 240.0, 'ZEC/USDT': 386.67, 'GOLD(PAXG)/USDT': 4441.58, 'FIL/USDT': 0.8466, 'TAO/USDT': 206.5, 'DOT/USDT': 1.022, 'TON/USDT': 1.655, 'TRUMP/USDT': 1.767, 'BILL/USDT': 0.08117, 'NEAR/USDT': 2.1858, 'BEAT/USDT': 1.61684, 'ULTIMA/USDT': 2322.93, 'MX/USDT': 1.7437, 'GUA/USDT': 0.87738, 'ONDO/USDT': 0.36707, 'ASTER/USDT': 0.6737, 'EDEN/USDT': 0.04451, 'EUR/USDT': 1.1623, 'ETHFI/USDT': 0.32, 'GENIUS/USDT': 0.43703, 'RAIN/USDT': 0.014121, 'XMR/USDT': 333.1, 'UBOX/USDT': 0.00135, 'LINK/USDT': 7.843, 'DASH/USDT': 33.38, 'SHIB/USDT': 4.882e-06, 'PLAY/USDT': 0.08145, 'AVAX/USDT': 7.451, 'PENGU/USDT': 0.006715, 'WXT/USDT': 0.015785, 'ATOM/USDT': 1.805, 'IN/USDT': 0.09035, 'TTN/USDT': 0.05024, 'ATLA/USDT': 187.9948, 'PENDLE/USDT': 1.287, 'AIXDROP/USDT': 0.00022618, 'SENS/USDT': 0.00407, 'TIA/USDT': 0.3328, 'BDX/USDT': 0.08012, '9BIT/USDT': 0.045531, 'JGGL/USDT': 2.116, 'CAKE/USDT': 1.239, 'BOB/USDT': 0.006106}
+quant-1  | MARKET TICK DATA VALIDATED: {'BTC/USDT': 63495.48, 'ETH/USDT': 1737.58, 'SOL/USDT': 67.86, 'USDC/USDT': 1.00077, 'XRP/USDT': 1.1423, 'DOGE/USDT': 0.08674, 'BNB/USDT': 599.77, 'TRIA/USDT': 0.03013, 'TRX/USDT': 0.3288, 'BSB/USDT': 0.23094, 'ADA/USDT': 0.1681, 'USD1/USDT': 0.99981, 'INJ/USDT': 5.335, 'SUI/USDT': 0.7408, 'LTC/USDT': 45.19, 'HYPE/USDT': 63.14, 'BCH/USDT': 240.0, 'ZEC/USDT': 386.67, 'GOLD(PAXG)/USDT': 4441.58, 'FIL/USDT': 0.8466, 'TAO/USDT': 206.5, 'DOT/USDT': 1.022, 'TON/USDT': 1.655, 'TRUMP/USDT': 1.767, 'BILL/USDT': 0.08117, 'NEAR/USDT': 2.1858, 'BEAT/USDT': 1.61684, 'ULTIMA/USDT': 2322.93, 'MX/USDT': 1.7437, 'GUA/USDT': 0.87738, 'ONDO/USDT': 0.36707, 'ASTER/USDT': 0.6737, 'EDEN/USDT': 0.04451, 'EUR/USDT': 1.1623, 'ETHFI/USDT': 0.32, 'GENIUS/USDT': 0.43703, 'RAIN/USDT': 0.014121, 'XMR/USDT': 333.1, 'UBOX/USDT': 0.00135, 'LINK/USDT': 7.843, 'DASH/USDT': 33.38, 'SHIB/USDT': 4.882e-06, 'PLAY/USDT': 0.08145, 'AVAX/USDT': 7.451, 'PENGU/USDT': 0.006715, 'WXT/USDT': 0.015785, 'ATOM/USDT': 1.805, 'IN/USDT': 0.09035, 'TTN/USDT': 0.05024, 'ATLA/USDT': 187.9948, 'PENDLE/USDT': 1.287, 'AIXDROP/USDT': 0.00022618, 'SENS/USDT': 0.00407, 'TIA/USDT': 0.3328, 'BDX/USDT': 0.08012, '9BIT/USDT': 0.045531, 'JGGL/USDT': 2.116, 'CAKE/USDT': 1.239, 'BOB/USDT': 0.006106}
+quant-1  | WARNING: Normal FEATURES is empty. Trying RAW_MOMENTUM_FALLBACK...
+quant-1  | FALLBACK FEATURES DIAGNOSTIC ONLY: {'BEAT/USDT': {'ready': True, 'source': 'RAW_MOMENTUM_FALLBACK', 'direction': 'BUY', 'price': 1.61684, 'trend': 0.012416954183129733, 'long_trend': 0.012416954183129733, 'momentum': 0.012416954183129733, 'one_tick_momentum': 0.012416954183129733, 'volatility': 0.0029588903889475543, 'signal_strength': 1.0, 'confidence': 1.0, 'reason': 'normal_features_empty'}, 'UBOX/USDT': {'ready': True, 'source': 'RAW_MOMENTUM_FALLBACK', 'direction': 'SELL', 'price': 0.00135, 'trend': -0.061196105702364376, 'long_trend': -0.061196105702364376, 'momentum': -0.061196105702364376, 'one_tick_momentum': -0.061196105702364376, 'volatility': 0.0221082324836325, 'signal_strength': 1.0, 'confidence': 1.0, 'reason': 'normal_features_empty'}, 'ZEC/USDT': {'ready': True, 'source': 'RAW_MOMENTUM_FALLBACK', 'direction': 'SELL', 'price': 386.67, 'trend': -0.008385905523926712, 'long_trend': -0.008385905523926712, 'momentum': -0.008385905523926712, 'one_tick_momentum': -0.008385905523926712, 'volatility': 0.006569259854015564, 'signal_strength': 0.8022576389944482, 'confidence': 0.8022576389944482, 'reason': 'normal_features_empty'}, 'DASH/USDT': {'ready': True, 'source': 'RAW_MOMENTUM_FALLBACK', 'direction': 'SELL', 'price': 33.38, 'trend': -0.008023774145616523, 'long_trend': -0.008023774145616523, 'momentum': -0.008023774145616523, 'one_tick_momentum': -0.008023774145616523, 'volatility': 0.0034833230546659475, 'signal_strength': 0.7115683927426408, 'confidence': 0.7115683927426408, 'reason': 'normal_features_empty'}, 'TRIA/USDT': {'ready': True, 'source': 'RAW_MOMENTUM_FALLBACK', 'direction': 'SELL', 'price': 0.03013, 'trend': -0.007248764415156441, 'long_trend': -0.007248764415156441, 'momentum': -0.007248764415156441, 'one_tick_momentum': -0.007248764415156441, 'volatility': 0.0015071696660364196, 'signal_strength': 0.6100445465332436, 'confidence': 0.6100445465332436, 'reason': 'normal_features_empty'}}
+quant-1  | STRATEGY SCORE DEBUG: {'ready_features': 0, 'normal_features': 0, 'top_score': 0.0, 'top_matches': 0, 'top_strategy': 'evo_2300'}
+quant-1  | ALLOCATOR BLOCK: no_allowed_positive_strategy top_scores=[{'strategy': 'evo_2300', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_8371', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_9041', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_9937', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_7779', 'score': 0.0, 'matches': 0}]
+quant-1  | FALLBACK TRADING DISABLED: diagnostic fallback ignored; waiting for normal MEXC ranked signals
+quant-1  | [QUALITY_RANK] top-0: 
+quant-1  | ENTRY QUALITY TOP 10: []
+quant-1  | [ALLOCATOR_RESCUE] no_candidate_passed
+quant-1  | FEATURES: {}
+quant-1  | ORDERS: []
+quant-1  | [EXPECTANCY_PATCH] before=0 after=0 exits=0
+quant-1  | [EXPECTANCY_PATCH] before=0 after=0 exits=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | {'regime': 'SIDEWAYS', 'equity': 100.0, 'cash': 100.0, 'exposure': 0, 'exposure_pct': 0.0, 'positions': {}, 'orders': 0, 'rejected': [], 'status': 'ok', 'paused': False, 'risk_status': 'SAFE', 'shadow_positions': {}}
+quant-1  | 
+quant-1  | ========================================================================
+quant-1  | QUANT FUND OS ├â┬ó├óΓÇÜ┬¼├óΓé¼┬¥ CYCLE DIAGNOSTIC
+quant-1  | Time: 2026-06-05T05:07:18.613674Z
+quant-1  | Market symbols: 59
+quant-1  | Feature symbols: 0
+quant-1  | Orders/applied fills: 0
+quant-1  | Empty feature cycles: 7
+quant-1  | No-trade reason: features_empty
+quant-1  | Note: main_loop_after_execution
+quant-1  | ========================================================================
+quant-1  | 
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=100.0000 cash=100.0000 exposure=0.0000 realized=0.0000 unrealized=0.0000 drawdown=0.0000% regime=SIDEWAYS
+quant-1  | MARKET DATA WARNING: ccxt fetch_tickers failed: mexc does not have market symbol MOGU/USDT
+quant-1  | MARKET DATA WARNING: ccxt ticker failed MOGU/USDT: mexc does not have market symbol MOGU/USDT
+quant-1  | [PORTFOLIO_RECONCILER] synced equity=100.0000 cash=100.0000 exposure=0.0000 realized=0.0000 unrealized=0.0000 drawdown=0.0000% regime=SIDEWAYS
+quant-1  | MARKET TICK DATA RAW: {'BTC/USDT': 63507.04, 'ETH/USDT': 1737.03, 'SOL/USDT': 67.83, 'USDC/USDT': 1.00077, 'XRP/USDT': 1.1422, 'DOGE/USDT': 0.08672, 'BNB/USDT': 599.77, 'TRIA/USDT': 0.03017, 'TRX/USDT': 0.3288, 'BSB/USDT': 0.23072, 'ADA/USDT': 0.1678, 'USD1/USDT': 0.99982, 'INJ/USDT': 5.338, 'SUI/USDT': 0.741, 'LTC/USDT': 45.23, 'HYPE/USDT': 63.18, 'BCH/USDT': 240.2, 'ZEC/USDT': 387.66, 'GOLD(PAXG)/USDT': 4442.72, 'FIL/USDT': 0.8473, 'TAO/USDT': 206.5, 'DOT/USDT': 1.022, 'TON/USDT': 1.656, 'TRUMP/USDT': 1.768, 'BILL/USDT': 0.08086, 'NEAR/USDT': 2.1858, 'BEAT/USDT': 1.62148, 'ULTIMA/USDT': 2323.69, 'MX/USDT': 1.7437, 'GUA/USDT': 0.87695, 'ONDO/USDT': 0.36705, 'ASTER/USDT': 0.6733, 'EDEN/USDT': 0.04445, 'EUR/USDT': 1.1623, 'ETHFI/USDT': 0.32, 'GENIUS/USDT': 0.43557, 'RAIN/USDT': 0.0141126, 'XMR/USDT': 333.03, 'UBOX/USDT': 0.001425, 'LINK/USDT': 7.842, 'DASH/USDT': 33.4, 'SHIB/USDT': 4.88e-06, 'PLAY/USDT': 0.08149, 'AVAX/USDT': 7.451, 'PENGU/USDT': 0.006714, 'WXT/USDT': 0.015778, 'ATOM/USDT': 1.805, 'IN/USDT': 0.09006, 'TTN/USDT': 0.05027, 'ATLA/USDT': 187.7572, 'PENDLE/USDT': 1.284, 'AIXDROP/USDT': 0.00022639, 'SENS/USDT': 0.00407, 'TIA/USDT': 0.3325, 'BDX/USDT': 0.08004, '9BIT/USDT': 0.045521, 'JGGL/USDT': 2.1149, 'CAKE/USDT': 1.239, 'BOB/USDT': 0.006107}
+quant-1  | MARKET TICK DATA VALIDATED: {'BTC/USDT': 63507.04, 'ETH/USDT': 1737.03, 'SOL/USDT': 67.83, 'USDC/USDT': 1.00077, 'XRP/USDT': 1.1422, 'DOGE/USDT': 0.08672, 'BNB/USDT': 599.77, 'TRIA/USDT': 0.03017, 'TRX/USDT': 0.3288, 'BSB/USDT': 0.23072, 'ADA/USDT': 0.1678, 'USD1/USDT': 0.99982, 'INJ/USDT': 5.338, 'SUI/USDT': 0.741, 'LTC/USDT': 45.23, 'HYPE/USDT': 63.18, 'BCH/USDT': 240.2, 'ZEC/USDT': 387.66, 'GOLD(PAXG)/USDT': 4442.72, 'FIL/USDT': 0.8473, 'TAO/USDT': 206.5, 'DOT/USDT': 1.022, 'TON/USDT': 1.656, 'TRUMP/USDT': 1.768, 'BILL/USDT': 0.08086, 'NEAR/USDT': 2.1858, 'BEAT/USDT': 1.62148, 'ULTIMA/USDT': 2323.69, 'MX/USDT': 1.7437, 'GUA/USDT': 0.87695, 'ONDO/USDT': 0.36705, 'ASTER/USDT': 0.6733, 'EDEN/USDT': 0.04445, 'EUR/USDT': 1.1623, 'ETHFI/USDT': 0.32, 'GENIUS/USDT': 0.43557, 'RAIN/USDT': 0.0141126, 'XMR/USDT': 333.03, 'UBOX/USDT': 0.001425, 'LINK/USDT': 7.842, 'DASH/USDT': 33.4, 'SHIB/USDT': 4.88e-06, 'PLAY/USDT': 0.08149, 'AVAX/USDT': 7.451, 'PENGU/USDT': 0.006714, 'WXT/USDT': 0.015778, 'ATOM/USDT': 1.805, 'IN/USDT': 0.09006, 'TTN/USDT': 0.05027, 'ATLA/USDT': 187.7572, 'PENDLE/USDT': 1.284, 'AIXDROP/USDT': 0.00022639, 'SENS/USDT': 0.00407, 'TIA/USDT': 0.3325, 'BDX/USDT': 0.08004, '9BIT/USDT': 0.045521, 'JGGL/USDT': 2.1149, 'CAKE/USDT': 1.239, 'BOB/USDT': 0.006107}
+quant-1  | WARNING: Normal FEATURES is empty. Trying RAW_MOMENTUM_FALLBACK...
+quant-1  | FALLBACK FEATURES DIAGNOSTIC ONLY: {'BEAT/USDT': {'ready': True, 'source': 'RAW_MOMENTUM_FALLBACK', 'direction': 'BUY', 'price': 1.62148, 'trend': 0.013589708327603294, 'long_trend': 0.013589708327603294, 'momentum': 0.013589708327603294, 'one_tick_momentum': 0.013589708327603294, 'volatility': 0.0027935900443652405, 'signal_strength': 1.0, 'confidence': 1.0, 'reason': 'normal_features_empty'}, 'UBOX/USDT': {'ready': True, 'source': 'RAW_MOMENTUM_FALLBACK', 'direction': 'SELL', 'price': 0.001425, 'trend': -0.009040333796940189, 'long_trend': -0.009040333796940189, 'momentum': -0.009040333796940189, 'one_tick_momentum': -0.009040333796940189, 'volatility': 0.030710203960935916, 'signal_strength': 1.0, 'confidence': 1.0, 'reason': 'normal_features_empty'}, 'ZEC/USDT': {'ready': True, 'source': 'RAW_MOMENTUM_FALLBACK', 'direction': 'SELL', 'price': 387.66, 'trend': -0.005745062836624654, 'long_trend': -0.005745062836624654, 'momentum': -0.005745062836624654, 'one_tick_momentum': -0.005745062836624654, 'volatility': 0.006687623322421788, 'signal_strength': 0.593357493378408, 'confidence': 0.593357493378408, 'reason': 'normal_features_empty'}, 'GENIUS/USDT': {'ready': True, 'source': 'RAW_MOMENTUM_FALLBACK', 'direction': 'BUY', 'price': 0.43557, 'trend': 0.005470914127423913, 'long_trend': 0.005470914127423913, 'momentum': 0.005470914127423913, 'one_tick_momentum': 0.005470914127423913, 'volatility': 0.0031106163669582503, 'signal_strength': 0.499885457533078, 'confidence': 0.499885457533078, 'reason': 'normal_features_empty'}, 'PENDLE/USDT': {'ready': True, 'source': 'RAW_MOMENTUM_FALLBACK', 'direction': 'SELL', 'price': 1.284, 'trend': -0.004651162790697679, 'long_trend': -0.004651162790697679, 'momentum': -0.004651162790697679, 'one_tick_momentum': -0.004651162790697679, 'volatility': 0.001589368589620535, 'signal_strength': 0.403880395048225, 'confidence': 0.403880395048225, 'reason': 'normal_features_empty'}}
+quant-1  | STRATEGY SCORE DEBUG: {'ready_features': 0, 'normal_features': 0, 'top_score': 0.0, 'top_matches': 0, 'top_strategy': 'evo_2300'}
+quant-1  | ALLOCATOR BLOCK: no_allowed_positive_strategy top_scores=[{'strategy': 'evo_2300', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_8371', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_9041', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_9937', 'score': 0.0, 'matches': 0}, {'strategy': 'evo_7779', 'score': 0.0, 'matches': 0}]
+quant-1  | FALLBACK TRADING DISABLED: diagnostic fallback ignored; waiting for normal MEXC ranked signals
+quant-1  | [QUALITY_RANK] top-0: 
+quant-1  | ENTRY QUALITY TOP 10: []
+quant-1  | [ALLOCATOR_RESCUE] no_candidate_passed
+quant-1  | FEATURES: {}
+quant-1  | ORDERS: []
+quant-1  | [EXPECTANCY_PATCH] before=0 after=0 exits=0
+quant-1  | [EXPECTANCY_PATCH] before=0 after=0 exits=0
+quant-1  | [EXECUTION_STAGE] handoff raw_orders=0 proposed_fills=0 symbols=[]
+quant-1  | [EXECUTION_STAGE] begin_apply proposed_fills=0
+quant-1  | [EXECUTION_STAGE] final_applied_fills=0
+quant-1  | {'regime': 'SIDEWAYS', 'equity': 100.0, 'cash': 100.0, 'exposure': 0, 'exposure_pct': 0.0, 'positions': {}, 'orders': 0, 'rejected': [], 'status': 'ok', 'paused': False, 'risk_status': 'SAFE', 'shadow_positions': {}}
+quant-1  | 
+quant-1  | ========================================================================
+quant-1  | QUANT FUND OS ├â┬ó├óΓÇÜ┬¼├óΓé¼┬¥ CYCLE DIAGNOSTIC
+quant-1  | Time: 2026-06-05T05:08:00.766616Z
+quant-1  | Market symbols: 59
+quant-1  | Feature symbols: 0
+quant-1  | Orders/applied fills: 0
+quant-1  | Empty feature cycles: 8
+quant-1  | No-trade reason: features_empty
+quant-1  | Note: main_loop_after_execution
+quant-1  | ========================================================================
+quant-1  | 
+quant-1  | MARKET DATA WARNING: ccxt fetch_tickers failed: mexc does not have market symbol MOGU/USDT

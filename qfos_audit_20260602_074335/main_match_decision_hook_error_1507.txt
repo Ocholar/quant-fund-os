@@ -1,0 +1,34 @@
+01499:                 _qfos_position,
+01500:                 _qfos_mark_price,
+01501:                 _qfos_regime,
+01502:                 portfolio=_qfos_portfolio,
+01503:             )
+01504:             if _qfos_outlier_reason:
+01505:                 return _qfos_outlier_reason
+01506:     except Exception as _qfos_outlier_exc:
+01507:         print(f"[OUTLIER_LOSS_CAP] decision_hook_error={_qfos_outlier_exc}", flush=True)
+01508: 
+01509:     """
+01510:     Returns an exit reason or None.
+01511: 
+01512:     This is designed to improve win rate safely:
+01513:     - hard stop remains first priority
+01514:     - quick full TP in sideways
+01515:     - breakeven protection after a favorable move
+01516:     - trailing profit after a stronger favorable move
+01517:     - time stop before stale trades decay into stop loss
+01518:     """
+01519:     dynamic_stop_pct, dynamic_take_pct = adaptive_exit_thresholds(symbol, regime)
+01520:     tp_target = min(float(dynamic_take_pct), _qfos_take_profit_target(regime))
+01521: 
+01522:     # 1. Hard stop: keep capital protection.
+01523:     # Grace period: do NOT fire adaptive stop in the first 2 minutes unless catastrophic (>5% loss).
+01524:     # This prevents noise-triggered instant stops that hit within 60s of entry.
+01525:     STOP_GRACE_MINUTES = 2.0
+01526:     CATASTROPHIC_STOP_PCT = 0.05
+01527:     if change <= -float(dynamic_stop_pct):
+01528:         if age_minutes >= STOP_GRACE_MINUTES or change <= -CATASTROPHIC_STOP_PCT:
+01529:             return "adaptive_stop_loss"
+01530: 
+01531:     # 2. Full TP earlier, especially in SIDEWAYS.
+01532:     if change >= tp_target:

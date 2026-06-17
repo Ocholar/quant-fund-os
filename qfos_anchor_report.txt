@@ -1,0 +1,1350 @@
+QFOS main.py anchor report
+Total lines: 7211
+
+==========================================================================================
+CONTEXT AROUND PREVIOUS ERROR: lines 5515-5555
+==========================================================================================
+05515:     tick = 0
+05516:     while True:
+05517:         try:
+05518:             if QFOS_PORTFOLIO_RECONCILER_ENABLED:
+05519:                 tick += 1
+05520:                 _qfos_acct_reconcile_once(verbose=(tick % 5 == 1))
+05521:         except Exception as exc:
+05522:             print(f"[PORTFOLIO_RECONCILER] loop_error={exc}", flush=True)
+05523:         time.sleep(float(QFOS_PORTFOLIO_RECONCILER_INTERVAL_SECONDS))
+05524: 
+05525: def _qfos_start_portfolio_reconciler():
+05526:     try:
+05527:         import threading
+05528:         if globals().get("_QFOS_PORTFOLIO_RECONCILER_STARTED"):
+05529:             return
+05530:         globals()["_QFOS_PORTFOLIO_RECONCILER_STARTED"] = True
+05531:         # One immediate sync before thread.
+05532:         _qfos_acct_reconcile_once(verbose=True)
+05533:         t = threading.Thread(target=_qfos_acct_loop, daemon=True, name="qfos_portfolio_reconciler")
+05534:         t.start()
+05535:         print("[PORTFOLIO_RECONCILER] started", flush=True)
+05536:     except Exception as exc:
+05537:         print(f"[PORTFOLIO_RECONCILER] start_error={exc}", flush=True)
+05538: 
+05539: _qfos_start_portfolio_reconciler()
+05540: 
+05541: 
+05542: 
+05543: 
+05544: # ============================================================
+05545: # QFOS POLICY V2 — CONSOLIDATED ENTRY CLASSIFICATION + RUNNER LOGIC
+05546: # Purpose:
+05547: #   Fix confused scalper/trend-following behavior.
+05548: #
+05549: # Rules:
+05550: #   FALLBACK_SCOUT:
+05551: #     - Always tiny, fast, no runner.
+05552: #     - Can only upgrade to quality if exceptionally strong.
+05553: #
+05554: #   SIDEWAYS_SCALP:
+05555: #     - Default class for weak/medium trades during global SIDEWAYS.
+
+==========================================================================================
+MATCHES FOR: PROFIT_ENGINE
+==========================================================================================
+Found 28 matches. Showing up to first 12.
+
+--- around line 203 ---
+00199:     from datetime import datetime as _dt
+00200:     from pathlib import Path as _Path
+00201: 
+00202: # ============================================================
+00203: # QFOS_PROFIT_ENGINE_SIDEWAYS_GUARD_V1
+00204: # Profit Engine / Watchdog hard exposure + stale-class guard
+00205: # ============================================================
+00206: 
+00207: QFOS_SIDEWAYS_HARD_EXPOSURE_PCT = 0.045
+
+--- around line 356 ---
+00352:     cp = str(current_policy or "").upper()
+00353: 
+00354:     if tc == QFOS_STALE_CLASS_FROM and cp == QFOS_STALE_CLASS_TO:
+00355:         print(
+00356:             f"[PROFIT_ENGINE_GUARD] STALE_CLASS_DOWNGRADED "
+00357:             f"symbol={symbol} from={QFOS_STALE_CLASS_FROM} to={QFOS_STALE_CLASS_TO}",
+00358:             flush=True,
+00359:         )
+00360:         return QFOS_STALE_CLASS_TO
+
+--- around line 392 ---
+00388:             kept.append(fill)
+00389: 
+00390:         if blocked:
+00391:             print(
+00392:                 f"[PROFIT_ENGINE_GUARD] ENTRY_BLOCKED "
+00393:                 f"regime={regime} exposure_pct={_qfos_guard_float(exposure_pct):.4f} "
+00394:                 f"limit={QFOS_SIDEWAYS_HARD_EXPOSURE_PCT:.4f} blocked={blocked}",
+00395:                 flush=True,
+00396:             )
+
+--- around line 399 ---
+00395:                 flush=True,
+00396:             )
+00397: 
+00398:         print(
+00399:             f"[PROFIT_ENGINE_GUARD] execution_filter before={before} after={len(kept)}",
+00400:             flush=True,
+00401:         )
+00402: 
+00403:         return kept
+
+--- around line 405 ---
+00401:         )
+00402: 
+00403:         return kept
+00404:     except Exception as e:
+00405:         print(f"[PROFIT_ENGINE_GUARD] filter_error={e}", flush=True)
+00406:         return proposed_fills
+00407: 
+00408: 
+00409: def _qfos_guard_choose_weakest_from_profit_rows(rows):
+
+--- around line 458 ---
+00454: 
+00455: 
+00456: def _qfos_guard_log_watchdog(regime, exposure_pct, symbol=None, action="HOLD", reason=""):
+00457:     print(
+00458:         f"[PROFIT_ENGINE_GUARD] WATCHDOG action={action} "
+00459:         f"regime={regime} exposure_pct={_qfos_guard_float(exposure_pct):.4f} "
+00460:         f"symbol={symbol} reason={reason}",
+00461:         flush=True,
+00462:     )
+
+--- around line 465 ---
+00461:         flush=True,
+00462:     )
+00463: 
+00464: # ============================================================
+00465: # END QFOS_PROFIT_ENGINE_SIDEWAYS_GUARD_V1
+00466: # ============================================================
+00467: 
+00468: 
+00469:     before_list = list(proposed_fills or [])
+
+--- around line 4729 ---
+04725: # It is DB-level and does not depend on _qfos_exit_decision.
+04726: # Existing watchdogs remain active.
+04727: # ============================================================
+04728: 
+04729: QFOS_PROFIT_ENGINE_ENABLED = globals().get("QFOS_PROFIT_ENGINE_ENABLED", True)
+04730: QFOS_PROFIT_ENGINE_INTERVAL_SECONDS = globals().get("QFOS_PROFIT_ENGINE_INTERVAL_SECONDS", 8.0)
+04731: 
+04732: # Position sizing targets for FUTURE use/logging. This engine mostly manages exits.
+04733: QFOS_SIZE_FALLBACK_PCT = globals().get("QFOS_SIZE_FALLBACK_PCT", 0.005)       # 0.5% equity
+
+--- around line 4730 ---
+04726: # Existing watchdogs remain active.
+04727: # ============================================================
+04728: 
+04729: QFOS_PROFIT_ENGINE_ENABLED = globals().get("QFOS_PROFIT_ENGINE_ENABLED", True)
+04730: QFOS_PROFIT_ENGINE_INTERVAL_SECONDS = globals().get("QFOS_PROFIT_ENGINE_INTERVAL_SECONDS", 8.0)
+04731: 
+04732: # Position sizing targets for FUTURE use/logging. This engine mostly manages exits.
+04733: QFOS_SIZE_FALLBACK_PCT = globals().get("QFOS_SIZE_FALLBACK_PCT", 0.005)       # 0.5% equity
+04734: QFOS_SIZE_SIDEWAYS_PCT = globals().get("QFOS_SIZE_SIDEWAYS_PCT", 0.015)       # 1.5% equity
+
+--- around line 4763 ---
+04759: # If position is green then goes weak, do not let it become a meaningful loser.
+04760: QFOS_GREEN_TO_RED_BUFFER_PCT = globals().get("QFOS_GREEN_TO_RED_BUFFER_PCT", 0.0005)
+04761: 
+04762: # Cooldown after profit-engine exit.
+04763: QFOS_PROFIT_ENGINE_COOLDOWN_HOURS = globals().get("QFOS_PROFIT_ENGINE_COOLDOWN_HOURS", 4.0)
+04764: 
+04765: def _qfos_pe_float(value, default=0.0):
+04766:     try:
+04767:         if value is None:
+
+--- around line 4918 ---
+04914:     return (mark - entry) / entry
+04915: 
+04916: def _qfos_pe_quarantine(cur, symbol, strategy, reason, now_s):
+04917:     from datetime import timedelta
+04918:     blocked_until = (_qfos_pe_now_local() + timedelta(hours=float(QFOS_PROFIT_ENGINE_COOLDOWN_HOURS))).strftime("%Y-%m-%d %H:%M:%S")
+04919:     cur.execute("""
+04920:         INSERT OR REPLACE INTO symbol_quarantine(symbol, reason, blocked_until, created_at)
+04921:         VALUES (?, ?, ?, ?)
+04922:     """, (symbol, reason, blocked_until, now_s))
+
+--- around line 4940 ---
+04936:     if qty <= 0:
+04937:         return False
+04938: 
+04939:     print(
+04940:         "[PROFIT_ENGINE] selling "
+04941:         f"symbol={symbol} reason={reason} qty={qty:.8f} mark={mark:.8f} pnl={pnl:.6f}",
+04942:         flush=True,
+04943:     )
+04944: 
+
+==========================================================================================
+MATCHES FOR: POLICY_V2
+==========================================================================================
+Found 26 matches. Showing up to first 12.
+
+--- around line 2720 ---
+02716:             # POLICY V2 FIXED — persist normal feature map immediately after feature build
+02717:             try:
+02718:                 _qfos_v2_upsert_feature_snapshot(f_by_symbol)
+02719:             except Exception as _qfos_v2_feature_error:
+02720:                 print(f"[POLICY_V2] feature_snapshot_fixed_error={_qfos_v2_feature_error}", flush=True)
+02721: 
+02722:             ready = [f for f in f_by_symbol.values() if isinstance(f, dict) and f.get('ready')]
+02723:             fallback_features = {}
+02724:             if not ready:
+
+--- around line 2736 ---
+02732:                     try:
+02733:                         if "features" in locals() and isinstance(features, dict):
+02734:                             _qfos_v2_upsert_feature_snapshot(features)
+02735:                     except Exception as _qfos_v2_feature_error:
+02736:                         print(f"[POLICY_V2] feature_snapshot_inline_error={_qfos_v2_feature_error}", flush=True)
+02737: 
+02738:                     print('FALLBACK FEATURES: {}')
+02739:             avg_vol = sum((f['volatility'] for f in ready)) / len(ready) if ready else 0
+02740:             avg_trend = sum((abs(f['trend']) for f in ready)) / len(ready) if ready else 0
+
+--- around line 2788 ---
+02784:                                 result.get('orders', []),
+02785:                                 source='result.orders.post_scout_injection',
+02786:                             )
+02787:                     except Exception as _qfos_v2_filter_error:
+02788:                         print(f"[POLICY_V2] post_scout_filter_error={_qfos_v2_filter_error}", flush=True)
+02789: 
+02790: 
+02791:                     # QFOS FALLBACK SCOUT SOURCE GUARD — directly after scout injection
+02792:                     try:
+
+--- around line 2824 ---
+02820:                             _qfos_v2_locals[_qfos_v2_name],
+02821:                             source=f"pre_orders:{_qfos_v2_name}",
+02822:                         )
+02823:             except Exception as _qfos_v2_filter_error:
+02824:                 print(f"[POLICY_V2] fallback_filter_inline_error={_qfos_v2_filter_error}", flush=True)
+02825: 
+02826:             # POLICY V2 FIXED — block weak fallback orders in the real result['orders'] list
+02827:             try:
+02828:                 if isinstance(result, dict) and isinstance(result.get('orders'), list):
+
+--- around line 2834 ---
+02830:                         result.get('orders', []),
+02831:                         source='result.orders.pre_print',
+02832:                     )
+02833:             except Exception as _qfos_v2_filter_error:
+02834:                 print(f"[POLICY_V2] result_orders_filter_error={_qfos_v2_filter_error}", flush=True)
+02835: 
+02836:             # ============================================================
+02837:             # QFOS EXECUTION HANDOFF PATCH
+02838:             # Purpose:
+
+--- around line 4893 ---
+04889:             global_regime=str(global_regime or "SIDEWAYS"),
+04890:             exposure_pct=exposure_pct,
+04891:         )
+04892:     except Exception as exc:
+04893:         print(f"[POLICY_V2] classify_fallback_error symbol={symbol} err={exc}", flush=True)
+04894:         if "fallback" in strategy.lower() or "scout" in strategy.lower():
+04895:             return "FALLBACK_SCOUT"
+04896:         if str(global_regime).upper() == "SIDEWAYS":
+04897:             return "SIDEWAYS_SCALP"
+
+--- around line 5566 ---
+05562: # This block does not replace your app loop/API.
+05563: # It rewires the policy layer around the existing main.py.
+05564: # ============================================================
+05565: 
+05566: QFOS_POLICY_V2_ENABLED = globals().get("QFOS_POLICY_V2_ENABLED", True)
+05567: 
+05568: # Quality upgrade thresholds for normal non-fallback trades.
+05569: QFOS_V2_QUALITY_SIGNAL_MIN = globals().get("QFOS_V2_QUALITY_SIGNAL_MIN", 0.0065)
+05570: QFOS_V2_QUALITY_BREAKOUT_MIN = globals().get("QFOS_V2_QUALITY_BREAKOUT_MIN", 0.0055)
+
+--- around line 5653 ---
+05649:         now_s,
+05650:     )
+05651: 
+05652: def _qfos_v2_upsert_feature_snapshot(features):
+05653:     if not QFOS_POLICY_V2_ENABLED:
+05654:         return
+05655:     if not isinstance(features, dict):
+05656:         return
+05657: 
+
+--- around line 5684 ---
+05680: 
+05681:         conn.commit()
+05682: 
+05683:         if rows:
+05684:             print(f"[POLICY_V2] feature_snapshot_upserted count={len(rows)}", flush=True)
+05685: 
+05686:     except Exception as exc:
+05687:         try:
+05688:             conn.rollback()
+
+--- around line 5691 ---
+05687:         try:
+05688:             conn.rollback()
+05689:         except Exception:
+05690:             pass
+05691:         print(f"[POLICY_V2] feature_snapshot_error={exc}", flush=True)
+05692:     finally:
+05693:         try:
+05694:             conn.close()
+05695:         except Exception:
+
+--- around line 5818 ---
+05814:             "strong_up_ratio": strong_up_ratio,
+05815:         }
+05816: 
+05817:     except Exception as exc:
+05818:         print(f"[POLICY_V2] breadth_error={exc}", flush=True)
+05819:         return {
+05820:             "total": 0,
+05821:             "up": 0,
+05822:             "down": 0,
+
+--- around line 5860 ---
+05856:     )
+05857: 
+05858:     if exceptional_symbol:
+05859:         print(
+05860:             f"[POLICY_V2] breadth_allows_exceptional_quality symbol={symbol} "
+05861:             f"down_ratio={b['down_ratio']:.2f} strong_up={b['strong_up']} "
+05862:             f"signal={signal:.6f} breakout={breakout:.6f} "
+05863:             f"trend_quality={trend_quality:.6f} momentum={momentum:.6f} one_tick={one_tick:.6f}",
+05864:             flush=True,
+
+==========================================================================================
+MATCHES FOR: QUALITY_TREND_OR_BREAKOUT
+==========================================================================================
+Found 16 matches. Showing up to first 12.
+
+--- around line 208 ---
+00204: # Profit Engine / Watchdog hard exposure + stale-class guard
+00205: # ============================================================
+00206: 
+00207: QFOS_SIDEWAYS_HARD_EXPOSURE_PCT = 0.045
+00208: QFOS_STALE_CLASS_FROM = "QUALITY_TREND_OR_BREAKOUT"
+00209: QFOS_STALE_CLASS_TO = "SIDEWAYS_SCALP"
+00210: 
+00211: 
+00212: def _qfos_guard_float(v, default=0.0):
+
+--- around line 339 ---
+00335:             and momentum >= 0.0015
+00336:         )
+00337: 
+00338:         if strong_breakout:
+00339:             return "QUALITY_TREND_OR_BREAKOUT"
+00340: 
+00341:         return "SIDEWAYS_SCALP"
+00342:     except Exception:
+00343:         return None
+
+--- around line 348 ---
+00344: 
+00345: 
+00346: def _qfos_guard_downgrade_trade_class(symbol, trade_class, current_policy):
+00347:     """
+00348:     If a position was QUALITY_TREND_OR_BREAKOUT but current Policy V2 says
+00349:     SIDEWAYS_SCALP, downgrade exit handling immediately.
+00350:     """
+00351:     tc = str(trade_class or "").upper()
+00352:     cp = str(current_policy or "").upper()
+
+--- around line 415 ---
+00411:     rows must contain dictionaries with:
+00412:     symbol, qty, mark, trade_class, ret_pct, unrealized, age_min
+00413: 
+00414:     Priority:
+00415:     1. stale QUALITY_TREND_OR_BREAKOUT now handled as scalp
+00416:     2. loser
+00417:     3. worst ret_pct
+00418:     4. older
+00419:     """
+
+--- around line 4750 ---
+04746: QFOS_SW_PROFIT_GIVEBACK_TRIGGER_PCT = globals().get("QFOS_SW_PROFIT_GIVEBACK_TRIGGER_PCT", 0.0070)
+04747: QFOS_SW_PROFIT_FLOOR_PCT = globals().get("QFOS_SW_PROFIT_FLOOR_PCT", 0.0030)
+04748: QFOS_SW_MAX_HOLD_MIN = globals().get("QFOS_SW_MAX_HOLD_MIN", 45.0)
+04749: 
+04750: # QUALITY_TREND_OR_BREAKOUT: partial + protected runner.
+04751: QFOS_Q_PARTIAL_TP_PCT = globals().get("QFOS_Q_PARTIAL_TP_PCT", 0.0120)        # +1.00%
+04752: QFOS_Q_PARTIAL_FRACTION = globals().get("QFOS_Q_PARTIAL_FRACTION", 1.0)
+04753: QFOS_Q_INITIAL_SL_PCT = globals().get("QFOS_Q_INITIAL_SL_PCT", -0.0070)       # -0.70%
+04754: QFOS_Q_RUNNER_BE_PCT = globals().get("QFOS_Q_RUNNER_BE_PCT", 0.0010)          # +0.10%
+
+--- around line 4874 ---
+04870: 
+04871:     SIDEWAYS_SCALP:
+04872:       Default for weak/medium trades in SIDEWAYS.
+04873: 
+04874:     QUALITY_TREND_OR_BREAKOUT:
+04875:       Only for strong symbol-level trend/breakout features.
+04876:     """
+04877:     strategy = f"{position_strategy or ''} {latest_buy_strategy or ''}".strip()
+04878: 
+
+--- around line 4898 ---
+04894:         if "fallback" in strategy.lower() or "scout" in strategy.lower():
+04895:             return "FALLBACK_SCOUT"
+04896:         if str(global_regime).upper() == "SIDEWAYS":
+04897:             return "SIDEWAYS_SCALP"
+04898:         return "QUALITY_TREND_OR_BREAKOUT"
+04899: 
+04900: 
+04901: def _qfos_pe_unrealized(qty, avg_entry, last_price, db_unrealized):
+04902:     q = abs(_qfos_pe_float(qty))
+
+--- around line 5228 ---
+05224:                     conn.commit()
+05225:                     return
+05226: 
+05227:             # -------------------------------
+05228:             # QUALITY_TREND_OR_BREAKOUT
+05229:             # -------------------------------
+05230:             else:
+05231:                 # Initial hard SL for quality trades.
+05232:                 if ret_pct <= QFOS_Q_INITIAL_SL_PCT:
+
+--- around line 5558 ---
+05554: #   SIDEWAYS_SCALP:
+05555: #     - Default class for weak/medium trades during global SIDEWAYS.
+05556: #     - Tight TP/SL and short hold.
+05557: #
+05558: #   QUALITY_TREND_OR_BREAKOUT:
+05559: #     - Only if symbol-level features are strong enough.
+05560: #     - Uses partial TP + runner.
+05561: #
+05562: # This block does not replace your app loop/API.
+
+--- around line 5884 ---
+05880:     """
+05881:     Returns:
+05882:       FALLBACK_SCOUT
+05883:       SIDEWAYS_SCALP
+05884:       QUALITY_TREND_OR_BREAKOUT
+05885: 
+05886:     This is the central classifier. Profit Engine V1 should use this.
+05887:     """
+05888:     if not QFOS_POLICY_V2_ENABLED:
+
+--- around line 5891 ---
+05887:     """
+05888:     if not QFOS_POLICY_V2_ENABLED:
+05889:         if str(global_regime).upper() == "SIDEWAYS":
+05890:             return "SIDEWAYS_SCALP"
+05891:         return "QUALITY_TREND_OR_BREAKOUT"
+05892: 
+05893:     f = _qfos_v2_latest_feature(symbol)
+05894: 
+05895:     symbol_regime = str(f.get("symbol_regime") or "")
+
+--- around line 5940 ---
+05936: 
+05937:     if fallback:
+05938:         if fallback_exceptional:
+05939:             print(
+05940:                 f"[POLICY_V2] class QUALITY_TREND_OR_BREAKOUT symbol={symbol} reason=exceptional_fallback "
+05941:                 f"signal={signal:.6f} breakout={breakout:.6f} trend_quality={trend_quality:.6f} "
+05942:                 f"momentum={momentum:.6f} one_tick={one_tick:.6f}",
+05943:                 flush=True,
+05944:             )
+
+==========================================================================================
+MATCHES FOR: SIDEWAYS_SCALP
+==========================================================================================
+Found 18 matches. Showing up to first 12.
+
+--- around line 209 ---
+00205: # ============================================================
+00206: 
+00207: QFOS_SIDEWAYS_HARD_EXPOSURE_PCT = 0.045
+00208: QFOS_STALE_CLASS_FROM = "QUALITY_TREND_OR_BREAKOUT"
+00209: QFOS_STALE_CLASS_TO = "SIDEWAYS_SCALP"
+00210: 
+00211: 
+00212: def _qfos_guard_float(v, default=0.0):
+00213:     try:
+
+--- around line 341 ---
+00337: 
+00338:         if strong_breakout:
+00339:             return "QUALITY_TREND_OR_BREAKOUT"
+00340: 
+00341:         return "SIDEWAYS_SCALP"
+00342:     except Exception:
+00343:         return None
+00344: 
+00345: 
+
+--- around line 349 ---
+00345: 
+00346: def _qfos_guard_downgrade_trade_class(symbol, trade_class, current_policy):
+00347:     """
+00348:     If a position was QUALITY_TREND_OR_BREAKOUT but current Policy V2 says
+00349:     SIDEWAYS_SCALP, downgrade exit handling immediately.
+00350:     """
+00351:     tc = str(trade_class or "").upper()
+00352:     cp = str(current_policy or "").upper()
+00353: 
+
+--- around line 4742 ---
+04738: QFOS_FB_TP_PCT = globals().get("QFOS_FB_TP_PCT", 0.0060)                     # +0.60%
+04739: QFOS_FB_SL_PCT = globals().get("QFOS_FB_SL_PCT", -0.0035)                    # -0.35%
+04740: QFOS_FB_MAX_HOLD_MIN = globals().get("QFOS_FB_MAX_HOLD_MIN", 20.0)
+04741: 
+04742: # SIDEWAYS_SCALP: scalp only, no fantasy runner.
+04743: QFOS_SW_TP_PCT = globals().get("QFOS_SW_TP_PCT", 0.0090)                     # +0.80%
+04744: QFOS_SW_SL_PCT = globals().get("QFOS_SW_SL_PCT", -0.0045)                    # -0.45%
+04745: QFOS_SW_BREAKEVEN_TRIGGER_PCT = globals().get("QFOS_SW_BREAKEVEN_TRIGGER_PCT", 0.0035)
+04746: QFOS_SW_PROFIT_GIVEBACK_TRIGGER_PCT = globals().get("QFOS_SW_PROFIT_GIVEBACK_TRIGGER_PCT", 0.0070)
+
+--- around line 4871 ---
+04867: 
+04868:     FALLBACK_SCOUT:
+04869:       Always tiny, fast, no runner unless exceptional.
+04870: 
+04871:     SIDEWAYS_SCALP:
+04872:       Default for weak/medium trades in SIDEWAYS.
+04873: 
+04874:     QUALITY_TREND_OR_BREAKOUT:
+04875:       Only for strong symbol-level trend/breakout features.
+
+--- around line 4897 ---
+04893:         print(f"[POLICY_V2] classify_fallback_error symbol={symbol} err={exc}", flush=True)
+04894:         if "fallback" in strategy.lower() or "scout" in strategy.lower():
+04895:             return "FALLBACK_SCOUT"
+04896:         if str(global_regime).upper() == "SIDEWAYS":
+04897:             return "SIDEWAYS_SCALP"
+04898:         return "QUALITY_TREND_OR_BREAKOUT"
+04899: 
+04900: 
+04901: def _qfos_pe_unrealized(qty, avg_entry, last_price, db_unrealized):
+
+--- around line 5161 ---
+05157:                     except Exception:
+05158:                         _qfos_regime_for_policy = ""
+05159: 
+05160:                     if _qfos_regime_for_policy == "SIDEWAYS":
+05161:                         _qfos_current_policy = "SIDEWAYS_SCALP"
+05162: 
+05163:                 _qfos_new_trade_class = _qfos_guard_downgrade_trade_class(
+05164:                     symbol,
+05165:                     trade_class,
+
+--- around line 5202 ---
+05198:                     conn.commit()
+05199:                     return
+05200: 
+05201:             # -------------------------------
+05202:             # SIDEWAYS_SCALP
+05203:             # -------------------------------
+05204:             elif trade_class == "SIDEWAYS_SCALP":
+05205:                 if ret_pct >= QFOS_SW_TP_PCT:
+05206:                     _qfos_pe_sell(cur, pos, qty, "sideways_scalp_take_profit", unrealized, now_s, quarantine=False)
+
+--- around line 5204 ---
+05200: 
+05201:             # -------------------------------
+05202:             # SIDEWAYS_SCALP
+05203:             # -------------------------------
+05204:             elif trade_class == "SIDEWAYS_SCALP":
+05205:                 if ret_pct >= QFOS_SW_TP_PCT:
+05206:                     _qfos_pe_sell(cur, pos, qty, "sideways_scalp_take_profit", unrealized, now_s, quarantine=False)
+05207:                     conn.commit()
+05208:                     return
+
+--- around line 5554 ---
+05550: #   FALLBACK_SCOUT:
+05551: #     - Always tiny, fast, no runner.
+05552: #     - Can only upgrade to quality if exceptionally strong.
+05553: #
+05554: #   SIDEWAYS_SCALP:
+05555: #     - Default class for weak/medium trades during global SIDEWAYS.
+05556: #     - Tight TP/SL and short hold.
+05557: #
+05558: #   QUALITY_TREND_OR_BREAKOUT:
+
+--- around line 5883 ---
+05879: def _qfos_v2_symbol_quality_class(symbol, strategy="", global_regime="SIDEWAYS", exposure_pct=0.0):
+05880:     """
+05881:     Returns:
+05882:       FALLBACK_SCOUT
+05883:       SIDEWAYS_SCALP
+05884:       QUALITY_TREND_OR_BREAKOUT
+05885: 
+05886:     This is the central classifier. Profit Engine V1 should use this.
+05887:     """
+
+--- around line 5890 ---
+05886:     This is the central classifier. Profit Engine V1 should use this.
+05887:     """
+05888:     if not QFOS_POLICY_V2_ENABLED:
+05889:         if str(global_regime).upper() == "SIDEWAYS":
+05890:             return "SIDEWAYS_SCALP"
+05891:         return "QUALITY_TREND_OR_BREAKOUT"
+05892: 
+05893:     f = _qfos_v2_latest_feature(symbol)
+05894: 
+
+==========================================================================================
+MATCHES FOR: trade_class
+==========================================================================================
+Found 26 matches. Showing up to first 12.
+
+--- around line 270 ---
+00266:             return _qfos_guard_float(v)
+00267:     return 0.0
+00268: 
+00269: 
+00270: def _qfos_guard_trade_class(pos):
+00271:     return str(
+00272:         _qfos_guard_get(
+00273:             pos,
+00274:             "trade_class",
+
+--- around line 274 ---
+00270: def _qfos_guard_trade_class(pos):
+00271:     return str(
+00272:         _qfos_guard_get(
+00273:             pos,
+00274:             "trade_class",
+00275:             _qfos_guard_get(
+00276:                 pos,
+00277:                 "entry_class",
+00278:                 _qfos_guard_get(pos, "quality_class", _qfos_guard_get(pos, "policy_class", "")),
+
+--- around line 317 ---
+00313:             return None
+00314: 
+00315:         explicit = (
+00316:             src.get("policy_class")
+00317:             or src.get("trade_class")
+00318:             or src.get("qfos_policy_class")
+00319:             or src.get("entry_class")
+00320:         )
+00321:         if explicit:
+
+--- around line 346 ---
+00342:     except Exception:
+00343:         return None
+00344: 
+00345: 
+00346: def _qfos_guard_downgrade_trade_class(symbol, trade_class, current_policy):
+00347:     """
+00348:     If a position was QUALITY_TREND_OR_BREAKOUT but current Policy V2 says
+00349:     SIDEWAYS_SCALP, downgrade exit handling immediately.
+00350:     """
+
+--- around line 351 ---
+00347:     """
+00348:     If a position was QUALITY_TREND_OR_BREAKOUT but current Policy V2 says
+00349:     SIDEWAYS_SCALP, downgrade exit handling immediately.
+00350:     """
+00351:     tc = str(trade_class or "").upper()
+00352:     cp = str(current_policy or "").upper()
+00353: 
+00354:     if tc == QFOS_STALE_CLASS_FROM and cp == QFOS_STALE_CLASS_TO:
+00355:         print(
+
+--- around line 362 ---
+00358:             flush=True,
+00359:         )
+00360:         return QFOS_STALE_CLASS_TO
+00361: 
+00362:     return trade_class
+00363: 
+00364: 
+00365: def _qfos_guard_filter_new_buys(proposed_fills, regime, exposure_pct):
+00366:     """
+
+--- around line 412 ---
+00408: 
+00409: def _qfos_guard_choose_weakest_from_profit_rows(rows):
+00410:     """
+00411:     rows must contain dictionaries with:
+00412:     symbol, qty, mark, trade_class, ret_pct, unrealized, age_min
+00413: 
+00414:     Priority:
+00415:     1. stale QUALITY_TREND_OR_BREAKOUT now handled as scalp
+00416:     2. loser
+
+--- around line 427 ---
+00423:     for r in rows or []:
+00424:         symbol = str(r.get("symbol", ""))
+00425:         qty = _qfos_guard_float(r.get("qty"))
+00426:         mark = _qfos_guard_float(r.get("mark"))
+00427:         trade_class = str(r.get("trade_class", "")).upper()
+00428:         ret_pct = _qfos_guard_float(r.get("ret_pct"))
+00429:         unrealized = _qfos_guard_float(r.get("unrealized"))
+00430:         age_min = _qfos_guard_float(r.get("age_min"))
+00431: 
+
+--- around line 435 ---
+00431: 
+00432:         if not symbol or qty <= 0 or mark <= 0:
+00433:             continue
+00434: 
+00435:         stale = trade_class == QFOS_STALE_CLASS_FROM
+00436:         loser = unrealized < 0 or ret_pct < 0
+00437: 
+00438:         score = 0.0
+00439:         if stale:
+
+--- around line 4807 ---
+04803: def _qfos_pe_ensure_tables(cur):
+04804:     cur.execute("""
+04805:         CREATE TABLE IF NOT EXISTS profit_engine_state (
+04806:             symbol TEXT PRIMARY KEY,
+04807:             trade_class TEXT,
+04808:             entry_qty REAL,
+04809:             partial_taken INTEGER DEFAULT 0,
+04810:             peak_unrealized_pnl REAL DEFAULT 0.0,
+04811:             worst_unrealized_pnl REAL DEFAULT 0.0,
+
+--- around line 5036 ---
+05032:             age_min = 0.0
+05033:             if buy_time:
+05034:                 age_min = max((now - buy_time).total_seconds() / 60.0, 0.0)
+05035: 
+05036:             trade_class = _qfos_pe_classify(
+05037:                 symbol,
+05038:                 strategy,
+05039:                 latest_buy_strategy,
+05040:                 exposure,
+
+--- around line 5049 ---
+05045:             unrealized = _qfos_pe_unrealized(qty, avg_entry, last_price, pos.get("unrealized_pnl"))
+05046:             ret_pct = _qfos_pe_return_pct(avg_entry, last_price)
+05047: 
+05048:             state = cur.execute("""
+05049:                 SELECT trade_class, entry_qty, partial_taken, peak_unrealized_pnl, worst_unrealized_pnl, first_seen_at
+05050:                 FROM profit_engine_state
+05051:                 WHERE symbol = ?
+05052:             """, (symbol,)).fetchone()
+05053: 
+
+==========================================================================================
+MATCHES FOR: proposed_fills
+==========================================================================================
+Found 32 matches. Showing up to first 12.
+
+--- around line 65 ---
+00061: 
+00062: # QFOS_EXPECTANCY_INLINE_START
+00063: # Embedded because Docker image failed to import qfos_expectancy_patch.py.
+00064: _QFOS_EXPECTANCY_NS = {"__file__": __file__, "__name__": "_qfos_expectancy_inline"}
+00065: exec('\n\nimport json\nimport math\nimport time\nfrom datetime import datetime, timezone\nfrom pathlib import Path\nfrom typing import Any, Dict, List\n\nROOT = Path(__file__).resolve().parent\nCONFIG_PATH = ROOT / "qfos_expectancy_config.json"\n\nDEFAULT_CONFIG = {\n    "enabled": True,\n    "sideways_scout_notional_usd": 1.00,\n    "trend_scout_notional_usd": 1.50,\n    "min_trade_price": 0.01,\n    "min_scout_signal_sideways": 0.0012,\n    "min_scout_trend_quality": 0.001,\n    "max_scout_volatility_sideways": 0.006,\n    "require_positive_one_tick_for_scout": True,\n    "fallback_stop_loss_pct": -0.006,\n    "breakeven_arm_pct": 0.0035,\n    "breakeven_exit_floor_pct": 0.0004,\n    "trailing_arm_pct": 0.005,\n    "trailing_giveback_pct": 0.0025,\n    "sideways_time_stop_minutes": 45,\n    "sideways_time_stop_min_pnl": -0.0015,\n    "sideways_time_stop_max_pnl": 0.002,\n    "symbol_cooldown_after_losses": 2,\n    "cooldown_minutes": 180,\n    "state_file": "qfos_expectancy_state.json",\n    "decision_log": "qfos_expectancy_decisions.jsonl",\n}\n\ndef _load_config() -> Dict[str, Any]:\n    try:\n        if CONFIG_PATH.exists():\n            data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))\n            merged = dict(DEFAULT_CONFIG)\n            merged.update(data or {})\n            return merged\n    except Exception:\n        pass\n    return dict(DEFAULT_CONFIG)\n\nCFG = _load_config()\nSTATE_PATH = ROOT / str(CFG.get("state_file", "qfos_expectancy_state.json"))\nDECISION_LOG = ROOT / str(CFG.get("decision_log", "qfos_expectancy_decisions.jsonl"))\n\ndef _now_ts() -> float:\n    return time.time()\n\ndef _utc() -> str:\n    return datetime.now(timezone.utc).isoformat()\n\ndef _safe_float(x: Any, default: float = 0.0) -> float:\n    try:\n        if x is None:\n            return default\n        v = float(x)\n        if math.isnan(v) or math.isinf(v):\n            return default\n        return v\n    except Exception:\n        return default\n\ndef _safe_str(x: Any, default: str = "") -> str:\n    try:\n        return str(x)\n    except Exception:\n        return default\n\ndef _read_state() -> Dict[str, Any]:\n    try:\n        if STATE_PATH.exists():\n            data = json.loads(STATE_PATH.read_text(encoding="utf-8"))\n            if isinstance(data, dict):\n                data.setdefault("positions", {})\n                data.setdefault("losses", {})\n                return data\n    except Exception:\n        pass\n    return {"positions": {}, "losses": {}}\n\ndef _write_state(state: Dict[str, Any]) -> None:\n    try:\n        tmp = STATE_PATH.with_suffix(".tmp")\n        tmp.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")\n        tmp.replace(STATE_PATH)\n    except Exception:\n        pass\n\ndef _log(action: str, **payload: Any) -> None:\n    try:\n        row = {"ts": _utc(), "action": action}\n        row.update(payload)\n        with DECISION_LOG.open("a", encoding="utf-8") as f:\n            f.write(json.dumps(row, sort_keys=True) + "\\n")\n    except Exception:\n        pass\n\ndef _as_dict(obj: Any) -> Dict[str, Any]:\n    if isinstance(obj, dict):\n        return obj\n\n    data = {}\n    for name in (\n        "symbol", "quantity", "qty", "avg_entry", "entry_price",\n        "mark_price", "price", "strategy", "created_at", "updated_at"\n    ):\n        if hasattr(obj, name):\n            try:\n                data[name] = getattr(obj, name)\n            except Exception:\n                pass\n    return data\n\ndef _get_feature(features: Any, symbol: str) -> Dict[str, Any]:\n    if isinstance(features, dict):\n        value = features.get(symbol, {})\n        if isinstance(value, dict):\n            return value\n    return {}\n\ndef _get_price(symbol: str, pos: Dict[str, Any], feature: Dict[str, Any], prices: Any) -> float:\n    if isinstance(prices, dict) and symbol in prices:\n        p = _safe_float(prices.get(symbol))\n        if p > 0:\n            return p\n\n    p = _safe_float(feature.get("price"))\n    if p > 0:\n        return p\n\n    p = _safe_float(pos.get("mark_price"))\n    if p > 0:\n        return p\n\n    return _safe_float(pos.get("avg_entry") or pos.get("entry_price") or pos.get("price"))\n\ndef _get_positions(ctx: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:\n    raw = (\n        ctx.get("positions")\n        or ctx.get("open_positions")\n        or ctx.get("portfolio_positions")\n        or {}\n    )\n\n    out: Dict[str, Dict[str, Any]] = {}\n\n    if isinstance(raw, dict):\n        for sym, pos in raw.items():\n            pd = _as_dict(pos)\n            symbol = _safe_str(pd.get("symbol") or sym)\n            if symbol:\n                out[symbol] = pd\n\n    elif isinstance(raw, list):\n        for pos in raw:\n            pd = _as_dict(pos)\n            symbol = _safe_str(pd.get("symbol"))\n            if symbol:\n                out[symbol] = pd\n\n    return out\n\ndef _order_symbol(order: Dict[str, Any]) -> str:\n    return _safe_str(order.get("symbol"))\n\ndef _order_side(order: Dict[str, Any]) -> str:\n    return _safe_str(order.get("side")).lower()\n\ndef _order_strategy(order: Dict[str, Any]) -> str:\n    return _safe_str(order.get("strategy") or order.get("reason") or "unknown")\n\ndef _order_price(order: Dict[str, Any], feature: Dict[str, Any]) -> float:\n    p = _safe_float(order.get("fill_price") or order.get("expected_price") or order.get("price"))\n    if p > 0:\n        return p\n    return _safe_float(feature.get("price"))\n\ndef _recent_losses(symbol: str, state: Dict[str, Any], minutes: float) -> int:\n    losses = state.get("losses", {}).get(symbol, [])\n    now = _now_ts()\n    cutoff = now - minutes * 60\n    fresh = [x for x in losses if _safe_float(x.get("ts")) >= cutoff]\n    state.setdefault("losses", {})[symbol] = fresh\n    return len(fresh)\n\ndef _record_loss(symbol: str, strategy: str, state: Dict[str, Any]) -> None:\n    if not symbol:\n        return\n    state.setdefault("losses", {}).setdefault(symbol, []).append({\n        "ts": _now_ts(),\n        "strategy": strategy,\n    })\n\ndef _record_buy(order: Dict[str, Any], feature: Dict[str, Any], state: Dict[str, Any]) -> None:\n    symbol = _order_symbol(order)\n    if not symbol:\n        return\n\n    price = _order_price(order, feature)\n    if price <= 0:\n        return\n\n    state.setdefault("positions", {})[symbol] = {\n        "entry_ts": _now_ts(),\n        "entry_price": price,\n        "highest_price": price,\n        "highest_pnl_pct": 0.0,\n        "strategy": _order_strategy(order),\n        "signal_strength": _safe_float(order.get("signal_strength") or feature.get("signal_strength")),\n    }\n\ndef _ensure_position_meta(symbol: str, pos: Dict[str, Any], price: float, state: Dict[str, Any]) -> Dict[str, Any]:\n    positions = state.setdefault("positions", {})\n    meta = positions.get(symbol)\n\n    entry = _safe_float(pos.get("avg_entry") or pos.get("entry_price") or pos.get("price") or price)\n\n    if not isinstance(meta, dict):\n        meta = {\n            "entry_ts": _now_ts(),\n            "entry_price": entry if entry > 0 else price,\n            "highest_price": price,\n            "highest_pnl_pct": 0.0,\n            "strategy": _safe_str(pos.get("strategy") or "recovered_position"),\n            "signal_strength": 0.0,\n        }\n        positions[symbol] = meta\n\n    if price > _safe_float(meta.get("highest_price")):\n        meta["highest_price"] = price\n\n    entry_price = _safe_float(meta.get("entry_price") or entry)\n    if entry_price > 0 and price > 0:\n        pnl_pct = (price - entry_price) / entry_price\n        meta["highest_pnl_pct"] = max(_safe_float(meta.get("highest_pnl_pct")), pnl_pct)\n\n    return meta\n\ndef _make_sell(symbol: str, qty: float, price: float, reason: str) -> Dict[str, Any]:\n    return {\n        "symbol": symbol,\n        "side": "sell",\n        "quantity": qty,\n        "expected_price": price,\n        "fill_price": price,\n        "slippage_bps": 0,\n        "strategy": reason,\n        "confidence": 1.0,\n    }\n\ndef _has_pending_sell(symbol: str, orders: List[Dict[str, Any]]) -> bool:\n    for o in orders:\n        if _order_symbol(o) == symbol and _order_side(o) == "sell":\n            return True\n    return False\n\ndef _filter_and_resize_orders(\n    orders: List[Dict[str, Any]],\n    ctx: Dict[str, Any],\n    state: Dict[str, Any],\n) -> List[Dict[str, Any]]:\n\n    if not orders:\n        return []\n\n    features = ctx.get("features") or ctx.get("feature_map") or {}\n\n    regime = _safe_str(ctx.get("regime") or ctx.get("market_regime") or "").upper()\n    if not regime:\n        portfolio = ctx.get("portfolio")\n        if isinstance(portfolio, dict):\n            regime = _safe_str(portfolio.get("regime")).upper()\n\n    filtered: List[Dict[str, Any]] = []\n\n    for order in orders:\n        if not isinstance(order, dict):\n            filtered.append(order)\n            continue\n\n        symbol = _order_symbol(order)\n        side = _order_side(order)\n        strategy = _order_strategy(order)\n        feature = _get_feature(features, symbol)\n        price = _order_price(order, feature)\n\n        if side == "sell":\n            if "stop_loss" in strategy:\n                _record_loss(symbol, strategy, state)\n            filtered.append(order)\n            continue\n\n        if side != "buy":\n            filtered.append(order)\n            continue\n\n        is_scout = strategy == "fallback_scout_breakout"\n\n        if not is_scout:\n            # --- UNIVERSAL SIZE CAP for ALL strategies (not just scouts) ---\n            qty_ns = _safe_float(order.get("quantity") or order.get("qty"))\n            if qty_ns > 0 and price > 0:\n                max_ns = _safe_float(\n                    CFG.get("max_entry_notional_sideways_usd", 1.50)\n                    if "SIDEWAYS" in regime\n                    else CFG.get("max_entry_notional_trend_usd", 2.50)\n                )\n                notional_ns = qty_ns * price\n                if max_ns > 0 and notional_ns > max_ns:\n                    new_qty_ns = max_ns / price\n                    order["quantity"] = new_qty_ns\n                    if "qty" in order:\n                        order["qty"] = new_qty_ns\n                    _log("RESIZE_ENTRY", symbol=symbol, old_notional=notional_ns, new_notional=max_ns, price=price, strategy=strategy)\n            _record_buy(order, feature, state)\n            filtered.append(order)\n            continue\n\n        symbol_regime = _safe_str(feature.get("symbol_regime")).upper()\n        signal = _safe_float(order.get("signal_strength") or feature.get("signal_strength"))\n        trend_quality = _safe_float(feature.get("trend_quality") or feature.get("symbol_trend_score"))\n        volatility = _safe_float(feature.get("volatility"))\n        one_tick = _safe_float(feature.get("one_tick_momentum"))\n\n        if price <= 0 or price < _safe_float(CFG["min_trade_price"]):\n            _log("BLOCK_ENTRY", symbol=symbol, reason="price_too_low", price=price, strategy=strategy)\n            continue\n\n        cooldown_losses = _recent_losses(symbol, state, _safe_float(CFG["cooldown_minutes"]))\n\n        if cooldown_losses >= int(CFG["symbol_cooldown_after_losses"]):\n            _log("BLOCK_ENTRY", symbol=symbol, reason="loss_cooldown", losses=cooldown_losses, strategy=strategy)\n            continue\n\n        if "SIDEWAYS" in regime:\n            if symbol_regime not in ("SYMBOL_BREAKOUT_UP", "SYMBOL_TREND_UP"):\n                _log("BLOCK_ENTRY", symbol=symbol, reason="not_clean_uptrend", symbol_regime=symbol_regime, strategy=strategy)\n                continue\n\n            if signal < _safe_float(CFG["min_scout_signal_sideways"]):\n                _log("BLOCK_ENTRY", symbol=symbol, reason="weak_signal", signal=signal, strategy=strategy)\n                continue\n\n            if trend_quality < _safe_float(CFG["min_scout_trend_quality"]):\n                _log("BLOCK_ENTRY", symbol=symbol, reason="weak_trend_quality", trend_quality=trend_quality, strategy=strategy)\n                continue\n\n            if volatility > _safe_float(CFG["max_scout_volatility_sideways"]):\n                _log("BLOCK_ENTRY", symbol=symbol, reason="extreme_volatility", volatility=volatility, strategy=strategy)\n                continue\n\n            if bool(CFG["require_positive_one_tick_for_scout"]) and one_tick <= 0:\n                _log("BLOCK_ENTRY", symbol=symbol, reason="one_tick_not_positive", one_tick=one_tick, strategy=strategy)\n                continue\n\n        qty = _safe_float(order.get("quantity") or order.get("qty"))\n\n        if qty > 0 and price > 0:\n            max_notional = _safe_float(\n                CFG["sideways_scout_notional_usd"]\n                if "SIDEWAYS" in regime\n                else CFG["trend_scout_notional_usd"]\n            )\n            notional = qty * price\n\n            if max_notional > 0 and notional > max_notional:\n                new_qty = max_notional / price\n                order["quantity"] = new_qty\n                if "qty" in order:\n                    order["qty"] = new_qty\n                _log(\n                    "RESIZE_ENTRY",\n                    symbol=symbol,\n                    old_notional=notional,\n                    new_notional=max_notional,\n                    price=price,\n                )\n\n        _record_buy(order, feature, state)\n        filtered.append(order)\n\n    return filtered\n\ndef _defensive_exit_orders(\n    existing_orders: List[Dict[str, Any]],\n    ctx: Dict[str, Any],\n    state: Dict[str, Any],\n) -> List[Dict[str, Any]]:\n\n    features = ctx.get("features") or ctx.get("feature_map") or {}\n    prices = ctx.get("prices") or ctx.get("market_prices") or ctx.get("tick") or ctx.get("market")\n\n    regime = _safe_str(ctx.get("regime") or ctx.get("market_regime") or "").upper()\n    if not regime:\n        portfolio = ctx.get("portfolio")\n        if isinstance(portfolio, dict):\n            regime = _safe_str(portfolio.get("regime")).upper()\n\n    positions = _get_positions(ctx)\n    exits: List[Dict[str, Any]] = []\n\n    for symbol, pos in positions.items():\n        if _has_pending_sell(symbol, existing_orders):\n            continue\n\n        feature = _get_feature(features, symbol)\n        price = _get_price(symbol, pos, feature, prices)\n        qty = _safe_float(pos.get("quantity") or pos.get("qty"))\n\n        if qty <= 0 or price <= 0:\n            continue\n\n        meta = _ensure_position_meta(symbol, pos, price, state)\n        entry = _safe_float(meta.get("entry_price"))\n\n        if entry <= 0:\n            continue\n\n        pnl_pct = (price - entry) / entry\n        high_pnl = _safe_float(meta.get("highest_pnl_pct"))\n        age_min = max(0.0, (_now_ts() - _safe_float(meta.get("entry_ts"), _now_ts())) / 60.0)\n        strategy = _safe_str(meta.get("strategy") or pos.get("strategy"))\n\n        if strategy == "fallback_scout_breakout" and pnl_pct <= _safe_float(CFG["fallback_stop_loss_pct"]):\n            exits.append(_make_sell(symbol, qty, price, "adaptive_stop_loss"))\n            _record_loss(symbol, "adaptive_stop_loss", state)\n            _log("EXIT", symbol=symbol, reason="tight_scout_stop", pnl_pct=pnl_pct, age_min=age_min)\n            continue\n\n        if high_pnl >= _safe_float(CFG["breakeven_arm_pct"]) and pnl_pct <= _safe_float(CFG["breakeven_exit_floor_pct"]):\n            exits.append(_make_sell(symbol, qty, price, "breakeven_protection_exit"))\n            _log("EXIT", symbol=symbol, reason="breakeven_protection", pnl_pct=pnl_pct, high_pnl=high_pnl, age_min=age_min)\n            continue\n\n        if high_pnl >= _safe_float(CFG["trailing_arm_pct"]) and (high_pnl - pnl_pct) >= _safe_float(CFG["trailing_giveback_pct"]):\n            exits.append(_make_sell(symbol, qty, price, "trailing_profit_exit"))\n            _log("EXIT", symbol=symbol, reason="trailing_profit", pnl_pct=pnl_pct, high_pnl=high_pnl, age_min=age_min)\n            continue\n\n        if "SIDEWAYS" in regime and age_min >= _safe_float(CFG["sideways_time_stop_minutes"]):\n            if _safe_float(CFG["sideways_time_stop_min_pnl"]) <= pnl_pct <= _safe_float(CFG["sideways_time_stop_max_pnl"]):\n                exits.append(_make_sell(symbol, qty, price, "time_stop_exit"))\n                _log("EXIT", symbol=symbol, reason="sideways_time_stop", pnl_pct=pnl_pct, age_min=age_min)\n                continue\n\n    return exits\n\ndef qfos_expectancy_cycle_guard(proposed_fills: Any, context: Dict[str, Any]) -> List[Dict[str, Any]]:\n    """\n    Defensive expectancy guard.\n\n    It does four things:\n    1. Filters weak fallback scout entries.\n    2. Reduces SIDEWAYS scout size.\n    3. Adds breakeven, trailing, tight-stop, and time-stop sell orders.\n    4. Keeps risk_off_exit logic untouched.\n    """\n\n    if not CFG.get("enabled", True):\n        return proposed_fills if isinstance(proposed_fills, list) else []\n\n    state = _read_state()\n\n    try:\n        orders = list(proposed_fills or [])\n    except Exception:\n        orders = []\n\n    try:\n        orders = _filter_and_resize_orders(orders, context, state)\n        exits = _defensive_exit_orders(orders, context, state)\n\n        if exits:\n            orders = exits + orders\n\n    except Exception as exc:\n        _log("ERROR", error=repr(exc))\n\n    _write_state(state)\n    return orders\n\nprint("QFOS expectancy patch helper loaded.")\n', _QFOS_EXPECTANCY_NS)
+00066: qfos_expectancy_cycle_guard = _QFOS_EXPECTANCY_NS["qfos_expectancy_cycle_guard"]
+00067: 
+00068: # QFOS_EXPECTANCY_EARLY_HOOK_START
+00069: def _qfos_expectancy_guard_with_cycle_log_inner(proposed_fills=None, context=None):
+
+--- around line 69 ---
+00065: exec('\n\nimport json\nimport math\nimport time\nfrom datetime import datetime, timezone\nfrom pathlib import Path\nfrom typing import Any, Dict, List\n\nROOT = Path(__file__).resolve().parent\nCONFIG_PATH = ROOT / "qfos_expectancy_config.json"\n\nDEFAULT_CONFIG = {\n    "enabled": True,\n    "sideways_scout_notional_usd": 1.00,\n    "trend_scout_notional_usd": 1.50,\n    "min_trade_price": 0.01,\n    "min_scout_signal_sideways": 0.0012,\n    "min_scout_trend_quality": 0.001,\n    "max_scout_volatility_sideways": 0.006,\n    "require_positive_one_tick_for_scout": True,\n    "fallback_stop_loss_pct": -0.006,\n    "breakeven_arm_pct": 0.0035,\n    "breakeven_exit_floor_pct": 0.0004,\n    "trailing_arm_pct": 0.005,\n    "trailing_giveback_pct": 0.0025,\n    "sideways_time_stop_minutes": 45,\n    "sideways_time_stop_min_pnl": -0.0015,\n    "sideways_time_stop_max_pnl": 0.002,\n    "symbol_cooldown_after_losses": 2,\n    "cooldown_minutes": 180,\n    "state_file": "qfos_expectancy_state.json",\n    "decision_log": "qfos_expectancy_decisions.jsonl",\n}\n\ndef _load_config() -> Dict[str, Any]:\n    try:\n        if CONFIG_PATH.exists():\n            data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))\n            merged = dict(DEFAULT_CONFIG)\n            merged.update(data or {})\n            return merged\n    except Exception:\n        pass\n    return dict(DEFAULT_CONFIG)\n\nCFG = _load_config()\nSTATE_PATH = ROOT / str(CFG.get("state_file", "qfos_expectancy_state.json"))\nDECISION_LOG = ROOT / str(CFG.get("decision_log", "qfos_expectancy_decisions.jsonl"))\n\ndef _now_ts() -> float:\n    return time.time()\n\ndef _utc() -> str:\n    return datetime.now(timezone.utc).isoformat()\n\ndef _safe_float(x: Any, default: float = 0.0) -> float:\n    try:\n        if x is None:\n            return default\n        v = float(x)\n        if math.isnan(v) or math.isinf(v):\n            return default\n        return v\n    except Exception:\n        return default\n\ndef _safe_str(x: Any, default: str = "") -> str:\n    try:\n        return str(x)\n    except Exception:\n        return default\n\ndef _read_state() -> Dict[str, Any]:\n    try:\n        if STATE_PATH.exists():\n            data = json.loads(STATE_PATH.read_text(encoding="utf-8"))\n            if isinstance(data, dict):\n                data.setdefault("positions", {})\n                data.setdefault("losses", {})\n                return data\n    except Exception:\n        pass\n    return {"positions": {}, "losses": {}}\n\ndef _write_state(state: Dict[str, Any]) -> None:\n    try:\n        tmp = STATE_PATH.with_suffix(".tmp")\n        tmp.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")\n        tmp.replace(STATE_PATH)\n    except Exception:\n        pass\n\ndef _log(action: str, **payload: Any) -> None:\n    try:\n        row = {"ts": _utc(), "action": action}\n        row.update(payload)\n        with DECISION_LOG.open("a", encoding="utf-8") as f:\n            f.write(json.dumps(row, sort_keys=True) + "\\n")\n    except Exception:\n        pass\n\ndef _as_dict(obj: Any) -> Dict[str, Any]:\n    if isinstance(obj, dict):\n        return obj\n\n    data = {}\n    for name in (\n        "symbol", "quantity", "qty", "avg_entry", "entry_price",\n        "mark_price", "price", "strategy", "created_at", "updated_at"\n    ):\n        if hasattr(obj, name):\n            try:\n                data[name] = getattr(obj, name)\n            except Exception:\n                pass\n    return data\n\ndef _get_feature(features: Any, symbol: str) -> Dict[str, Any]:\n    if isinstance(features, dict):\n        value = features.get(symbol, {})\n        if isinstance(value, dict):\n            return value\n    return {}\n\ndef _get_price(symbol: str, pos: Dict[str, Any], feature: Dict[str, Any], prices: Any) -> float:\n    if isinstance(prices, dict) and symbol in prices:\n        p = _safe_float(prices.get(symbol))\n        if p > 0:\n            return p\n\n    p = _safe_float(feature.get("price"))\n    if p > 0:\n        return p\n\n    p = _safe_float(pos.get("mark_price"))\n    if p > 0:\n        return p\n\n    return _safe_float(pos.get("avg_entry") or pos.get("entry_price") or pos.get("price"))\n\ndef _get_positions(ctx: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:\n    raw = (\n        ctx.get("positions")\n        or ctx.get("open_positions")\n        or ctx.get("portfolio_positions")\n        or {}\n    )\n\n    out: Dict[str, Dict[str, Any]] = {}\n\n    if isinstance(raw, dict):\n        for sym, pos in raw.items():\n            pd = _as_dict(pos)\n            symbol = _safe_str(pd.get("symbol") or sym)\n            if symbol:\n                out[symbol] = pd\n\n    elif isinstance(raw, list):\n        for pos in raw:\n            pd = _as_dict(pos)\n            symbol = _safe_str(pd.get("symbol"))\n            if symbol:\n                out[symbol] = pd\n\n    return out\n\ndef _order_symbol(order: Dict[str, Any]) -> str:\n    return _safe_str(order.get("symbol"))\n\ndef _order_side(order: Dict[str, Any]) -> str:\n    return _safe_str(order.get("side")).lower()\n\ndef _order_strategy(order: Dict[str, Any]) -> str:\n    return _safe_str(order.get("strategy") or order.get("reason") or "unknown")\n\ndef _order_price(order: Dict[str, Any], feature: Dict[str, Any]) -> float:\n    p = _safe_float(order.get("fill_price") or order.get("expected_price") or order.get("price"))\n    if p > 0:\n        return p\n    return _safe_float(feature.get("price"))\n\ndef _recent_losses(symbol: str, state: Dict[str, Any], minutes: float) -> int:\n    losses = state.get("losses", {}).get(symbol, [])\n    now = _now_ts()\n    cutoff = now - minutes * 60\n    fresh = [x for x in losses if _safe_float(x.get("ts")) >= cutoff]\n    state.setdefault("losses", {})[symbol] = fresh\n    return len(fresh)\n\ndef _record_loss(symbol: str, strategy: str, state: Dict[str, Any]) -> None:\n    if not symbol:\n        return\n    state.setdefault("losses", {}).setdefault(symbol, []).append({\n        "ts": _now_ts(),\n        "strategy": strategy,\n    })\n\ndef _record_buy(order: Dict[str, Any], feature: Dict[str, Any], state: Dict[str, Any]) -> None:\n    symbol = _order_symbol(order)\n    if not symbol:\n        return\n\n    price = _order_price(order, feature)\n    if price <= 0:\n        return\n\n    state.setdefault("positions", {})[symbol] = {\n        "entry_ts": _now_ts(),\n        "entry_price": price,\n        "highest_price": price,\n        "highest_pnl_pct": 0.0,\n        "strategy": _order_strategy(order),\n        "signal_strength": _safe_float(order.get("signal_strength") or feature.get("signal_strength")),\n    }\n\ndef _ensure_position_meta(symbol: str, pos: Dict[str, Any], price: float, state: Dict[str, Any]) -> Dict[str, Any]:\n    positions = state.setdefault("positions", {})\n    meta = positions.get(symbol)\n\n    entry = _safe_float(pos.get("avg_entry") or pos.get("entry_price") or pos.get("price") or price)\n\n    if not isinstance(meta, dict):\n        meta = {\n            "entry_ts": _now_ts(),\n            "entry_price": entry if entry > 0 else price,\n            "highest_price": price,\n            "highest_pnl_pct": 0.0,\n            "strategy": _safe_str(pos.get("strategy") or "recovered_position"),\n            "signal_strength": 0.0,\n        }\n        positions[symbol] = meta\n\n    if price > _safe_float(meta.get("highest_price")):\n        meta["highest_price"] = price\n\n    entry_price = _safe_float(meta.get("entry_price") or entry)\n    if entry_price > 0 and price > 0:\n        pnl_pct = (price - entry_price) / entry_price\n        meta["highest_pnl_pct"] = max(_safe_float(meta.get("highest_pnl_pct")), pnl_pct)\n\n    return meta\n\ndef _make_sell(symbol: str, qty: float, price: float, reason: str) -> Dict[str, Any]:\n    return {\n        "symbol": symbol,\n        "side": "sell",\n        "quantity": qty,\n        "expected_price": price,\n        "fill_price": price,\n        "slippage_bps": 0,\n        "strategy": reason,\n        "confidence": 1.0,\n    }\n\ndef _has_pending_sell(symbol: str, orders: List[Dict[str, Any]]) -> bool:\n    for o in orders:\n        if _order_symbol(o) == symbol and _order_side(o) == "sell":\n            return True\n    return False\n\ndef _filter_and_resize_orders(\n    orders: List[Dict[str, Any]],\n    ctx: Dict[str, Any],\n    state: Dict[str, Any],\n) -> List[Dict[str, Any]]:\n\n    if not orders:\n        return []\n\n    features = ctx.get("features") or ctx.get("feature_map") or {}\n\n    regime = _safe_str(ctx.get("regime") or ctx.get("market_regime") or "").upper()\n    if not regime:\n        portfolio = ctx.get("portfolio")\n        if isinstance(portfolio, dict):\n            regime = _safe_str(portfolio.get("regime")).upper()\n\n    filtered: List[Dict[str, Any]] = []\n\n    for order in orders:\n        if not isinstance(order, dict):\n            filtered.append(order)\n            continue\n\n        symbol = _order_symbol(order)\n        side = _order_side(order)\n        strategy = _order_strategy(order)\n        feature = _get_feature(features, symbol)\n        price = _order_price(order, feature)\n\n        if side == "sell":\n            if "stop_loss" in strategy:\n                _record_loss(symbol, strategy, state)\n            filtered.append(order)\n            continue\n\n        if side != "buy":\n            filtered.append(order)\n            continue\n\n        is_scout = strategy == "fallback_scout_breakout"\n\n        if not is_scout:\n            # --- UNIVERSAL SIZE CAP for ALL strategies (not just scouts) ---\n            qty_ns = _safe_float(order.get("quantity") or order.get("qty"))\n            if qty_ns > 0 and price > 0:\n                max_ns = _safe_float(\n                    CFG.get("max_entry_notional_sideways_usd", 1.50)\n                    if "SIDEWAYS" in regime\n                    else CFG.get("max_entry_notional_trend_usd", 2.50)\n                )\n                notional_ns = qty_ns * price\n                if max_ns > 0 and notional_ns > max_ns:\n                    new_qty_ns = max_ns / price\n                    order["quantity"] = new_qty_ns\n                    if "qty" in order:\n                        order["qty"] = new_qty_ns\n                    _log("RESIZE_ENTRY", symbol=symbol, old_notional=notional_ns, new_notional=max_ns, price=price, strategy=strategy)\n            _record_buy(order, feature, state)\n            filtered.append(order)\n            continue\n\n        symbol_regime = _safe_str(feature.get("symbol_regime")).upper()\n        signal = _safe_float(order.get("signal_strength") or feature.get("signal_strength"))\n        trend_quality = _safe_float(feature.get("trend_quality") or feature.get("symbol_trend_score"))\n        volatility = _safe_float(feature.get("volatility"))\n        one_tick = _safe_float(feature.get("one_tick_momentum"))\n\n        if price <= 0 or price < _safe_float(CFG["min_trade_price"]):\n            _log("BLOCK_ENTRY", symbol=symbol, reason="price_too_low", price=price, strategy=strategy)\n            continue\n\n        cooldown_losses = _recent_losses(symbol, state, _safe_float(CFG["cooldown_minutes"]))\n\n        if cooldown_losses >= int(CFG["symbol_cooldown_after_losses"]):\n            _log("BLOCK_ENTRY", symbol=symbol, reason="loss_cooldown", losses=cooldown_losses, strategy=strategy)\n            continue\n\n        if "SIDEWAYS" in regime:\n            if symbol_regime not in ("SYMBOL_BREAKOUT_UP", "SYMBOL_TREND_UP"):\n                _log("BLOCK_ENTRY", symbol=symbol, reason="not_clean_uptrend", symbol_regime=symbol_regime, strategy=strategy)\n                continue\n\n            if signal < _safe_float(CFG["min_scout_signal_sideways"]):\n                _log("BLOCK_ENTRY", symbol=symbol, reason="weak_signal", signal=signal, strategy=strategy)\n                continue\n\n            if trend_quality < _safe_float(CFG["min_scout_trend_quality"]):\n                _log("BLOCK_ENTRY", symbol=symbol, reason="weak_trend_quality", trend_quality=trend_quality, strategy=strategy)\n                continue\n\n            if volatility > _safe_float(CFG["max_scout_volatility_sideways"]):\n                _log("BLOCK_ENTRY", symbol=symbol, reason="extreme_volatility", volatility=volatility, strategy=strategy)\n                continue\n\n            if bool(CFG["require_positive_one_tick_for_scout"]) and one_tick <= 0:\n                _log("BLOCK_ENTRY", symbol=symbol, reason="one_tick_not_positive", one_tick=one_tick, strategy=strategy)\n                continue\n\n        qty = _safe_float(order.get("quantity") or order.get("qty"))\n\n        if qty > 0 and price > 0:\n            max_notional = _safe_float(\n                CFG["sideways_scout_notional_usd"]\n                if "SIDEWAYS" in regime\n                else CFG["trend_scout_notional_usd"]\n            )\n            notional = qty * price\n\n            if max_notional > 0 and notional > max_notional:\n                new_qty = max_notional / price\n                order["quantity"] = new_qty\n                if "qty" in order:\n                    order["qty"] = new_qty\n                _log(\n                    "RESIZE_ENTRY",\n                    symbol=symbol,\n                    old_notional=notional,\n                    new_notional=max_notional,\n                    price=price,\n                )\n\n        _record_buy(order, feature, state)\n        filtered.append(order)\n\n    return filtered\n\ndef _defensive_exit_orders(\n    existing_orders: List[Dict[str, Any]],\n    ctx: Dict[str, Any],\n    state: Dict[str, Any],\n) -> List[Dict[str, Any]]:\n\n    features = ctx.get("features") or ctx.get("feature_map") or {}\n    prices = ctx.get("prices") or ctx.get("market_prices") or ctx.get("tick") or ctx.get("market")\n\n    regime = _safe_str(ctx.get("regime") or ctx.get("market_regime") or "").upper()\n    if not regime:\n        portfolio = ctx.get("portfolio")\n        if isinstance(portfolio, dict):\n            regime = _safe_str(portfolio.get("regime")).upper()\n\n    positions = _get_positions(ctx)\n    exits: List[Dict[str, Any]] = []\n\n    for symbol, pos in positions.items():\n        if _has_pending_sell(symbol, existing_orders):\n            continue\n\n        feature = _get_feature(features, symbol)\n        price = _get_price(symbol, pos, feature, prices)\n        qty = _safe_float(pos.get("quantity") or pos.get("qty"))\n\n        if qty <= 0 or price <= 0:\n            continue\n\n        meta = _ensure_position_meta(symbol, pos, price, state)\n        entry = _safe_float(meta.get("entry_price"))\n\n        if entry <= 0:\n            continue\n\n        pnl_pct = (price - entry) / entry\n        high_pnl = _safe_float(meta.get("highest_pnl_pct"))\n        age_min = max(0.0, (_now_ts() - _safe_float(meta.get("entry_ts"), _now_ts())) / 60.0)\n        strategy = _safe_str(meta.get("strategy") or pos.get("strategy"))\n\n        if strategy == "fallback_scout_breakout" and pnl_pct <= _safe_float(CFG["fallback_stop_loss_pct"]):\n            exits.append(_make_sell(symbol, qty, price, "adaptive_stop_loss"))\n            _record_loss(symbol, "adaptive_stop_loss", state)\n            _log("EXIT", symbol=symbol, reason="tight_scout_stop", pnl_pct=pnl_pct, age_min=age_min)\n            continue\n\n        if high_pnl >= _safe_float(CFG["breakeven_arm_pct"]) and pnl_pct <= _safe_float(CFG["breakeven_exit_floor_pct"]):\n            exits.append(_make_sell(symbol, qty, price, "breakeven_protection_exit"))\n            _log("EXIT", symbol=symbol, reason="breakeven_protection", pnl_pct=pnl_pct, high_pnl=high_pnl, age_min=age_min)\n            continue\n\n        if high_pnl >= _safe_float(CFG["trailing_arm_pct"]) and (high_pnl - pnl_pct) >= _safe_float(CFG["trailing_giveback_pct"]):\n            exits.append(_make_sell(symbol, qty, price, "trailing_profit_exit"))\n            _log("EXIT", symbol=symbol, reason="trailing_profit", pnl_pct=pnl_pct, high_pnl=high_pnl, age_min=age_min)\n            continue\n\n        if "SIDEWAYS" in regime and age_min >= _safe_float(CFG["sideways_time_stop_minutes"]):\n            if _safe_float(CFG["sideways_time_stop_min_pnl"]) <= pnl_pct <= _safe_float(CFG["sideways_time_stop_max_pnl"]):\n                exits.append(_make_sell(symbol, qty, price, "time_stop_exit"))\n                _log("EXIT", symbol=symbol, reason="sideways_time_stop", pnl_pct=pnl_pct, age_min=age_min)\n                continue\n\n    return exits\n\ndef qfos_expectancy_cycle_guard(proposed_fills: Any, context: Dict[str, Any]) -> List[Dict[str, Any]]:\n    """\n    Defensive expectancy guard.\n\n    It does four things:\n    1. Filters weak fallback scout entries.\n    2. Reduces SIDEWAYS scout size.\n    3. Adds breakeven, trailing, tight-stop, and time-stop sell orders.\n    4. Keeps risk_off_exit logic untouched.\n    """\n\n    if not CFG.get("enabled", True):\n        return proposed_fills if isinstance(proposed_fills, list) else []\n\n    state = _read_state()\n\n    try:\n        orders = list(proposed_fills or [])\n    except Exception:\n        orders = []\n\n    try:\n        orders = _filter_and_resize_orders(orders, context, state)\n        exits = _defensive_exit_orders(orders, context, state)\n\n        if exits:\n            orders = exits + orders\n\n    except Exception as exc:\n        _log("ERROR", error=repr(exc))\n\n    _write_state(state)\n    return orders\n\nprint("QFOS expectancy patch helper loaded.")\n', _QFOS_EXPECTANCY_NS)
+00066: qfos_expectancy_cycle_guard = _QFOS_EXPECTANCY_NS["qfos_expectancy_cycle_guard"]
+00067: 
+00068: # QFOS_EXPECTANCY_EARLY_HOOK_START
+00069: def _qfos_expectancy_guard_with_cycle_log_inner(proposed_fills=None, context=None):
+00070:     """
+00071:     Runs qfos_expectancy_cycle_guard and logs every cycle, even when no
+00072:     entry/exit/block/resize decision is made.
+00073: 
+
+--- around line 90 ---
+00086:     except Exception:
+00087:         pass
+00088: 
+00089:     try:
+00090:         _before_orders = list(proposed_fills or [])
+00091:     except Exception:
+00092:         _before_orders = []
+00093: 
+00094:     _before = len(_before_orders)
+
+--- around line 107 ---
+00103: 
+00104:         # QFOS FALLBACK SCOUT QUALITY GUARD — inline pre-expectancy filter
+00105:         try:
+00106:             _qfos_fb_locals = locals()
+00107:             for _qfos_fb_name in ("orders", "proposed_fills", "fills", "proposed_orders"):
+00108:                 if _qfos_fb_name in _qfos_fb_locals and isinstance(_qfos_fb_locals[_qfos_fb_name], list):
+00109:                     _qfos_fb_locals[_qfos_fb_name][:] = _qfos_fb_filter_orders(
+00110:                         _qfos_fb_locals[_qfos_fb_name],
+00111:                         local_vars=_qfos_fb_locals,
+
+--- around line 175 ---
+00171: 
+00172:     return _after_orders
+00173: 
+00174: 
+00175: def qfos_expectancy_guard_with_cycle_log(proposed_fills=None, context=None):
+00176:     """
+00177:     Safe expectancy wrapper.
+00178:     Always:
+00179:       - avoids unbound proposed_fills crashes
+
+--- around line 179 ---
+00175: def qfos_expectancy_guard_with_cycle_log(proposed_fills=None, context=None):
+00176:     """
+00177:     Safe expectancy wrapper.
+00178:     Always:
+00179:       - avoids unbound proposed_fills crashes
+00180:       - calls the original expectancy guard if available
+00181: 
+00182:       # QFOS FALLBACK SCOUT QUALITY GUARD — inline pre-expectancy filter
+00183:       try:
+
+--- around line 185 ---
+00181: 
+00182:       # QFOS FALLBACK SCOUT QUALITY GUARD — inline pre-expectancy filter
+00183:       try:
+00184:           _qfos_fb_locals = locals()
+00185:           for _qfos_fb_name in ("orders", "proposed_fills", "fills", "proposed_orders"):
+00186:               if _qfos_fb_name in _qfos_fb_locals and isinstance(_qfos_fb_locals[_qfos_fb_name], list):
+00187:                   _qfos_fb_locals[_qfos_fb_name][:] = _qfos_fb_filter_orders(
+00188:                       _qfos_fb_locals[_qfos_fb_name],
+00189:                       local_vars=_qfos_fb_locals,
+
+--- around line 365 ---
+00361: 
+00362:     return trade_class
+00363: 
+00364: 
+00365: def _qfos_guard_filter_new_buys(proposed_fills, regime, exposure_pct):
+00366:     """
+00367:     Final execution-stage veto.
+00368: 
+00369:     Allocator may still select candidates.
+
+--- around line 374 ---
+00370:     Profit Engine guard refuses BUY execution when SIDEWAYS exposure is already > 4.5%.
+00371:     """
+00372:     try:
+00373:         if not _qfos_guard_overexposed(regime, exposure_pct):
+00374:             return proposed_fills
+00375: 
+00376:         before = len(proposed_fills or [])
+00377:         kept = []
+00378:         blocked = []
+
+--- around line 376 ---
+00372:     try:
+00373:         if not _qfos_guard_overexposed(regime, exposure_pct):
+00374:             return proposed_fills
+00375: 
+00376:         before = len(proposed_fills or [])
+00377:         kept = []
+00378:         blocked = []
+00379: 
+00380:         for fill in proposed_fills or []:
+
+--- around line 380 ---
+00376:         before = len(proposed_fills or [])
+00377:         kept = []
+00378:         blocked = []
+00379: 
+00380:         for fill in proposed_fills or []:
+00381:             side = str(fill.get("side", "") if isinstance(fill, dict) else _qfos_guard_get(fill, "side", "")).lower()
+00382:             sym = fill.get("symbol", "") if isinstance(fill, dict) else _qfos_guard_symbol(fill)
+00383: 
+00384:             if side in ("buy", "long", "open"):
+
+--- around line 406 ---
+00402: 
+00403:         return kept
+00404:     except Exception as e:
+00405:         print(f"[PROFIT_ENGINE_GUARD] filter_error={e}", flush=True)
+00406:         return proposed_fills
+00407: 
+00408: 
+00409: def _qfos_guard_choose_weakest_from_profit_rows(rows):
+00410:     """
+
+==========================================================================================
+MATCHES FOR: raw_orders
+==========================================================================================
+Found 1 matches. Showing up to first 12.
+
+--- around line 2880 ---
+02876:             except Exception:
+02877:                 pass
+02878: 
+02879:             print(
+02880:                 f"[EXECUTION_STAGE] handoff raw_orders={len(raw_result_orders)} "
+02881:                 f"proposed_fills={len(proposed_fills or [])} "
+02882:                 f"symbols={[x.get('symbol') for x in proposed_fills if isinstance(x, dict)]}",
+02883:                 flush=True,
+02884:             )
+
+==========================================================================================
+MATCHES FOR: begin_apply
+==========================================================================================
+Found 1 matches. Showing up to first 12.
+
+--- around line 2905 ---
+02901:                 rejected.append({'symbol': 'ALL', 'reason': pause_reason() or 'paused'})
+02902:             else:
+02903:                 buys_this_cycle = 0
+02904:             proposed_fills = _qfos_normalize_fill_list(list(proposed_fills or []))
+02905:             print(f"[EXECUTION_STAGE] begin_apply proposed_fills={len(proposed_fills)}", flush=True)
+02906:             for fill in proposed_fills:
+02907:                 fill = _qfos_normalize_fill_defaults(fill)
+02908:                 strategy = fill.get('strategy')
+02909:                 is_shadow = fill.get('shadow_mode', False)
+
+==========================================================================================
+MATCHES FOR: EXECUTION_STAGE
+==========================================================================================
+Found 9 matches. Showing up to first 12.
+
+--- around line 2870 ---
+02866:                         list(proposed_fills or []),
+02867:                         source="execution_handoff.final",
+02868:                     )
+02869:             except Exception as _qfos_exec_policy_error:
+02870:                 print(f"[EXECUTION_STAGE] policy_filter_error={_qfos_exec_policy_error}", flush=True)
+02871: 
+02872:             # Keep result["orders"] synchronized with what execution will process.
+02873:             try:
+02874:                 if isinstance(result, dict):
+
+--- around line 2880 ---
+02876:             except Exception:
+02877:                 pass
+02878: 
+02879:             print(
+02880:                 f"[EXECUTION_STAGE] handoff raw_orders={len(raw_result_orders)} "
+02881:                 f"proposed_fills={len(proposed_fills or [])} "
+02882:                 f"symbols={[x.get('symbol') for x in proposed_fills if isinstance(x, dict)]}",
+02883:                 flush=True,
+02884:             )
+
+--- around line 2905 ---
+02901:                 rejected.append({'symbol': 'ALL', 'reason': pause_reason() or 'paused'})
+02902:             else:
+02903:                 buys_this_cycle = 0
+02904:             proposed_fills = _qfos_normalize_fill_list(list(proposed_fills or []))
+02905:             print(f"[EXECUTION_STAGE] begin_apply proposed_fills={len(proposed_fills)}", flush=True)
+02906:             for fill in proposed_fills:
+02907:                 fill = _qfos_normalize_fill_defaults(fill)
+02908:                 strategy = fill.get('strategy')
+02909:                 is_shadow = fill.get('shadow_mode', False)
+
+--- around line 2928 ---
+02924:                             print(f"[OPPORTUNITY_MODE] override_error symbol={symbol} err={_qfos_opp_override_error}", flush=True)
+02925: 
+02926:                     if not allowed:
+02927:                         print(
+02928:                             f"[EXECUTION_STAGE] entry_policy_rejected symbol={symbol} "
+02929:                             f"strategy={strategy} reason={reason}",
+02930:                             flush=True,
+02931:                         )
+02932:                         rejected.append({'symbol': symbol, 'reason': reason})
+
+--- around line 2946 ---
+02942:                         print(f"[OPPORTUNITY_MODE] resize_error symbol={symbol} err={_qfos_opp_resize_error}", flush=True)
+02943: 
+02944:                     approved, reason = can_buy(symbol, fill, prices, equity)
+02945:                     print(
+02946:                         f"[EXECUTION_STAGE] can_buy symbol={symbol} approved={approved} "
+02947:                         f"reason={reason} qty={fill.get('quantity')} price={fill.get('fill_price')} "
+02948:                         f"tier={fill.get('qfos_size_tier')} value={fill.get('qfos_target_value')}",
+02949:                         flush=True,
+02950:                     )
+
+--- around line 2954 ---
+02950:                     )
+02951:                     if approved:
+02952:                         applied_ok = apply_buy(fill)
+02953:                         print(
+02954:                             f"[EXECUTION_STAGE] apply_buy symbol={symbol} applied={applied_ok}",
+02955:                             flush=True,
+02956:                         )
+02957:                         if applied_ok:
+02958:                             applied_fills.append(fill)
+
+--- around line 2987 ---
+02983:                     if allowed:
+02984:                         filtered_fills.append(fill)
+02985:                     else:
+02986:                         print(
+02987:                             f"[EXECUTION_STAGE] final_firewall_rejected "
+02988:                             f"symbol={fill.get('symbol', 'UNKNOWN')} strategy={fill.get('strategy')} reason={reason}",
+02989:                             flush=True,
+02990:                         )
+02991:                         rejected.append({'symbol': fill.get('symbol', 'UNKNOWN'), 'reason': reason})
+
+--- around line 2993 ---
+02989:                             flush=True,
+02990:                         )
+02991:                         rejected.append({'symbol': fill.get('symbol', 'UNKNOWN'), 'reason': reason})
+02992:                 applied_fills = filtered_fills
+02993:                 print(f"[EXECUTION_STAGE] final_applied_fills={len(applied_fills)}", flush=True)
+02994:                 for fill in applied_fills:
+02995:                     fill_pnl, original_strat = update_position_from_fill(conn, fill)
+02996:                     fill['pnl'] = fill_pnl
+02997:                     trades_total.inc()
+
+--- around line 3014 ---
+03010:                         else:
+03011:                             portfolio.positions[symbol] = 0.0
+03012: 
+03013:                     print(
+03014:                         f"[EXECUTION_STAGE] db_trade_written side={side} symbol={symbol} "
+03015:                         f"qty={qty:.8f} price={price:.8f} pnl={fill_pnl:.6f} "
+03016:                         f"position_qty={portfolio.positions.get(symbol, 0.0)}",
+03017:                         flush=True,
+03018:                     )
+
+==========================================================================================
+MATCHES FOR: evo_allocator_rescue
+==========================================================================================
+Found 3 matches. Showing up to first 12.
+
+--- around line 6612 ---
+06608:     except Exception:
+06609:         pass
+06610: 
+06611:     # Fallback still starts with evo_ so Opportunity Mode treats it as evo path.
+06612:     return "evo_allocator_rescue"
+06613: 
+06614: def _qfos_ar_candidate_score(symbol, f):
+06615:     signal = _qfos_ar_float(f.get("signal_strength"))
+06616:     breakout = _qfos_ar_float(f.get("breakout_score"))
+
+--- around line 6944 ---
+06940:         row = cur.execute("""
+06941:             SELECT COUNT(*)
+06942:             FROM trades
+06943:             WHERE side = 'buy'
+06944:               AND strategy = 'evo_allocator_rescue'
+06945:               AND created_at >= ?
+06946:         """, (cutoff,)).fetchone()
+06947: 
+06948:         return int(row[0] or 0)
+
+--- around line 6969 ---
+06965:         row = cur.execute("""
+06966:             SELECT created_at
+06967:             FROM trades
+06968:             WHERE side = 'buy'
+06969:               AND strategy = 'evo_allocator_rescue'
+06970:             ORDER BY id DESC
+06971:             LIMIT 1
+06972:         """).fetchone()
+06973: 
+
+==========================================================================================
+MATCHES FOR: entry_quality_not_top_10
+==========================================================================================
+NO MATCHES
+
+==========================================================================================
+MATCHES FOR: sideways
+==========================================================================================
+Found 53 matches. Showing up to first 12.
+
+--- around line 65 ---
+00061: 
+00062: # QFOS_EXPECTANCY_INLINE_START
+00063: # Embedded because Docker image failed to import qfos_expectancy_patch.py.
+00064: _QFOS_EXPECTANCY_NS = {"__file__": __file__, "__name__": "_qfos_expectancy_inline"}
+00065: exec('\n\nimport json\nimport math\nimport time\nfrom datetime import datetime, timezone\nfrom pathlib import Path\nfrom typing import Any, Dict, List\n\nROOT = Path(__file__).resolve().parent\nCONFIG_PATH = ROOT / "qfos_expectancy_config.json"\n\nDEFAULT_CONFIG = {\n    "enabled": True,\n    "sideways_scout_notional_usd": 1.00,\n    "trend_scout_notional_usd": 1.50,\n    "min_trade_price": 0.01,\n    "min_scout_signal_sideways": 0.0012,\n    "min_scout_trend_quality": 0.001,\n    "max_scout_volatility_sideways": 0.006,\n    "require_positive_one_tick_for_scout": True,\n    "fallback_stop_loss_pct": -0.006,\n    "breakeven_arm_pct": 0.0035,\n    "breakeven_exit_floor_pct": 0.0004,\n    "trailing_arm_pct": 0.005,\n    "trailing_giveback_pct": 0.0025,\n    "sideways_time_stop_minutes": 45,\n    "sideways_time_stop_min_pnl": -0.0015,\n    "sideways_time_stop_max_pnl": 0.002,\n    "symbol_cooldown_after_losses": 2,\n    "cooldown_minutes": 180,\n    "state_file": "qfos_expectancy_state.json",\n    "decision_log": "qfos_expectancy_decisions.jsonl",\n}\n\ndef _load_config() -> Dict[str, Any]:\n    try:\n        if CONFIG_PATH.exists():\n            data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))\n            merged = dict(DEFAULT_CONFIG)\n            merged.update(data or {})\n            return merged\n    except Exception:\n        pass\n    return dict(DEFAULT_CONFIG)\n\nCFG = _load_config()\nSTATE_PATH = ROOT / str(CFG.get("state_file", "qfos_expectancy_state.json"))\nDECISION_LOG = ROOT / str(CFG.get("decision_log", "qfos_expectancy_decisions.jsonl"))\n\ndef _now_ts() -> float:\n    return time.time()\n\ndef _utc() -> str:\n    return datetime.now(timezone.utc).isoformat()\n\ndef _safe_float(x: Any, default: float = 0.0) -> float:\n    try:\n        if x is None:\n            return default\n        v = float(x)\n        if math.isnan(v) or math.isinf(v):\n            return default\n        return v\n    except Exception:\n        return default\n\ndef _safe_str(x: Any, default: str = "") -> str:\n    try:\n        return str(x)\n    except Exception:\n        return default\n\ndef _read_state() -> Dict[str, Any]:\n    try:\n        if STATE_PATH.exists():\n            data = json.loads(STATE_PATH.read_text(encoding="utf-8"))\n            if isinstance(data, dict):\n                data.setdefault("positions", {})\n                data.setdefault("losses", {})\n                return data\n    except Exception:\n        pass\n    return {"positions": {}, "losses": {}}\n\ndef _write_state(state: Dict[str, Any]) -> None:\n    try:\n        tmp = STATE_PATH.with_suffix(".tmp")\n        tmp.write_text(json.dumps(state, indent=2, sort_keys=True), encoding="utf-8")\n        tmp.replace(STATE_PATH)\n    except Exception:\n        pass\n\ndef _log(action: str, **payload: Any) -> None:\n    try:\n        row = {"ts": _utc(), "action": action}\n        row.update(payload)\n        with DECISION_LOG.open("a", encoding="utf-8") as f:\n            f.write(json.dumps(row, sort_keys=True) + "\\n")\n    except Exception:\n        pass\n\ndef _as_dict(obj: Any) -> Dict[str, Any]:\n    if isinstance(obj, dict):\n        return obj\n\n    data = {}\n    for name in (\n        "symbol", "quantity", "qty", "avg_entry", "entry_price",\n        "mark_price", "price", "strategy", "created_at", "updated_at"\n    ):\n        if hasattr(obj, name):\n            try:\n                data[name] = getattr(obj, name)\n            except Exception:\n                pass\n    return data\n\ndef _get_feature(features: Any, symbol: str) -> Dict[str, Any]:\n    if isinstance(features, dict):\n        value = features.get(symbol, {})\n        if isinstance(value, dict):\n            return value\n    return {}\n\ndef _get_price(symbol: str, pos: Dict[str, Any], feature: Dict[str, Any], prices: Any) -> float:\n    if isinstance(prices, dict) and symbol in prices:\n        p = _safe_float(prices.get(symbol))\n        if p > 0:\n            return p\n\n    p = _safe_float(feature.get("price"))\n    if p > 0:\n        return p\n\n    p = _safe_float(pos.get("mark_price"))\n    if p > 0:\n        return p\n\n    return _safe_float(pos.get("avg_entry") or pos.get("entry_price") or pos.get("price"))\n\ndef _get_positions(ctx: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:\n    raw = (\n        ctx.get("positions")\n        or ctx.get("open_positions")\n        or ctx.get("portfolio_positions")\n        or {}\n    )\n\n    out: Dict[str, Dict[str, Any]] = {}\n\n    if isinstance(raw, dict):\n        for sym, pos in raw.items():\n            pd = _as_dict(pos)\n            symbol = _safe_str(pd.get("symbol") or sym)\n            if symbol:\n                out[symbol] = pd\n\n    elif isinstance(raw, list):\n        for pos in raw:\n            pd = _as_dict(pos)\n            symbol = _safe_str(pd.get("symbol"))\n            if symbol:\n                out[symbol] = pd\n\n    return out\n\ndef _order_symbol(order: Dict[str, Any]) -> str:\n    return _safe_str(order.get("symbol"))\n\ndef _order_side(order: Dict[str, Any]) -> str:\n    return _safe_str(order.get("side")).lower()\n\ndef _order_strategy(order: Dict[str, Any]) -> str:\n    return _safe_str(order.get("strategy") or order.get("reason") or "unknown")\n\ndef _order_price(order: Dict[str, Any], feature: Dict[str, Any]) -> float:\n    p = _safe_float(order.get("fill_price") or order.get("expected_price") or order.get("price"))\n    if p > 0:\n        return p\n    return _safe_float(feature.get("price"))\n\ndef _recent_losses(symbol: str, state: Dict[str, Any], minutes: float) -> int:\n    losses = state.get("losses", {}).get(symbol, [])\n    now = _now_ts()\n    cutoff = now - minutes * 60\n    fresh = [x for x in losses if _safe_float(x.get("ts")) >= cutoff]\n    state.setdefault("losses", {})[symbol] = fresh\n    return len(fresh)\n\ndef _record_loss(symbol: str, strategy: str, state: Dict[str, Any]) -> None:\n    if not symbol:\n        return\n    state.setdefault("losses", {}).setdefault(symbol, []).append({\n        "ts": _now_ts(),\n        "strategy": strategy,\n    })\n\ndef _record_buy(order: Dict[str, Any], feature: Dict[str, Any], state: Dict[str, Any]) -> None:\n    symbol = _order_symbol(order)\n    if not symbol:\n        return\n\n    price = _order_price(order, feature)\n    if price <= 0:\n        return\n\n    state.setdefault("positions", {})[symbol] = {\n        "entry_ts": _now_ts(),\n        "entry_price": price,\n        "highest_price": price,\n        "highest_pnl_pct": 0.0,\n        "strategy": _order_strategy(order),\n        "signal_strength": _safe_float(order.get("signal_strength") or feature.get("signal_strength")),\n    }\n\ndef _ensure_position_meta(symbol: str, pos: Dict[str, Any], price: float, state: Dict[str, Any]) -> Dict[str, Any]:\n    positions = state.setdefault("positions", {})\n    meta = positions.get(symbol)\n\n    entry = _safe_float(pos.get("avg_entry") or pos.get("entry_price") or pos.get("price") or price)\n\n    if not isinstance(meta, dict):\n        meta = {\n            "entry_ts": _now_ts(),\n            "entry_price": entry if entry > 0 else price,\n            "highest_price": price,\n            "highest_pnl_pct": 0.0,\n            "strategy": _safe_str(pos.get("strategy") or "recovered_position"),\n            "signal_strength": 0.0,\n        }\n        positions[symbol] = meta\n\n    if price > _safe_float(meta.get("highest_price")):\n        meta["highest_price"] = price\n\n    entry_price = _safe_float(meta.get("entry_price") or entry)\n    if entry_price > 0 and price > 0:\n        pnl_pct = (price - entry_price) / entry_price\n        meta["highest_pnl_pct"] = max(_safe_float(meta.get("highest_pnl_pct")), pnl_pct)\n\n    return meta\n\ndef _make_sell(symbol: str, qty: float, price: float, reason: str) -> Dict[str, Any]:\n    return {\n        "symbol": symbol,\n        "side": "sell",\n        "quantity": qty,\n        "expected_price": price,\n        "fill_price": price,\n        "slippage_bps": 0,\n        "strategy": reason,\n        "confidence": 1.0,\n    }\n\ndef _has_pending_sell(symbol: str, orders: List[Dict[str, Any]]) -> bool:\n    for o in orders:\n        if _order_symbol(o) == symbol and _order_side(o) == "sell":\n            return True\n    return False\n\ndef _filter_and_resize_orders(\n    orders: List[Dict[str, Any]],\n    ctx: Dict[str, Any],\n    state: Dict[str, Any],\n) -> List[Dict[str, Any]]:\n\n    if not orders:\n        return []\n\n    features = ctx.get("features") or ctx.get("feature_map") or {}\n\n    regime = _safe_str(ctx.get("regime") or ctx.get("market_regime") or "").upper()\n    if not regime:\n        portfolio = ctx.get("portfolio")\n        if isinstance(portfolio, dict):\n            regime = _safe_str(portfolio.get("regime")).upper()\n\n    filtered: List[Dict[str, Any]] = []\n\n    for order in orders:\n        if not isinstance(order, dict):\n            filtered.append(order)\n            continue\n\n        symbol = _order_symbol(order)\n        side = _order_side(order)\n        strategy = _order_strategy(order)\n        feature = _get_feature(features, symbol)\n        price = _order_price(order, feature)\n\n        if side == "sell":\n            if "stop_loss" in strategy:\n                _record_loss(symbol, strategy, state)\n            filtered.append(order)\n            continue\n\n        if side != "buy":\n            filtered.append(order)\n            continue\n\n        is_scout = strategy == "fallback_scout_breakout"\n\n        if not is_scout:\n            # --- UNIVERSAL SIZE CAP for ALL strategies (not just scouts) ---\n            qty_ns = _safe_float(order.get("quantity") or order.get("qty"))\n            if qty_ns > 0 and price > 0:\n                max_ns = _safe_float(\n                    CFG.get("max_entry_notional_sideways_usd", 1.50)\n                    if "SIDEWAYS" in regime\n                    else CFG.get("max_entry_notional_trend_usd", 2.50)\n                )\n                notional_ns = qty_ns * price\n                if max_ns > 0 and notional_ns > max_ns:\n                    new_qty_ns = max_ns / price\n                    order["quantity"] = new_qty_ns\n                    if "qty" in order:\n                        order["qty"] = new_qty_ns\n                    _log("RESIZE_ENTRY", symbol=symbol, old_notional=notional_ns, new_notional=max_ns, price=price, strategy=strategy)\n            _record_buy(order, feature, state)\n            filtered.append(order)\n            continue\n\n        symbol_regime = _safe_str(feature.get("symbol_regime")).upper()\n        signal = _safe_float(order.get("signal_strength") or feature.get("signal_strength"))\n        trend_quality = _safe_float(feature.get("trend_quality") or feature.get("symbol_trend_score"))\n        volatility = _safe_float(feature.get("volatility"))\n        one_tick = _safe_float(feature.get("one_tick_momentum"))\n\n        if price <= 0 or price < _safe_float(CFG["min_trade_price"]):\n            _log("BLOCK_ENTRY", symbol=symbol, reason="price_too_low", price=price, strategy=strategy)\n            continue\n\n        cooldown_losses = _recent_losses(symbol, state, _safe_float(CFG["cooldown_minutes"]))\n\n        if cooldown_losses >= int(CFG["symbol_cooldown_after_losses"]):\n            _log("BLOCK_ENTRY", symbol=symbol, reason="loss_cooldown", losses=cooldown_losses, strategy=strategy)\n            continue\n\n        if "SIDEWAYS" in regime:\n            if symbol_regime not in ("SYMBOL_BREAKOUT_UP", "SYMBOL_TREND_UP"):\n                _log("BLOCK_ENTRY", symbol=symbol, reason="not_clean_uptrend", symbol_regime=symbol_regime, strategy=strategy)\n                continue\n\n            if signal < _safe_float(CFG["min_scout_signal_sideways"]):\n                _log("BLOCK_ENTRY", symbol=symbol, reason="weak_signal", signal=signal, strategy=strategy)\n                continue\n\n            if trend_quality < _safe_float(CFG["min_scout_trend_quality"]):\n                _log("BLOCK_ENTRY", symbol=symbol, reason="weak_trend_quality", trend_quality=trend_quality, strategy=strategy)\n                continue\n\n            if volatility > _safe_float(CFG["max_scout_volatility_sideways"]):\n                _log("BLOCK_ENTRY", symbol=symbol, reason="extreme_volatility", volatility=volatility, strategy=strategy)\n                continue\n\n            if bool(CFG["require_positive_one_tick_for_scout"]) and one_tick <= 0:\n                _log("BLOCK_ENTRY", symbol=symbol, reason="one_tick_not_positive", one_tick=one_tick, strategy=strategy)\n                continue\n\n        qty = _safe_float(order.get("quantity") or order.get("qty"))\n\n        if qty > 0 and price > 0:\n            max_notional = _safe_float(\n                CFG["sideways_scout_notional_usd"]\n                if "SIDEWAYS" in regime\n                else CFG["trend_scout_notional_usd"]\n            )\n            notional = qty * price\n\n            if max_notional > 0 and notional > max_notional:\n                new_qty = max_notional / price\n                order["quantity"] = new_qty\n                if "qty" in order:\n                    order["qty"] = new_qty\n                _log(\n                    "RESIZE_ENTRY",\n                    symbol=symbol,\n                    old_notional=notional,\n                    new_notional=max_notional,\n                    price=price,\n                )\n\n        _record_buy(order, feature, state)\n        filtered.append(order)\n\n    return filtered\n\ndef _defensive_exit_orders(\n    existing_orders: List[Dict[str, Any]],\n    ctx: Dict[str, Any],\n    state: Dict[str, Any],\n) -> List[Dict[str, Any]]:\n\n    features = ctx.get("features") or ctx.get("feature_map") or {}\n    prices = ctx.get("prices") or ctx.get("market_prices") or ctx.get("tick") or ctx.get("market")\n\n    regime = _safe_str(ctx.get("regime") or ctx.get("market_regime") or "").upper()\n    if not regime:\n        portfolio = ctx.get("portfolio")\n        if isinstance(portfolio, dict):\n            regime = _safe_str(portfolio.get("regime")).upper()\n\n    positions = _get_positions(ctx)\n    exits: List[Dict[str, Any]] = []\n\n    for symbol, pos in positions.items():\n        if _has_pending_sell(symbol, existing_orders):\n            continue\n\n        feature = _get_feature(features, symbol)\n        price = _get_price(symbol, pos, feature, prices)\n        qty = _safe_float(pos.get("quantity") or pos.get("qty"))\n\n        if qty <= 0 or price <= 0:\n            continue\n\n        meta = _ensure_position_meta(symbol, pos, price, state)\n        entry = _safe_float(meta.get("entry_price"))\n\n        if entry <= 0:\n            continue\n\n        pnl_pct = (price - entry) / entry\n        high_pnl = _safe_float(meta.get("highest_pnl_pct"))\n        age_min = max(0.0, (_now_ts() - _safe_float(meta.get("entry_ts"), _now_ts())) / 60.0)\n        strategy = _safe_str(meta.get("strategy") or pos.get("strategy"))\n\n        if strategy == "fallback_scout_breakout" and pnl_pct <= _safe_float(CFG["fallback_stop_loss_pct"]):\n            exits.append(_make_sell(symbol, qty, price, "adaptive_stop_loss"))\n            _record_loss(symbol, "adaptive_stop_loss", state)\n            _log("EXIT", symbol=symbol, reason="tight_scout_stop", pnl_pct=pnl_pct, age_min=age_min)\n            continue\n\n        if high_pnl >= _safe_float(CFG["breakeven_arm_pct"]) and pnl_pct <= _safe_float(CFG["breakeven_exit_floor_pct"]):\n            exits.append(_make_sell(symbol, qty, price, "breakeven_protection_exit"))\n            _log("EXIT", symbol=symbol, reason="breakeven_protection", pnl_pct=pnl_pct, high_pnl=high_pnl, age_min=age_min)\n            continue\n\n        if high_pnl >= _safe_float(CFG["trailing_arm_pct"]) and (high_pnl - pnl_pct) >= _safe_float(CFG["trailing_giveback_pct"]):\n            exits.append(_make_sell(symbol, qty, price, "trailing_profit_exit"))\n            _log("EXIT", symbol=symbol, reason="trailing_profit", pnl_pct=pnl_pct, high_pnl=high_pnl, age_min=age_min)\n            continue\n\n        if "SIDEWAYS" in regime and age_min >= _safe_float(CFG["sideways_time_stop_minutes"]):\n            if _safe_float(CFG["sideways_time_stop_min_pnl"]) <= pnl_pct <= _safe_float(CFG["sideways_time_stop_max_pnl"]):\n                exits.append(_make_sell(symbol, qty, price, "time_stop_exit"))\n                _log("EXIT", symbol=symbol, reason="sideways_time_stop", pnl_pct=pnl_pct, age_min=age_min)\n                continue\n\n    return exits\n\ndef qfos_expectancy_cycle_guard(proposed_fills: Any, context: Dict[str, Any]) -> List[Dict[str, Any]]:\n    """\n    Defensive expectancy guard.\n\n    It does four things:\n    1. Filters weak fallback scout entries.\n    2. Reduces SIDEWAYS scout size.\n    3. Adds breakeven, trailing, tight-stop, and time-stop sell orders.\n    4. Keeps risk_off_exit logic untouched.\n    """\n\n    if not CFG.get("enabled", True):\n        return proposed_fills if isinstance(proposed_fills, list) else []\n\n    state = _read_state()\n\n    try:\n        orders = list(proposed_fills or [])\n    except Exception:\n        orders = []\n\n    try:\n        orders = _filter_and_resize_orders(orders, context, state)\n        exits = _defensive_exit_orders(orders, context, state)\n\n        if exits:\n            orders = exits + orders\n\n    except Exception as exc:\n        _log("ERROR", error=repr(exc))\n\n    _write_state(state)\n    return orders\n\nprint("QFOS expectancy patch helper loaded.")\n', _QFOS_EXPECTANCY_NS)
+00066: qfos_expectancy_cycle_guard = _QFOS_EXPECTANCY_NS["qfos_expectancy_cycle_guard"]
+00067: 
+00068: # QFOS_EXPECTANCY_EARLY_HOOK_START
+00069: def _qfos_expectancy_guard_with_cycle_log_inner(proposed_fills=None, context=None):
+
+--- around line 285 ---
+00281:         or ""
+00282:     ).upper()
+00283: 
+00284: 
+00285: def _qfos_guard_is_sideways(regime):
+00286:     return str(regime or "").upper() == "SIDEWAYS"
+00287: 
+00288: 
+00289: def _qfos_guard_overexposed(regime, exposure_pct):
+
+--- around line 290 ---
+00286:     return str(regime or "").upper() == "SIDEWAYS"
+00287: 
+00288: 
+00289: def _qfos_guard_overexposed(regime, exposure_pct):
+00290:     return _qfos_guard_is_sideways(regime) and _qfos_guard_float(exposure_pct) > QFOS_SIDEWAYS_HARD_EXPOSURE_PCT
+00291: 
+00292: 
+00293: def _qfos_guard_policy_class_from_features(symbol, result_f_by_symbol=None, features=None):
+00294:     """
+
+--- around line 625 ---
+00621: QFOS_SCOUT_CONFIDENCE = float(getattr(settings, "qfos_scout_confidence", 0.78))
+00622: QFOS_SCOUT_ALLOW_RISK_OFF = str(getattr(settings, "qfos_scout_allow_risk_off", "true")).lower() in ("1", "true", "yes", "on")
+00623: QFOS_SCOUT_MIN_PRICE = float(getattr(settings, "qfos_scout_min_price", 0.001))
+00624: QFOS_SCOUT_MAX_VOLATILITY = float(getattr(settings, "qfos_scout_max_volatility", 0.012))
+00625: QFOS_SCOUT_MIN_SIDEWAYS_SIGNAL = float(getattr(settings, "qfos_scout_min_sideways_signal", 0.0060))
+00626: QFOS_SCOUT_MIN_TREND_QUALITY = float(getattr(settings, "qfos_scout_min_trend_quality", 0.0030))
+00627: QFOS_SCOUT_RECENT_STOP_LOSS_HOURS = float(getattr(settings, "qfos_scout_recent_stop_loss_hours", 2))
+00628: 
+00629: LAST_MARKET_DATA_HEALTH = {
+
+--- around line 1012 ---
+01008: MAX_SYMBOL_EXPOSURE_PCT = float(settings.max_symbol_exposure_pct)
+01009: MAX_TRADES_PER_SYMBOL = int(settings.max_trades_per_symbol)
+01010: ENTRY_QUALITY_LOCKDOWN_ENABLED = True
+01011: ENTRY_QUALITY_TOP_N = int(getattr(settings, 'entry_quality_top_n', 2))
+01012: ENTRY_MIN_SIGNAL_SIDEWAYS = float(getattr(settings, 'entry_min_signal_sideways', 0.025))
+01013: ENTRY_MIN_SIGNAL_TRENDING = float(getattr(settings, 'entry_min_signal_trending', 0.018))
+01014: ENTRY_MAX_VOLATILITY = float(getattr(settings, 'entry_max_volatility', 0.008))
+01015: ENTRY_MIN_EXPECTED_MOVE_PCT = float(getattr(settings, 'entry_min_expected_move_pct', 0.012))
+01016: ENTRY_STOP_LOSS_QUARANTINE_HOURS = float(getattr(settings, 'entry_stop_loss_quarantine_hours', 4))
+
+--- around line 1022 ---
+01018: ENTRY_BLOCK_SIDEWAYS_IF_NO_TOP_CANDIDATE = True
+01019: SAME_SYMBOL_ENTRY_COOLDOWN_MINUTES = float(getattr(settings, 'same_symbol_entry_cooldown_minutes', 30))
+01020: SAME_SYMBOL_EXCEPTIONAL_COOLDOWN_MINUTES = float(getattr(settings, 'same_symbol_exceptional_cooldown_minutes', 10))
+01021: ENTRY_QUALITY_LOG_REJECTION_LIMIT = int(getattr(settings, 'entry_quality_log_rejection_limit', 12))
+01022: SIDEWAYS_ENTRY_MIN_GAP_MINUTES = float(getattr(settings, 'sideways_entry_min_gap_minutes', 15))
+01023: SIDEWAYS_RESERVE_FINAL_SLOT_UNTIL_MINUTE = int(getattr(settings, 'sideways_reserve_final_slot_until_minute', 35))
+01024: SIDEWAYS_EXCEPTIONAL_SIGNAL = float(getattr(settings, 'sideways_exceptional_signal', 0.045))
+01025: SIDEWAYS_EXCEPTIONAL_LADDER = [float(x.strip()) for x in str(getattr(settings, 'sideways_exceptional_ladder', '0.045,0.050,0.055,0.060,0.065,0.070')).split(',') if x.strip()]
+01026: SIDEWAYS_EXCEPTIONAL_BYPASS_HOURLY_CAP = str(getattr(settings, 'sideways_exceptional_bypass_hourly_cap', 'true')).lower() in ('1', 'true', 'yes', 'on')
+
+--- around line 1023 ---
+01019: SAME_SYMBOL_ENTRY_COOLDOWN_MINUTES = float(getattr(settings, 'same_symbol_entry_cooldown_minutes', 30))
+01020: SAME_SYMBOL_EXCEPTIONAL_COOLDOWN_MINUTES = float(getattr(settings, 'same_symbol_exceptional_cooldown_minutes', 10))
+01021: ENTRY_QUALITY_LOG_REJECTION_LIMIT = int(getattr(settings, 'entry_quality_log_rejection_limit', 12))
+01022: SIDEWAYS_ENTRY_MIN_GAP_MINUTES = float(getattr(settings, 'sideways_entry_min_gap_minutes', 15))
+01023: SIDEWAYS_RESERVE_FINAL_SLOT_UNTIL_MINUTE = int(getattr(settings, 'sideways_reserve_final_slot_until_minute', 35))
+01024: SIDEWAYS_EXCEPTIONAL_SIGNAL = float(getattr(settings, 'sideways_exceptional_signal', 0.045))
+01025: SIDEWAYS_EXCEPTIONAL_LADDER = [float(x.strip()) for x in str(getattr(settings, 'sideways_exceptional_ladder', '0.045,0.050,0.055,0.060,0.065,0.070')).split(',') if x.strip()]
+01026: SIDEWAYS_EXCEPTIONAL_BYPASS_HOURLY_CAP = str(getattr(settings, 'sideways_exceptional_bypass_hourly_cap', 'true')).lower() in ('1', 'true', 'yes', 'on')
+01027: SIDEWAYS_EXCEPTIONAL_BYPASS_PACING = str(getattr(settings, 'sideways_exceptional_bypass_pacing', 'true')).lower() in ('1', 'true', 'yes', 'on')
+
+--- around line 1024 ---
+01020: SAME_SYMBOL_EXCEPTIONAL_COOLDOWN_MINUTES = float(getattr(settings, 'same_symbol_exceptional_cooldown_minutes', 10))
+01021: ENTRY_QUALITY_LOG_REJECTION_LIMIT = int(getattr(settings, 'entry_quality_log_rejection_limit', 12))
+01022: SIDEWAYS_ENTRY_MIN_GAP_MINUTES = float(getattr(settings, 'sideways_entry_min_gap_minutes', 15))
+01023: SIDEWAYS_RESERVE_FINAL_SLOT_UNTIL_MINUTE = int(getattr(settings, 'sideways_reserve_final_slot_until_minute', 35))
+01024: SIDEWAYS_EXCEPTIONAL_SIGNAL = float(getattr(settings, 'sideways_exceptional_signal', 0.045))
+01025: SIDEWAYS_EXCEPTIONAL_LADDER = [float(x.strip()) for x in str(getattr(settings, 'sideways_exceptional_ladder', '0.045,0.050,0.055,0.060,0.065,0.070')).split(',') if x.strip()]
+01026: SIDEWAYS_EXCEPTIONAL_BYPASS_HOURLY_CAP = str(getattr(settings, 'sideways_exceptional_bypass_hourly_cap', 'true')).lower() in ('1', 'true', 'yes', 'on')
+01027: SIDEWAYS_EXCEPTIONAL_BYPASS_PACING = str(getattr(settings, 'sideways_exceptional_bypass_pacing', 'true')).lower() in ('1', 'true', 'yes', 'on')
+01028: ENTRY_REQUIRE_LONG_TREND = str(getattr(settings, 'entry_require_long_trend', 'true')).lower() in ('1', 'true', 'yes', 'on')
+
+--- around line 1025 ---
+01021: ENTRY_QUALITY_LOG_REJECTION_LIMIT = int(getattr(settings, 'entry_quality_log_rejection_limit', 12))
+01022: SIDEWAYS_ENTRY_MIN_GAP_MINUTES = float(getattr(settings, 'sideways_entry_min_gap_minutes', 15))
+01023: SIDEWAYS_RESERVE_FINAL_SLOT_UNTIL_MINUTE = int(getattr(settings, 'sideways_reserve_final_slot_until_minute', 35))
+01024: SIDEWAYS_EXCEPTIONAL_SIGNAL = float(getattr(settings, 'sideways_exceptional_signal', 0.045))
+01025: SIDEWAYS_EXCEPTIONAL_LADDER = [float(x.strip()) for x in str(getattr(settings, 'sideways_exceptional_ladder', '0.045,0.050,0.055,0.060,0.065,0.070')).split(',') if x.strip()]
+01026: SIDEWAYS_EXCEPTIONAL_BYPASS_HOURLY_CAP = str(getattr(settings, 'sideways_exceptional_bypass_hourly_cap', 'true')).lower() in ('1', 'true', 'yes', 'on')
+01027: SIDEWAYS_EXCEPTIONAL_BYPASS_PACING = str(getattr(settings, 'sideways_exceptional_bypass_pacing', 'true')).lower() in ('1', 'true', 'yes', 'on')
+01028: ENTRY_REQUIRE_LONG_TREND = str(getattr(settings, 'entry_require_long_trend', 'true')).lower() in ('1', 'true', 'yes', 'on')
+01029: EXCLUDED_ENTRY_SYMBOLS = {'USDC/USDT', 'USD1/USDT', 'EUR/USDT', 'GOLD(PAXG)/USDT', 'MOGU/USDT', 'SHIB/USDT', 'AIXDROP/USDT'}
+
+--- around line 1026 ---
+01022: SIDEWAYS_ENTRY_MIN_GAP_MINUTES = float(getattr(settings, 'sideways_entry_min_gap_minutes', 15))
+01023: SIDEWAYS_RESERVE_FINAL_SLOT_UNTIL_MINUTE = int(getattr(settings, 'sideways_reserve_final_slot_until_minute', 35))
+01024: SIDEWAYS_EXCEPTIONAL_SIGNAL = float(getattr(settings, 'sideways_exceptional_signal', 0.045))
+01025: SIDEWAYS_EXCEPTIONAL_LADDER = [float(x.strip()) for x in str(getattr(settings, 'sideways_exceptional_ladder', '0.045,0.050,0.055,0.060,0.065,0.070')).split(',') if x.strip()]
+01026: SIDEWAYS_EXCEPTIONAL_BYPASS_HOURLY_CAP = str(getattr(settings, 'sideways_exceptional_bypass_hourly_cap', 'true')).lower() in ('1', 'true', 'yes', 'on')
+01027: SIDEWAYS_EXCEPTIONAL_BYPASS_PACING = str(getattr(settings, 'sideways_exceptional_bypass_pacing', 'true')).lower() in ('1', 'true', 'yes', 'on')
+01028: ENTRY_REQUIRE_LONG_TREND = str(getattr(settings, 'entry_require_long_trend', 'true')).lower() in ('1', 'true', 'yes', 'on')
+01029: EXCLUDED_ENTRY_SYMBOLS = {'USDC/USDT', 'USD1/USDT', 'EUR/USDT', 'GOLD(PAXG)/USDT', 'MOGU/USDT', 'SHIB/USDT', 'AIXDROP/USDT'}
+01030: TRADE_COUNT_WINDOW_HOURS = float(getattr(settings, 'trade_count_window_hours', 4))
+
+--- around line 1027 ---
+01023: SIDEWAYS_RESERVE_FINAL_SLOT_UNTIL_MINUTE = int(getattr(settings, 'sideways_reserve_final_slot_until_minute', 35))
+01024: SIDEWAYS_EXCEPTIONAL_SIGNAL = float(getattr(settings, 'sideways_exceptional_signal', 0.045))
+01025: SIDEWAYS_EXCEPTIONAL_LADDER = [float(x.strip()) for x in str(getattr(settings, 'sideways_exceptional_ladder', '0.045,0.050,0.055,0.060,0.065,0.070')).split(',') if x.strip()]
+01026: SIDEWAYS_EXCEPTIONAL_BYPASS_HOURLY_CAP = str(getattr(settings, 'sideways_exceptional_bypass_hourly_cap', 'true')).lower() in ('1', 'true', 'yes', 'on')
+01027: SIDEWAYS_EXCEPTIONAL_BYPASS_PACING = str(getattr(settings, 'sideways_exceptional_bypass_pacing', 'true')).lower() in ('1', 'true', 'yes', 'on')
+01028: ENTRY_REQUIRE_LONG_TREND = str(getattr(settings, 'entry_require_long_trend', 'true')).lower() in ('1', 'true', 'yes', 'on')
+01029: EXCLUDED_ENTRY_SYMBOLS = {'USDC/USDT', 'USD1/USDT', 'EUR/USDT', 'GOLD(PAXG)/USDT', 'MOGU/USDT', 'SHIB/USDT', 'AIXDROP/USDT'}
+01030: TRADE_COUNT_WINDOW_HOURS = float(getattr(settings, 'trade_count_window_hours', 4))
+01031: STOP_LOSS_PCT = float(settings.stop_loss_pct)
+
+--- around line 1040 ---
+01036: TIME_STOP_MINUTES = float(getattr(settings, 'position_time_stop_minutes', 40))
+01037: TIME_STOP_EXIT_BELOW_PCT = float(getattr(settings, 'time_stop_exit_below_pct', 0.0015))
+01038: WIN_RATE_TRAIL_TRIGGER_PCT = float(getattr(settings, 'win_rate_trail_trigger_pct', 0.007))
+01039: WIN_RATE_TRAIL_GIVEBACK_PCT = float(getattr(settings, 'win_rate_trail_giveback_pct', 0.0035))
+01040: WIN_RATE_SIDEWAYS_FULL_TP_PCT = float(getattr(settings, 'win_rate_sideways_full_tp_pct', 0.0075))
+01041: WIN_RATE_MIN_HOLD_BEFORE_BREAKEVEN_MIN = float(getattr(settings, 'win_rate_min_hold_before_breakeven_min', 8))
+01042: 
+01043: TAKE_PROFIT_SELL_FRACTION = 1.0  # QFOS_FULL_PROFIT_MODE: close full position on take-profitngs.take_profit_sell_fraction)
+01044: DAILY_LOSS_LIMIT_PCT = float(settings.max_daily_loss)
+
+==========================================================================================
+MATCHES FOR: exposure_pct
+==========================================================================================
+Found 55 matches. Showing up to first 12.
+
+--- around line 289 ---
+00285: def _qfos_guard_is_sideways(regime):
+00286:     return str(regime or "").upper() == "SIDEWAYS"
+00287: 
+00288: 
+00289: def _qfos_guard_overexposed(regime, exposure_pct):
+00290:     return _qfos_guard_is_sideways(regime) and _qfos_guard_float(exposure_pct) > QFOS_SIDEWAYS_HARD_EXPOSURE_PCT
+00291: 
+00292: 
+00293: def _qfos_guard_policy_class_from_features(symbol, result_f_by_symbol=None, features=None):
+
+--- around line 290 ---
+00286:     return str(regime or "").upper() == "SIDEWAYS"
+00287: 
+00288: 
+00289: def _qfos_guard_overexposed(regime, exposure_pct):
+00290:     return _qfos_guard_is_sideways(regime) and _qfos_guard_float(exposure_pct) > QFOS_SIDEWAYS_HARD_EXPOSURE_PCT
+00291: 
+00292: 
+00293: def _qfos_guard_policy_class_from_features(symbol, result_f_by_symbol=None, features=None):
+00294:     """
+
+--- around line 365 ---
+00361: 
+00362:     return trade_class
+00363: 
+00364: 
+00365: def _qfos_guard_filter_new_buys(proposed_fills, regime, exposure_pct):
+00366:     """
+00367:     Final execution-stage veto.
+00368: 
+00369:     Allocator may still select candidates.
+
+--- around line 373 ---
+00369:     Allocator may still select candidates.
+00370:     Profit Engine guard refuses BUY execution when SIDEWAYS exposure is already > 4.5%.
+00371:     """
+00372:     try:
+00373:         if not _qfos_guard_overexposed(regime, exposure_pct):
+00374:             return proposed_fills
+00375: 
+00376:         before = len(proposed_fills or [])
+00377:         kept = []
+
+--- around line 393 ---
+00389: 
+00390:         if blocked:
+00391:             print(
+00392:                 f"[PROFIT_ENGINE_GUARD] ENTRY_BLOCKED "
+00393:                 f"regime={regime} exposure_pct={_qfos_guard_float(exposure_pct):.4f} "
+00394:                 f"limit={QFOS_SIDEWAYS_HARD_EXPOSURE_PCT:.4f} blocked={blocked}",
+00395:                 flush=True,
+00396:             )
+00397: 
+
+--- around line 456 ---
+00452: 
+00453:     return best
+00454: 
+00455: 
+00456: def _qfos_guard_log_watchdog(regime, exposure_pct, symbol=None, action="HOLD", reason=""):
+00457:     print(
+00458:         f"[PROFIT_ENGINE_GUARD] WATCHDOG action={action} "
+00459:         f"regime={regime} exposure_pct={_qfos_guard_float(exposure_pct):.4f} "
+00460:         f"symbol={symbol} reason={reason}",
+
+--- around line 459 ---
+00455: 
+00456: def _qfos_guard_log_watchdog(regime, exposure_pct, symbol=None, action="HOLD", reason=""):
+00457:     print(
+00458:         f"[PROFIT_ENGINE_GUARD] WATCHDOG action={action} "
+00459:         f"regime={regime} exposure_pct={_qfos_guard_float(exposure_pct):.4f} "
+00460:         f"symbol={symbol} reason={reason}",
+00461:         flush=True,
+00462:     )
+00463: 
+
+--- around line 619 ---
+00615: 
+00616: QFOS_SCOUT_FALLBACK_ENABLED = True
+00617: QFOS_SCOUT_MAX_VALUE_USD = float(getattr(settings, "qfos_scout_max_value_usd", 2.00))
+00618: QFOS_SCOUT_MIN_VALUE_USD = float(getattr(settings, "qfos_scout_min_value_usd", 1.00))
+00619: QFOS_SCOUT_MAX_EXPOSURE_PCT = float(getattr(settings, "qfos_scout_max_exposure_pct", 0.08))
+00620: QFOS_SCOUT_MIN_SIGNAL = float(getattr(settings, "qfos_scout_min_signal", 0.0010))
+00621: QFOS_SCOUT_CONFIDENCE = float(getattr(settings, "qfos_scout_confidence", 0.78))
+00622: QFOS_SCOUT_ALLOW_RISK_OFF = str(getattr(settings, "qfos_scout_allow_risk_off", "true")).lower() in ("1", "true", "yes", "on")
+00623: QFOS_SCOUT_MIN_PRICE = float(getattr(settings, "qfos_scout_min_price", 0.001))
+
+--- around line 698 ---
+00694:         return eq if eq > 0 else _qfos_cash()
+00695:     except Exception:
+00696:         return _qfos_cash()
+00697: 
+00698: def _qfos_exposure_pct(prices):
+00699:     try:
+00700:         equity = _qfos_equity_from_prices(prices or {})
+00701:         if equity <= 0:
+00702:             return 0.0
+
+--- around line 943 ---
+00939:         if r == "RISK_OFF" and not QFOS_SCOUT_ALLOW_RISK_OFF:
+00940:             print("[SCOUT_FALLBACK] skipped: risk_off entries disabled")
+00941:             return None
+00942: 
+00943:         exposure_pct = _qfos_exposure_pct(prices or {})
+00944:         if exposure_pct >= QFOS_SCOUT_MAX_EXPOSURE_PCT:
+00945:             print(f"[SCOUT_FALLBACK] skipped: exposure cap reached {exposure_pct:.4f}")
+00946:             return None
+00947: 
+
+--- around line 944 ---
+00940:             print("[SCOUT_FALLBACK] skipped: risk_off entries disabled")
+00941:             return None
+00942: 
+00943:         exposure_pct = _qfos_exposure_pct(prices or {})
+00944:         if exposure_pct >= QFOS_SCOUT_MAX_EXPOSURE_PCT:
+00945:             print(f"[SCOUT_FALLBACK] skipped: exposure cap reached {exposure_pct:.4f}")
+00946:             return None
+00947: 
+00948:         candidate = qfos_select_scout_candidate(feature_map or {}, prices or {}, regime=regime)
+
+--- around line 945 ---
+00941:             return None
+00942: 
+00943:         exposure_pct = _qfos_exposure_pct(prices or {})
+00944:         if exposure_pct >= QFOS_SCOUT_MAX_EXPOSURE_PCT:
+00945:             print(f"[SCOUT_FALLBACK] skipped: exposure cap reached {exposure_pct:.4f}")
+00946:             return None
+00947: 
+00948:         candidate = qfos_select_scout_candidate(feature_map or {}, prices or {}, regime=regime)
+00949:         if not candidate:
+
+==========================================================================================
+FUNCTIONS / CLASSES CONTAINING PROFIT, POLICY, EXECUTION, ALLOCATOR, WATCHDOG
+==========================================================================================
+00293: def _qfos_guard_policy_class_from_features(symbol, result_f_by_symbol=None, features=None):
+00346: def _qfos_guard_downgrade_trade_class(symbol, trade_class, current_policy):
+00409: def _qfos_guard_choose_weakest_from_profit_rows(rows):
+00456: def _qfos_guard_log_watchdog(regime, exposure_pct, symbol=None, action="HOLD", reason=""):
+00566: def allow_risk_off_exit(position, global_state=None, portfolio=None, reason=""):
+01309: def _strong_symbol_trend_for_risk_off(fill_or_feature: dict) -> bool:
+01466: def apply_buy(fill):
+01485: def apply_sell(symbol, qty, price, reason):
+01511: def apply_shadow_buy(fill):
+01525: def apply_shadow_sell(symbol, qty, price, reason):
+01654: def _qfos_take_profit_target(regime):
+02134: def entry_policy_allows(symbol: str, regime: str, confidence: float, entries_this_cycle: int, strategy: str=None):
+03714: def _qfos_watchdog_db_path():
+03724: def _qfos_watchdog_now_local():
+03728: def _qfos_watchdog_float(value, default=0.0):
+03736: def _qfos_watchdog_ensure_tables(cur):
+03754: def _qfos_watchdog_latest_equity_and_regime(cur):
+03771: def _qfos_watchdog_basket_cap_pct(regime):
+03779: def _qfos_watchdog_close_worst_loser_once():
+03916: def _qfos_watchdog_loop():
+03926: def _qfos_start_emergency_basket_watchdog():
+04701: def _qfos_start_active_position_watchdog():
+05297: def _qfos_start_profit_engine():
+06692: def _qfos_allocator_opportunity_rescue(result, local_vars=None):

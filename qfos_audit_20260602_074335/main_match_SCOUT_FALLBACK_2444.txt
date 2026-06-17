@@ -1,0 +1,34 @@
+02436:                     prices=prices,
+02437:                     regime=regime,
+02438:                     equity=equity,
+02439:                     cash=portfolio.cash,
+02440:                 )
+02441:                 if scout_order:
+02442:                     result['orders'] = [scout_order]
+02443:                     entry_quality_rejections = []
+02444:                     print('[SCOUT_FALLBACK] injected into proposed_fills:', scout_order)
+02445: 
+02446:             print('FEATURES:', {k: v for k, v in state['features'].items() if isinstance(v, dict) and v.get('ready')})
+02447:             print('ORDERS:', result.get('orders', []))
+02448:             proposed_fills = result.get('orders', [])
+02449:             # QFOS_EXPECTANCY_SAFE_APPLY
+02450:             try:
+02451:                 proposed_fills = qfos_expectancy_guard_with_cycle_log(locals().get('proposed_fills', []), locals())
+02452:             except Exception as _qfos_expectancy_error:
+02453:                 print('[EXPECTANCY_PATCH] guard failed safely: ' + repr(_qfos_expectancy_error))
+02454:                 proposed_fills = locals().get('proposed_fills', []) or []
+02455: 
+02456:             applied_fills = []
+02457:             rejected = []
+02458:             try:
+02459:                 if entry_quality_rejections:
+02460:                     rejected.extend(entry_quality_rejections)
+02461:             except NameError:
+02462:                 pass
+02463:             entries_this_cycle = 0
+02464:             paused = is_paused()
+02465:             if globals().get('last_seen_paused_state') is True and paused is False:
+02466:                 reset_liquidity_errors()
+02467:             globals()['last_seen_paused_state'] = paused
+02468:             if not paused and pause_reason():
+02469:                 reset_liquidity_errors()

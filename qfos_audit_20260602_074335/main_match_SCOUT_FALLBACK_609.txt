@@ -1,0 +1,34 @@
+00601:                 continue
+00602: 
+00603:             if not _qfos_feature_clean_uptrend(feature, regime=regime):
+00604:                 continue
+00605: 
+00606:             score = _qfos_scout_score(feature)
+00607:             candidates.append((score, symbol, price, feature))
+00608:         except Exception as e:
+00609:             print(f"[SCOUT_FALLBACK] candidate error {symbol}: {e}")
+00610:             continue
+00611: 
+00612:     candidates.sort(key=lambda x: x[0], reverse=True)
+00613:     return candidates[0] if candidates else None
+00614: 
+00615: def qfos_build_scout_fallback_order(feature_map, prices, regime, equity, cash):
+00616:     """
+00617:     Return one properly-shaped buy fill dict, or None.
+00618:     This function does NOT mutate the portfolio and does NOT call apply_buy.
+00619:     """
+00620:     try:
+00621:         if not QFOS_SCOUT_FALLBACK_ENABLED:
+00622:             return None
+00623:         if not qfos_market_data_sane_for_entries(prices):
+00624:             return None
+00625: 
+00626:         r = str(regime or "").upper()
+00627:         if r in {"RISK_OFF_HARD", "BLOCKED"}:
+00628:             print("[SCOUT_FALLBACK] skipped: hard risk regime")
+00629:             return None
+00630:         if r == "RISK_OFF" and not QFOS_SCOUT_ALLOW_RISK_OFF:
+00631:             print("[SCOUT_FALLBACK] skipped: risk_off entries disabled")
+00632:             return None
+00633: 
+00634:         exposure_pct = _qfos_exposure_pct(prices or {})

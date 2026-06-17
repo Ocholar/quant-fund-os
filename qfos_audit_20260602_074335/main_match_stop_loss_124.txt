@@ -1,0 +1,34 @@
+00116:         except Exception:
+00117:             pass
+00118:         return _after_orders
+00119: 
+00120:     _after = len(_after_orders)
+00121: 
+00122:     _exit_reasons = {
+00123:         "adaptive_stop_loss",
+00124:         "stop_loss",
+00125:         "stop_loss_exit",
+00126:         "adaptive_take_profit",
+00127:         "take_profit",
+00128:         "trailing_profit_exit",
+00129:         "breakeven_protection_exit",
+00130:         "time_stop_exit",
+00131:         "risk_off_exit",
+00132:         "emergency_exposure_reduction",
+00133:     }
+00134: 
+00135:     _exits = 0
+00136:     for _o in _after_orders:
+00137:         if isinstance(_o, dict):
+00138:             _side = str(_o.get("side", "")).lower()
+00139:             _strategy = str(_o.get("strategy") or _o.get("reason") or "").lower()
+00140:             if _side == "sell" or _strategy in _exit_reasons or _strategy.endswith("_exit"):
+00141:                 _exits += 1
+00142: 
+00143:     _line = f"[EXPECTANCY_PATCH] before={_before} after={_after} exits={_exits}"
+00144:     print(_line)
+00145: 
+00146:     try:
+00147:         with _decision_log.open("a", encoding="utf-8") as _f:
+00148:             _f.write(_json.dumps({
+00149:                 "ts": _dt.now(_tz.utc).isoformat(),

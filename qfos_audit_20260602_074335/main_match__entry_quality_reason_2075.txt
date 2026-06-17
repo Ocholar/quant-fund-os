@@ -1,0 +1,34 @@
+02067:     try:
+02068:         with engine.begin() as conn:
+02069:             row = conn.execute(text("\n                SELECT COUNT(*) AS count\n                FROM trades\n                WHERE symbol = :symbol\n                  AND (\n                        strategy IN ('stop_loss', 'adaptive_stop_loss')\n                     OR side = 'sell' AND strategy LIKE '%stop_loss%'\n                  )\n                  AND created_at >= datetime('now', '+3 hours', '-' || :hours || ' hours')\n            "), {'symbol': symbol, 'hours': ENTRY_STOP_LOSS_QUARANTINE_HOURS}).mappings().first()
+02070:         return int(row['count'] or 0) > 0
+02071:     except Exception as e:
+02072:         print(f'ENTRY QUALITY quarantine check error for {symbol}: {e}')
+02073:         return False
+02074: 
+02075: def _entry_quality_reason(symbol, data, regime):
+02076:     """
+02077:     Returns None if allowed by quality gate, otherwise a rejection reason.
+02078:     """
+02079:     if symbol in EXCLUDED_ENTRY_SYMBOLS:
+02080:         return 'excluded_quote_or_stable_symbol'
+02081:     if not isinstance(data, dict) or not data.get('ready'):
+02082:         return 'feature_not_ready'
+02083:     if not _is_normal_feature(data):
+02084:         return 'raw_momentum_fallback_disabled'
+02085:     if _recent_stop_loss_blocked(symbol):
+02086:         return f'recent_stop_loss_quarantine_{ENTRY_STOP_LOSS_QUARANTINE_HOURS:g}h'
+02087:     signal_strength = _feature_value(data, 'signal_strength')
+02088:     min_signal = _entry_signal_threshold(regime)
+02089:     if signal_strength < min_signal:
+02090:         return f'signal_too_weak_{signal_strength:.4f}_lt_{min_signal:.4f}'
+02091:     if ENTRY_REQUIRE_LONG_TREND:
+02092:         long_trend = _feature_value(data, 'long_trend')
+02093:         if long_trend <= 0:
+02094:             return f'long_trend_not_positive_{long_trend:.4f}'
+02095:     if not _bullish_triple_agreement(data):
+02096:         trend = _feature_value(data, 'trend')
+02097:         momentum = _feature_value(data, 'momentum')
+02098:         one_tick = _feature_value(data, 'one_tick_momentum')
+02099:         return f'triple_agreement_failed_t={trend:.4f}_m={momentum:.4f}_ot={one_tick:.4f}'
+02100:     volatility = abs(_feature_value(data, 'volatility'))

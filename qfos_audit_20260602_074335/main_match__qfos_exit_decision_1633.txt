@@ -1,0 +1,34 @@
+01625:         except Exception:
+01626:             continue
+01627: 
+01628:         # Use separate shadow peak key to avoid mixing real and shadow state.
+01629:         shadow_peak_key = f"SHADOW::{symbol}"
+01630:         peak_change = _qfos_record_peak_change(shadow_peak_key, change)
+01631:         age_minutes = _qfos_position_age_minutes(symbol)
+01632: 
+01633:         reason = _qfos_exit_decision(symbol, change, peak_change, age_minutes, regime)
+01634: 
+01635:         if reason:
+01636:             sell = normalize_exit_order(apply_shadow_sell(symbol, qty, price, reason))
+01637:             if sell:
+01638:                 print(
+01639:                     f"[WIN_RATE_EXIT][SHADOW] {reason} {symbol} "
+01640:                     f"change={change:.4f} peak={peak_change:.4f} age_min={age_minutes:.1f}"
+01641:                 )
+01642:                 sells.append(sell)
+01643:             continue
+01644: 
+01645:         if regime == 'RISK_OFF':
+01646:             risk_position = {
+01647:                 'symbol': symbol,
+01648:                 'quantity': qty,
+01649:                 'entry_price': avg_entry,
+01650:                 'mark_price': price,
+01651:                 'price': price,
+01652:                 'side': 'long',
+01653:             }
+01654:             if allow_risk_off_exit(risk_position, {'regime': regime}, portfolio, reason='risk_off_exit'):
+01655:                 sell = normalize_exit_order(apply_shadow_sell(symbol, qty, price, 'risk_off_exit'))
+01656:                 if sell:
+01657:                     sells.append(sell)
+01658:             else:

@@ -1,0 +1,34 @@
+02372:             continue
+02373:         if strategy == 'raw_momentum_fallback':
+02374:             rejected.append({'symbol': symbol, 'reason': 'entry_quality_raw_momentum_fallback_disabled'})
+02375:             continue
+02376:         if symbol not in top_symbols:
+02377:             rejected.append({'symbol': symbol, 'reason': f'entry_quality_not_top_{ENTRY_QUALITY_TOP_N}'})
+02378:             continue
+02379:         data = feature_map.get(symbol, {})
+02380:         reason = _entry_quality_reason(symbol, data, regime)
+02381:         if reason:
+02382:             rejected.append({'symbol': symbol, 'reason': f'entry_quality_{reason}'})
+02383:             continue
+02384:         filtered.append(order)
+02385:     if rejected:
+02386:         print('ENTRY QUALITY REJECTED:', rejected[:ENTRY_QUALITY_LOG_REJECTION_LIMIT])
+02387:     return (filtered, rejected)
+02388: 
+02389: def main():
+02390:     positions = globals().get('positions', [])
+02391:     load_state_from_db()
+02392:     while True:
+02393:         try:
+02394:             tick = market.tick()
+02395:             raw_prices = tick['prices']
+02396:             print('MARKET TICK DATA RAW:', raw_prices)
+02397:             prices = validate_market_prices(raw_prices)
+02398:             print('MARKET TICK DATA VALIDATED:', prices)
+02399:             if not prices:
+02400:                 print('MARKET DATA BLOCK: no_valid_prices_this_cycle')
+02401:                 time.sleep(settings.trade_interval_seconds)
+02402:                 continue
+02403:             remember_prices(prices)
+02404:             refresh_recent_trade_counts()
+02405:             features.update(prices)

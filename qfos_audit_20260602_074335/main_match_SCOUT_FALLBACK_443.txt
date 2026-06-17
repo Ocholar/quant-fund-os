@@ -1,0 +1,34 @@
+00435:                          OR strategy LIKE '%stop_loss%'
+00436:                       )
+00437:                       AND created_at >= DATETIME('now', '+3 hours', '-' || :hours || ' hours')
+00438:                 """),
+00439:                 {"symbol": symbol, "hours": QFOS_SCOUT_RECENT_STOP_LOSS_HOURS},
+00440:             ).mappings().first()
+00441:         return int(row["count"] or 0) > 0 if row else False
+00442:     except Exception as e:
+00443:         print(f"[SCOUT_FALLBACK] recent SL check error {symbol}: {e}")
+00444:         return True
+00445: 
+00446: 
+00447: def _qfos_recent_scout_stop_loss_count(hours=1.5):
+00448:     try:
+00449:         with engine.begin() as conn:
+00450:             row = conn.execute(
+00451:                 text("""
+00452:                     SELECT COUNT(*) AS count
+00453:                     FROM trades
+00454:                     WHERE side = 'sell'
+00455:                       AND (
+00456:                             strategy IN ('stop_loss', 'adaptive_stop_loss')
+00457:                          OR strategy LIKE '%stop_loss%'
+00458:                       )
+00459:                       AND created_at >= DATETIME('now', '+3 hours', '-' || :hours || ' hours')
+00460:                 """),
+00461:                 {"hours": hours},
+00462:             ).mappings().first()
+00463:         return int(row["count"] or 0) if row else 0
+00464:     except Exception as e:
+00465:         print(f"[SCOUT_FALLBACK] recent global SL check error: {e}")
+00466:         return 99
+00467: 
+00468: def _qfos_scout_global_cooldown_active():

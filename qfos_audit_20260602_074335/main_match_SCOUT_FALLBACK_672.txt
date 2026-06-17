@@ -1,0 +1,34 @@
+00664:             "fill_price": price,
+00665:             "slippage_bps": 0,
+00666:             "strategy": "fallback_scout_breakout",
+00667:             "confidence": confidence,
+00668:             "signal_strength": signal,
+00669:             "feature": feature,
+00670:         }
+00671:         print(
+00672:             f"[SCOUT_FALLBACK] SELECTED {symbol} qty={qty:.8f} "
+00673:             f"value=${value:.2f} price={price} score={score:.4f} "
+00674:             f"regime={feature.get('symbol_regime')} signal={signal:.5f}"
+00675:         )
+00676:         return order
+00677:     except Exception as e:
+00678:         print(f"[SCOUT_FALLBACK] error: {e}")
+00679:         return None
+00680: 
+00681: 
+00682: EXIT_REASON_STRATEGIES = {'stop_loss', 'stop_loss_exit', 'adaptive_stop_loss', 'take_profit', 'adaptive_take_profit', 'risk_off_exit', 'emergency_exposure_reduction', 'breakeven_protection_exit', 'time_stop_exit', 'trailing_profit_exit'}
+00683: 
+00684: def normalize_exit_order(order):
+00685:     if not isinstance(order, dict):
+00686:         return order
+00687:     side = str(order.get('side') or '').lower()
+00688:     strategy = str(order.get('strategy') or '').strip()
+00689:     if side == 'sell' and strategy.lower() in EXIT_REASON_STRATEGIES:
+00690:         order.setdefault('exit_reason', strategy.lower())
+00691:         order.setdefault('raw_strategy', strategy)
+00692:         order.setdefault('display_strategy', strategy.lower())
+00693:     else:
+00694:         order.setdefault('entry_strategy', strategy)
+00695:         order.setdefault('display_strategy', strategy)
+00696:     return order
+00697: INITIAL_EQUITY = float(settings.starting_equity)

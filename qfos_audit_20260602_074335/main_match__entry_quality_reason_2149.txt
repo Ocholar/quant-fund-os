@@ -1,0 +1,34 @@
+02141:     Build the eligible top-N execution list from normal FeatureStore features.
+02142:     Candidates are ranked by composite quality score, not raw signal alone.
+02143:     """
+02144:     eligible = []
+02145:     rejected_preview = []
+02146:     if not isinstance(feature_map, dict):
+02147:         return (set(), [], [])
+02148:     for symbol, data in feature_map.items():
+02149:         reason = _entry_quality_reason(symbol, data, regime)
+02150:         if reason:
+02151:             rejected_preview.append({'symbol': symbol, 'reason': f'entry_quality_{reason}'})
+02152:             continue
+02153:         quality_score = _compute_quality_score(data)
+02154:         signal = _feature_value(data, 'signal_strength')
+02155:         eligible.append((symbol, quality_score, signal))
+02156:     # Sort by composite quality score descending; signal breaks ties.
+02157:     eligible.sort(key=lambda x: (x[1], x[2]), reverse=True)
+02158:     top = eligible[:ENTRY_QUALITY_TOP_N]
+02159:     top_symbols = {s for s, _, _ in top}
+02160:     print(f'[QUALITY_RANK] top-{len(top)}: ' + ', '.join(
+02161:         f'{s}(qs={qs:.4f},sig={sig:.4f})' for s, qs, sig in top[:5]
+02162:     ))
+02163:     return (top_symbols, top, rejected_preview)
+02164: 
+02165: def _sideways_exceptional_level(signal_strength):
+02166:     """
+02167:     Returns 0 for non-exceptional.
+02168:     Returns 1..N for ladder level.
+02169:     """
+02170:     try:
+02171:         s = float(signal_strength or 0.0)
+02172:     except Exception:
+02173:         s = 0.0
+02174:     level = 0

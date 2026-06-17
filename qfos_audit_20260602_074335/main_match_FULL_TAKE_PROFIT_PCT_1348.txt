@@ -1,0 +1,34 @@
+01340:         position_peak_change[symbol] = peak
+01341:         return peak
+01342:     except Exception:
+01343:         return float(change or 0.0)
+01344: 
+01345: def _qfos_take_profit_target(regime):
+01346:     try:
+01347:         if str(regime or "").upper() == "SIDEWAYS":
+01348:             return min(float(FULL_TAKE_PROFIT_PCT), float(WIN_RATE_SIDEWAYS_FULL_TP_PCT))
+01349:         return float(FULL_TAKE_PROFIT_PCT)
+01350:     except Exception:
+01351:         return 0.008
+01352: 
+01353: 
+01354: def _qfos_float(value, default=0.0):
+01355:     try:
+01356:         if value is None:
+01357:             return default
+01358:         return float(value)
+01359:     except Exception:
+01360:         return default
+01361: 
+01362: 
+01363: def _qfos_get(obj, key, default=None):
+01364:     try:
+01365:         if isinstance(obj, dict):
+01366:             return obj.get(key, default)
+01367:         return getattr(obj, key, default)
+01368:     except Exception:
+01369:         return default
+01370: 
+01371: 
+01372: def _qfos_current_equity(portfolio=None, default=100.0):
+01373:     """

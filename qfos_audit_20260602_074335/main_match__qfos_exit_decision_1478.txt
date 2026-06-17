@@ -1,0 +1,34 @@
+01470:             return reason
+01471: 
+01472:         return None
+01473:     except Exception as exc:
+01474:         print(f"[OUTLIER_LOSS_CAP] guard_error={exc}", flush=True)
+01475:         return None
+01476: 
+01477: 
+01478: def _qfos_exit_decision(symbol, change, peak_change, age_minutes, regime):
+01479: 
+01480:     # QFOS OUTLIER LOSS CAP:
+01481:     # Equity-scaled per-trade loss guard.
+01482:     # This runs before normal adaptive stop-loss/take-profit logic.
+01483:     try:
+01484:         _qfos_mark_price = locals().get("mark_price", None)
+01485:         if _qfos_mark_price is None:
+01486:             _qfos_mark_price = locals().get("price", None)
+01487:         if _qfos_mark_price is None:
+01488:             _qfos_mark_price = locals().get("current_price", None)
+01489: 
+01490:         _qfos_position = locals().get("position", None)
+01491:         if _qfos_position is None:
+01492:             _qfos_position = locals().get("pos", None)
+01493: 
+01494:         _qfos_regime = locals().get("regime", globals().get("regime", "SIDEWAYS"))
+01495:         _qfos_portfolio = locals().get("portfolio", globals().get("portfolio", None))
+01496: 
+01497:         if _qfos_position is not None and _qfos_mark_price is not None:
+01498:             _qfos_outlier_reason = _qfos_outlier_loss_exit_reason(
+01499:                 _qfos_position,
+01500:                 _qfos_mark_price,
+01501:                 _qfos_regime,
+01502:                 portfolio=_qfos_portfolio,
+01503:             )
