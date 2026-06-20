@@ -1,0 +1,942 @@
+﻿{
+    "name":  "Quant Fund OS",
+    "mode":  "paper",
+    "live_trading":  false,
+    "exchange":  "mexc",
+    "exchange_type":  "spot",
+    "leverage":  1,
+    "risk_status":  "SAFE",
+    "portfolio":  {
+                      "equity":  99.97,
+                      "cash":  99.97,
+                      "exposure":  0.0,
+                      "exposure_pct":  0.0,
+                      "drawdown":  -0.0003,
+                      "regime":  "SIDEWAYS",
+                      "realized_pnl":  -0.0279,
+                      "unrealized_pnl":  0.0,
+                      "total_pnl":  -0.0279,
+                      "updated_at":  "2026-06-20T08:04:24.124045",
+                      "snapshot_exposure":  0.0,
+                      "exposure_source":  "no_open_positions",
+                      "equity_source":  "cash_plus_exposure",
+                      "equity_minus_cash_exposure":  0.0
+                  },
+    "positions":  [
+
+                  ],
+    "performance":  {
+                        "total_trades":  260,
+                        "buy_count":  130,
+                        "sell_count":  130,
+                        "win_rate":  0.2,
+                        "win_rate_estimate":  0.2,
+                        "realized_pnl":  -0.0279,
+                        "unrealized_pnl":  0.0,
+                        "total_pnl":  -0.0279,
+                        "take_profit_count":  70,
+                        "stop_loss_count":  5,
+                        "closed_outcome_count":  130,
+                        "other_exit_count":  55,
+                        "metrics_available":  true,
+                        "metrics_basis":  "chronological_weighted_average_fill_prices_excluding_unrecorded_fees",
+                        "metrics_error":  null,
+                        "winning_closed_fills":  26,
+                        "losing_closed_fills":  69,
+                        "breakeven_closed_fills":  35,
+                        "unmatched_sell_fills":  6,
+                        "fill_derived_closed_pnl":  -0.02786941,
+                        "gross_fill_price_realized_pnl":  -0.02786941,
+                        "ledger_realized_pnl":  -0.0279,
+                        "metrics_reconciliation_delta":  3.059E-05,
+                        "metrics_reconciliation_tolerance":  0.01,
+                        "metrics_reconciliation_gate":  "PASS",
+                        "trade_pnl_field_ignored":  true,
+                        "trade_pnl_field_note":  "Persisted trades.pnl is excluded from headline metrics because it does not consistently match BUY/SELL fill economics.",
+                        "raw_fill_metrics_available":  true,
+                        "raw_fill_metrics_basis":  "chronological_weighted_average_buy_sell_fill_prices_excluding_unrecorded_fees",
+                        "raw_fill_metrics_error":  null,
+                        "raw_fill_closed_outcome_count":  130,
+                        "raw_fill_winning_closed_fills":  26,
+                        "raw_fill_losing_closed_fills":  69,
+                        "raw_fill_breakeven_closed_fills":  35,
+                        "raw_fill_unmatched_sell_fills":  6,
+                        "raw_fill_unmatched_sell_quantity":  4.5E-06,
+                        "raw_fill_open_inventory_symbols":  10,
+                        "raw_fill_realized_pnl":  -0.02786941,
+                        "raw_fill_win_rate":  0.2,
+                        "dust_notional_limit":  0.01,
+                        "unmatched_sell_notional":  4.43503E-07,
+                        "unmatched_sell_dust_count":  6,
+                        "unmatched_sell_non_dust_count":  0,
+                        "unmatched_sell_non_dust_notional":  0,
+                        "residual_inventory_count":  10,
+                        "residual_inventory_notional":  4.997062E-06,
+                        "residual_inventory_dust_count":  10,
+                        "residual_inventory_non_dust_count":  0,
+                        "residual_inventory_non_dust_notional":  0
+                    },
+    "trading":  {
+                    "total_trades":  260,
+                    "buy_count":  130,
+                    "sell_count":  130,
+                    "latest_trades":  [
+                                          {
+                                              "time":  "2026-06-20T07:59:40",
+                                              "created_at":  "2026-06-20T07:59:40",
+                                              "symbol":  "BDX/USDT",
+                                              "side":  "sell",
+                                              "quantity":  18.175322,
+                                              "fill_price":  0.08215,
+                                              "strategy":  "sideways_stop_loss_exit",
+                                              "confidence":  1.0,
+                                              "live":  false,
+                                              "raw_strategy":  "sideways_stop_loss_exit",
+                                              "is_exit":  true,
+                                              "exit_reason":  "sideways_stop_loss_exit",
+                                              "entry_strategy":  null,
+                                              "display_strategy":  "sideways_stop_loss_exit"
+                                          },
+                                          {
+                                              "time":  "2026-06-20T07:54:46",
+                                              "created_at":  "2026-06-20T07:54:46",
+                                              "symbol":  "BDX/USDT",
+                                              "side":  "buy",
+                                              "quantity":  18.175322,
+                                              "fill_price":  0.08252948,
+                                              "strategy":  "evo_6376",
+                                              "confidence":  0.9,
+                                              "live":  false,
+                                              "raw_strategy":  "evo_6376",
+                                              "is_exit":  false,
+                                              "exit_reason":  null,
+                                              "entry_strategy":  "evo_6376",
+                                              "display_strategy":  "evo_6376"
+                                          },
+                                          {
+                                              "time":  "2026-06-19T15:22:30",
+                                              "created_at":  "2026-06-19T15:22:30",
+                                              "symbol":  "GUA/USDT",
+                                              "side":  "sell",
+                                              "quantity":  2.0800033,
+                                              "fill_price":  0.96077,
+                                              "strategy":  "sideways_take_profit_exit",
+                                              "confidence":  1.0,
+                                              "live":  false,
+                                              "raw_strategy":  "sideways_take_profit_exit",
+                                              "is_exit":  true,
+                                              "exit_reason":  "sideways_take_profit_exit",
+                                              "entry_strategy":  null,
+                                              "display_strategy":  "sideways_take_profit_exit"
+                                          },
+                                          {
+                                              "time":  "2026-06-19T15:22:21",
+                                              "created_at":  "2026-06-19T15:22:21",
+                                              "symbol":  "GUA/USDT",
+                                              "side":  "buy",
+                                              "quantity":  2.0800033,
+                                              "fill_price":  0.96134645,
+                                              "strategy":  "evo_2304",
+                                              "confidence":  0.9,
+                                              "live":  false,
+                                              "raw_strategy":  "evo_2304",
+                                              "is_exit":  false,
+                                              "exit_reason":  null,
+                                              "entry_strategy":  "evo_2304",
+                                              "display_strategy":  "evo_2304"
+                                          },
+                                          {
+                                              "time":  "2026-06-19T15:20:49",
+                                              "created_at":  "2026-06-19T15:20:49",
+                                              "symbol":  "BOB/USDT",
+                                              "side":  "sell",
+                                              "quantity":  273.65833,
+                                              "fill_price":  0.005478,
+                                              "strategy":  "sideways_stagnation_exit",
+                                              "confidence":  1.0,
+                                              "live":  false,
+                                              "raw_strategy":  "sideways_stagnation_exit",
+                                              "is_exit":  true,
+                                              "exit_reason":  "sideways_stagnation_exit",
+                                              "entry_strategy":  null,
+                                              "display_strategy":  "sideways_stagnation_exit"
+                                          },
+                                          {
+                                              "time":  "2026-06-19T15:20:00",
+                                              "created_at":  "2026-06-19T15:20:00",
+                                              "symbol":  "BOB/USDT",
+                                              "side":  "buy",
+                                              "quantity":  273.65836,
+                                              "fill_price":  0.00548129,
+                                              "strategy":  "evo_5338",
+                                              "confidence":  0.9,
+                                              "live":  false,
+                                              "raw_strategy":  "evo_5338",
+                                              "is_exit":  false,
+                                              "exit_reason":  null,
+                                              "entry_strategy":  "evo_5338",
+                                              "display_strategy":  "evo_5338"
+                                          },
+                                          {
+                                              "time":  "2026-06-19T15:18:42",
+                                              "created_at":  "2026-06-19T15:18:42",
+                                              "symbol":  "PLAY/USDT",
+                                              "side":  "sell",
+                                              "quantity":  52.418213,
+                                              "fill_price":  0.0389,
+                                              "strategy":  "sideways_take_profit_exit",
+                                              "confidence":  1.0,
+                                              "live":  false,
+                                              "raw_strategy":  "sideways_take_profit_exit",
+                                              "is_exit":  true,
+                                              "exit_reason":  "sideways_take_profit_exit",
+                                              "entry_strategy":  null,
+                                              "display_strategy":  "sideways_take_profit_exit"
+                                          },
+                                          {
+                                              "time":  "2026-06-19T15:18:40",
+                                              "created_at":  "2026-06-19T15:18:40",
+                                              "symbol":  "PLAY/USDT",
+                                              "side":  "buy",
+                                              "quantity":  52.41823,
+                                              "fill_price":  0.03892334,
+                                              "strategy":  "evo_8743",
+                                              "confidence":  0.9,
+                                              "live":  false,
+                                              "raw_strategy":  "evo_8743",
+                                              "is_exit":  false,
+                                              "exit_reason":  null,
+                                              "entry_strategy":  "evo_8743",
+                                              "display_strategy":  "evo_8743"
+                                          },
+                                          {
+                                              "time":  "2026-06-19T15:17:18",
+                                              "created_at":  "2026-06-19T15:17:18",
+                                              "symbol":  "HYPE/USDT",
+                                              "side":  "sell",
+                                              "quantity":  0.02930494,
+                                              "fill_price":  69.56,
+                                              "strategy":  "sideways_take_profit_exit",
+                                              "confidence":  1.0,
+                                              "live":  false,
+                                              "raw_strategy":  "sideways_take_profit_exit",
+                                              "is_exit":  true,
+                                              "exit_reason":  "sideways_take_profit_exit",
+                                              "entry_strategy":  null,
+                                              "display_strategy":  "sideways_take_profit_exit"
+                                          },
+                                          {
+                                              "time":  "2026-06-19T15:17:14",
+                                              "created_at":  "2026-06-19T15:17:14",
+                                              "symbol":  "HYPE/USDT",
+                                              "side":  "buy",
+                                              "quantity":  0.02930495,
+                                              "fill_price":  69.60174,
+                                              "strategy":  "evo_2304",
+                                              "confidence":  0.8508,
+                                              "live":  false,
+                                              "raw_strategy":  "evo_2304",
+                                              "is_exit":  false,
+                                              "exit_reason":  null,
+                                              "entry_strategy":  "evo_2304",
+                                              "display_strategy":  "evo_2304"
+                                          }
+                                      ],
+                    "bot_state":  "PAUSED",
+                    "status_label":  "PAUSED"
+                },
+    "take_profit_count":  0,
+    "stop_loss_count":  0,
+    "breakeven_protection_exit_count":  2,
+    "time_stop_exit_count":  0,
+    "risk_rules":  {
+                       "max_total_exposure_pct":  0.12,
+                       "max_symbol_exposure_pct":  0.04,
+                       "caution_exposure_pct":  0.09,
+                       "blocked_drawdown":  -0.08,
+                       "caution_drawdown":  -0.04,
+                       "sideways_max_entries_per_hour":  3,
+                       "sideways_min_confidence":  0.5,
+                       "max_trades_per_symbol":  3,
+                       "trade_count_window_hours":  1.0,
+                       "entry_quality_top_n":  10,
+                       "entry_min_signal_sideways":  0.0016
+                   },
+    "quarantine":  [
+
+                   ],
+    "strategy_scores":  [
+                            {
+                                "strategy":  "sideways_take_profit_exit",
+                                "score":  1.4907697,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "sideways_max_hold_exit",
+                                "score":  0.027781947,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4211",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_1665",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_9882",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_8910",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4210",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_6408",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4951",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_9863",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_8909",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4951_m",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_6408_m",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_7947",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_7657",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_7657_m",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_8766",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_6553",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_8315",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_8134",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4633",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_3107",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_9299",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_5007_m",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_7383",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_9271",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_9568",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_1018",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_5195",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_2960",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_9299_m_m",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_8026_m",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_9271_m_m",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_8026",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_5887",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_9796",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_1210",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_8026_m_m",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_5862",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_7986",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_5326",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_5476",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_6541",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_3672",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_8381",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_1301",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_8122",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4858",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_2577",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_2522",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_1247",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_3968",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_3027",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4044",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_6715",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_2685",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_9811",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_5351",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4922",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_7015",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_3946",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_5314",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_8884",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_7577_m",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4554",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_3462",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_7577",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_7647",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_8644",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4526",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_5640",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_7026",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4738",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_6376",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_6543",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4044_m",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_1360",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4738_m",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_5900",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_3502",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_1831",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_9974",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_3943",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_3359",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4788",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_9703",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4686",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_9054",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4511",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_6571",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4008",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_2970",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_5007",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_9796_m",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_5189",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_5338",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_7685",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_1962",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4434",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_2594",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4544",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4840",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_3813",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_7711",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_3954",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4433",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_7594",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4376",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_3188",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_8743",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_2304",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4586",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_1382",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_8278",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_8090",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_9666",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4976",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_1382_m",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_7439",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_2708",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_9211",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_3058",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_1564",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_8053",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_1970",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_1901",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_8763",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "sideways_stagnation_exit",
+                                "score":  -0.017705737,
+                                "status":  "blocked"
+                            },
+                            {
+                                "strategy":  "sideways_stop_loss_exit",
+                                "score":  -0.054366525,
+                                "status":  "blocked"
+                            }
+                        ],
+    "trading_loop_running":  true,
+    "trading_loop_last_cycle_at":  "2026-06-20T08:04:24.118960+00:00",
+    "trading_loop_last_market_tick_at":  "2026-06-20T08:04:24.118960+00:00",
+    "trading_loop_last_feature_update_at":  "2026-06-20T08:04:24.118960+00:00",
+    "trading_loop_heartbeat_age_seconds":  28.727370977401733,
+    "runtime_loop_stale":  false,
+    "runtime_anomaly_warnings":  [
+
+                                 ],
+    "runtime_cycle_id":  21,
+    "runtime_market_symbols":  57,
+    "runtime_valid_prices":  57,
+    "runtime_normal_features":  57,
+    "runtime_ready_features":  57,
+    "paused":  true,
+    "pause_reason":  "manual_pause",
+    "bot_state":  "PAUSED",
+    "status_label":  "PAUSED",
+    "controls":  {
+                     "pause":  "/pause",
+                     "resume":  "/resume",
+                     "kill_switch":  "/kill-switch"
+                 },
+    "anomaly_warnings":  [
+
+                         ],
+    "running":  false
+}

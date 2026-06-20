@@ -1,0 +1,12 @@
+{
+  "verdict": "FAIL",
+  "fresh_sell_observed": false,
+  "exit_audit_persisted_observed": false,
+  "atomic_sell_persist_observed": false,
+  "failures": [
+    "bot did not end paused"
+  ],
+  "warnings": [
+    "No eligible exit observed during the ten-minute controlled window; fresh exit persistence remains unproven."
+  ]
+}

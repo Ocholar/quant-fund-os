@@ -1,0 +1,11 @@
+{
+  "verdict": "FAIL",
+  "failures": [
+    "GUA/USDT BUY not found in trades",
+    "evo_allocator_rescue BUY not found",
+    "GUA/USDT position missing"
+  ],
+  "warnings": [
+    "final_applied_fills=0 not found in scanned logs; may be outside tail window"
+  ]
+}

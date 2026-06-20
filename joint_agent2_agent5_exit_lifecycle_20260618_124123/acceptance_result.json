@@ -1,0 +1,9 @@
+{
+  "verdict": "FAIL",
+  "failures": [
+    "no EXIT_DECISION logs/audit observed"
+  ],
+  "warnings": [
+    "no SELL row observed; verify no position qualified for exit during observation"
+  ]
+}
