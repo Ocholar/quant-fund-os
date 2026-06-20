@@ -1,0 +1,8 @@
+{
+  "verdict": "FAIL",
+  "failures": [
+    "cash/equity SQL did not commit",
+    "runtime cash/equity authority log not observed"
+  ],
+  "warnings": []
+}

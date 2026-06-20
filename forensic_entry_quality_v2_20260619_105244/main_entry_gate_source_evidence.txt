@@ -1,0 +1,990 @@
+﻿
+  main.py:56:
+  main.py:57:# RESCUE_HOURLY_CAP_PATCH_V1
+  main.py:58:# Rescue entries were capped too tightly at 
+2/hour.
+  main.py:59:# Start with 4/hour in SIDEWAYS. Do not jump 
+to 6 until another clean run confirms stability.
+> main.py:60:ALLOCATOR_RESCUE_HOURLY_CAP = 4
+  main.py:61:
+  main.py:62:LIVE_STATUS_CACHE = {}
+  main.py:63:
+  main.py:64:def update_live_status_cache(payload: dict):
+  main.py:65:    try:
+  main.py:66:        LIVE_STATUS_CACHE.clear()
+  main.py:67:        LIVE_STATUS_CACHE.update(payload or 
+{})
+  main.py:68:    except Exception:
+  main.py:69:        pass
+  main.py:70:
+  main.py:551:    if pnl_pct <= sl:
+  main.py:552:        return {
+  main.py:553:            "symbol": symbol,
+  main.py:554:            "decision": "SELL",
+> main.py:555:            "reason": 
+"sideways_stop_loss_exit" if is_sideways else 
+"stop_loss_exit",
+  main.py:556:            "quantity": qty,
+  main.py:557:            "price": last_price,
+  main.py:558:            "pnl_pct": pnl_pct,
+  main.py:559:            "peak_pnl_pct": peak_pnl_pct,
+  main.py:560:            "age_minutes": age_minutes,
+  main.py:561:        }
+  main.py:562:
+  main.py:563:    # 5. Trailing profit protection
+  main.py:564:    if peak_pnl_pct >= 
+QFOS_TRAILING_PEAK_PCT and pnl_pct <= 
+QFOS_TRAILING_FLOOR_PCT:
+  main.py:565:        return {
+  main.py:1559:MAX_TOTAL_EXPOSURE_PCT = 
+float(settings.max_total_exposure_pct)
+  main.py:1560:MAX_SYMBOL_EXPOSURE_PCT = 
+float(settings.max_symbol_exposure_pct)
+  main.py:1561:MAX_TRADES_PER_SYMBOL = 
+int(settings.max_trades_per_symbol)
+  main.py:1562:ENTRY_QUALITY_LOCKDOWN_ENABLED = True
+> main.py:1563:ENTRY_QUALITY_TOP_N = int(getattr(settings, 
+'entry_quality_top_n', 2))
+> main.py:1564:ENTRY_MIN_SIGNAL_SIDEWAYS = 
+float(getattr(settings, 'entry_min_signal_sideways', 
+0.025))
+  main.py:1565:ENTRY_MIN_SIGNAL_TRENDING = 
+float(getattr(settings, 'entry_min_signal_trending', 
+0.018))
+  main.py:1566:ENTRY_MAX_VOLATILITY = 
+float(getattr(settings, 'entry_max_volatility', 0.008))
+  main.py:1567:ENTRY_MIN_EXPECTED_MOVE_PCT = 
+float(getattr(settings, 'entry_min_expected_move_pct', 
+0.012))
+  main.py:1568:ENTRY_STOP_LOSS_QUARANTINE_HOURS = 
+float(getattr(settings, 
+'entry_stop_loss_quarantine_hours', 4))
+  main.py:1569:ENTRY_REQUIRE_TRIPLE_AGREEMENT = 
+str(getattr(settings, 'entry_require_triple_agreement', 
+'true')).lower() in ('1', 'true', 'yes', 'on')
+  main.py:1570:ENTRY_BLOCK_SIDEWAYS_IF_NO_TOP_CANDIDATE = 
+True
+  main.py:1571:SAME_SYMBOL_ENTRY_COOLDOWN_MINUTES = 
+float(getattr(settings, 
+'same_symbol_entry_cooldown_minutes', 30))
+  main.py:1572:SAME_SYMBOL_EXCEPTIONAL_COOLDOWN_MINUTES = 
+float(getattr(settings, 
+'same_symbol_exceptional_cooldown_minutes', 10))
+  main.py:1573:ENTRY_QUALITY_LOG_REJECTION_LIMIT = 
+int(getattr(settings, 'entry_quality_log_rejection_limit', 
+12))
+  main.py:1574:SIDEWAYS_ENTRY_MIN_GAP_MINUTES = 
+float(getattr(settings, 'sideways_entry_min_gap_minutes', 
+15))
+  main.py:1597:COOLDOWN_SECONDS = 
+int(settings.cooldown_seconds)
+  main.py:1598:FEE_RATE = float(settings.trading_fee_rate)
+  main.py:1599:MAX_DAILY_LOSS_PCT = 
+float(settings.max_daily_loss)
+  main.py:1600:SIDEWAYS_MAX_ENTRIES_PER_HOUR = 
+int(settings.sideways_max_entries_per_hour)
+> main.py:1601:SIDEWAYS_MIN_CONFIDENCE = 
+float(settings.sideways_min_confidence)
+  main.py:1602:TRENDING_MAX_ENTRIES_PER_HOUR = 
+int(settings.trending_max_entries_per_hour)
+  main.py:1603:TRENDING_MIN_CONFIDENCE = 
+float(settings.trending_min_confidence)
+  main.py:1604:LIQUIDITY_ERROR_LIMIT = 3
+  main.py:1605:LIQUIDITY_ERROR_WINDOW_SECONDS = 600
+  main.py:1606:liquidity_error_times = []
+  main.py:1607:last_auto_pause_reason = None
+  main.py:1608:last_known_equity = INITIAL_EQUITY
+  main.py:1609:last_known_exposure = 0.0
+  main.py:1610:last_known_regime = 'UNKNOWN'
+  main.py:1611:last_seen_paused_state = None
+  main.py:4207:        reason = 
+"sideways_take_profit_exit" if r == "SIDEWAYS" else 
+"take_profit_exit"
+  main.py:4208:        return "SELL", reason
+  main.py:4209:
+  main.py:4210:    if pnl_pct <= stop_loss:
+> main.py:4211:        reason = "sideways_stop_loss_exit" 
+if r == "SIDEWAYS" else "stop_loss_exit"
+  main.py:4212:        return "SELL", reason
+  main.py:4213:
+  main.py:4214:    if peak_pnl_pct >= 
+QFOS_EXIT_TRAILING_PEAK_PCT and pnl_pct <= 
+QFOS_EXIT_TRAILING_FLOOR_PCT:
+  main.py:4215:        return "SELL", 
+"trailing_profit_exit"
+  main.py:4216:
+  main.py:4217:    if peak_pnl_pct >= 
+QFOS_EXIT_BREAKEVEN_PEAK_PCT and pnl_pct <= 
+QFOS_EXIT_BREAKEVEN_FLOOR_PCT:
+  main.py:4218:        return "SELL", 
+"breakeven_protection_exit"
+  main.py:4219:
+  main.py:4220:    if r == "SIDEWAYS":
+  main.py:4221:        if (
+  main.py:4598:# ==========================================
+==================
+  main.py:4599:# QFOS_REAL_MEXC_ONLY_FUNCTIONS_V1
+  main.py:4600:# Runtime function install.
+  main.py:4601:# Blocks fallback scout / 
+RAW_MOMENTUM_FALLBACK buys.
+> main.py:4602:# Allows normal evo / evo_allocator_rescue 
+MEXC-derived buys.
+  main.py:4603:# ==========================================
+==================
+  main.py:4604:
+  main.py:4605:def qfos_real_mexc_entry_allowed(fill):
+  main.py:4606:    try:
+  main.py:4607:        if not isinstance(fill, dict):
+  main.py:4608:            return True, 
+"not_dict_passthrough"
+  main.py:4609:
+  main.py:4610:        side = str(fill.get("side", "") or 
+"").lower()
+  main.py:4611:        if side != "buy":
+  main.py:4612:            return True, 
+"non_buy_passthrough"
+  main.py:4683:            return (False, 
+f'risk_off_scout_confidence_too_low_{confidence:.2f}')
+  main.py:4684:        return (False, 
+'risk_off_blocks_new_buys')
+  main.py:4685:    recent_entries = recent_buy_count() + 
+entries_this_cycle
+  main.py:4686:    if r == 'SIDEWAYS':
+> main.py:4687:        if confidence < 
+SIDEWAYS_MIN_CONFIDENCE:
+  main.py:4688:            return (False, 
+f'sideways_confidence_too_low_{confidence:.2f}')
+  main.py:4689:        if recent_entries >= 
+SIDEWAYS_MAX_ENTRIES_PER_HOUR:
+  main.py:4690:            return (False, 
+'sideways_max_entries_per_hour_hit')
+  main.py:4691:        return (True, 'ok')
+  main.py:4692:    if is_trending_regime(r):
+  main.py:4693:        if confidence < 
+TRENDING_MIN_CONFIDENCE:
+  main.py:4694:            return (False, 
+f'trending_confidence_too_low_{confidence:.2f}')
+  main.py:4695:        if recent_entries >= 
+TRENDING_MAX_ENTRIES_PER_HOUR:
+  main.py:4696:            return (False, 
+'trending_max_entries_per_hour_hit')
+  main.py:4697:        return (True, 'ok')
+> main.py:4698:    if confidence < SIDEWAYS_MIN_CONFIDENCE:
+  main.py:4699:        return (False, 
+f'default_confidence_too_low_{confidence:.2f}')
+  main.py:4700:    if recent_entries >= 
+SIDEWAYS_MAX_ENTRIES_PER_HOUR:
+  main.py:4701:        return (False, 
+'default_max_entries_per_hour_hit')
+  main.py:4702:    return (True, 'ok')
+  main.py:4703:
+  main.py:4704:def reset_liquidity_errors():
+  main.py:4705:    global liquidity_error_times
+  main.py:4706:    liquidity_error_times = []
+  main.py:4707:
+  main.py:4708:def register_liquidity_error(error_message: 
+str):
+  main.py:4726:    if r == 'RISK_OFF':
+  main.py:4727:        if strategy == 
+'fallback_scout_breakout' and confidence >= 
+QFOS_SCOUT_CONFIDENCE and 
+_strong_symbol_trend_for_risk_off(fill):
+  main.py:4728:            return (True, 
+'risk_off_scout_fallback_allowed')
+  main.py:4729:        return (False, 
+'risk_off_blocks_buy')
+> main.py:4730:    if r == 'SIDEWAYS' and confidence < 
+SIDEWAYS_MIN_CONFIDENCE:
+  main.py:4731:        return (False, 
+f'sideways_confidence_too_low_{confidence:.2f}')
+  main.py:4732:    if is_trending_regime(r) and confidence 
+< TRENDING_MIN_CONFIDENCE:
+  main.py:4733:        return (False, 
+f'trending_confidence_too_low_{confidence:.2f}')
+  main.py:4734:    if r not in {'SIDEWAYS', 'BULL', 
+'BULLISH', 'TRENDING', 'UPTREND', 'TREND'}:
+  main.py:4735:        return (False, 
+f'unknown_regime_blocks_buy_{r}')
+  main.py:4736:    return (True, 'buy_allowed')
+  main.py:4737:PRICE_HISTORY = {}
+  main.py:4738:EMPTY_FEATURE_CYCLES = 0
+  main.py:4739:
+  main.py:4740:def remember_prices(prices, max_len=30):
+  main.py:4798:            continue
+  main.py:4799:        confidence = 
+float(data.get('confidence', data.get('signal_strength', 
+0)) or 0)
+  main.py:4800:        r = str(regime or '').upper()
+  main.py:4801:        if r == 'SIDEWAYS':
+> main.py:4802:            confidence = max(confidence, 
+float(SIDEWAYS_MIN_CONFIDENCE) + 0.01)
+  main.py:4803:        elif is_trending_regime(r):
+  main.py:4804:            confidence = max(confidence, 
+float(TRENDING_MIN_CONFIDENCE) + 0.01)
+  main.py:4805:        confidence = min(confidence, 0.95)
+  main.py:4806:        position_value = 
+min(max(float(equity or 0) * 0.025, 1.0), float(cash or 0) 
+* 0.05)
+  main.py:4807:        if position_value <= 0:
+  main.py:4808:            continue
+  main.py:4809:        qty = position_value / price
+  main.py:4810:        orders.append({'symbol': symbol, 
+'side': 'buy', 'quantity': qty, 'expected_price': price, 
+'fill_price': price, 'slippage_bps': 0, 'strategy': 
+'raw_momentum_fallback', 'confidence': confidence})
+  main.py:4811:    return orders
+  main.py:4812:
+  main.py:4879:
+  main.py:4880:def _entry_signal_threshold(regime):
+  main.py:4881:    r = str(regime or '').upper()
+  main.py:4882:    if r == 'SIDEWAYS':
+> main.py:4883:        return ENTRY_MIN_SIGNAL_SIDEWAYS
+  main.py:4884:    return ENTRY_MIN_SIGNAL_TRENDING
+  main.py:4885:
+  main.py:4886:def _is_normal_feature(data):
+  main.py:4887:    """
+  main.py:4888:    Raw momentum fallback must never be 
+tradable.
+  main.py:4889:    Missing source is treated as NORMAL 
+because current FeatureStore
+  main.py:4890:    often emits feature dicts without a 
+source field.
+  main.py:4891:    """
+  main.py:4892:    if not isinstance(data, dict):
+  main.py:4893:        return False
+  main.py:6227:        signal = _feature_value(data, 
+'signal_strength')
+  main.py:6228:        eligible.append((symbol, 
+quality_score, signal))
+  main.py:6229:    # Sort by composite quality score 
+descending; signal breaks ties.
+  main.py:6230:    eligible.sort(key=lambda x: (x[1], 
+x[2]), reverse=True)
+> main.py:6231:    top = eligible[:ENTRY_QUALITY_TOP_N]
+  main.py:6232:    top_symbols = {s for s, _, _ in top}
+  main.py:6233:    print(f'[QUALITY_RANK] top-{len(top)}: 
+' + ', '.join(
+  main.py:6234:        f'{s}(qs={qs:.4f},sig={sig:.4f})' 
+for s, qs, sig in top[:5]
+  main.py:6235:    ))
+  main.py:6236:    return (top_symbols, top, 
+rejected_preview)
+  main.py:6237:
+  main.py:6238:def 
+_sideways_exceptional_level(signal_strength):
+  main.py:6239:    """
+  main.py:6240:    Returns 0 for non-exceptional.
+  main.py:6241:    Returns 1..N for ladder level.
+  main.py:6427:    orders = result.get('orders', []) if 
+isinstance(result, dict) else []
+  main.py:6428:    if not orders:
+  main.py:6429:        try:
+  main.py:6430:            top_symbols, top_ranked, 
+rejected_preview = 
+entry_quality_ranked_symbols(feature_map, regime)
+> main.py:6431:            print(f'ENTRY QUALITY TOP 
+{ENTRY_QUALITY_TOP_N}:', top_ranked)
+  main.py:6432:        except Exception:
+  main.py:6433:            pass
+  main.py:6434:        return ([], [])
+  main.py:6435:    top_symbols, top_ranked, 
+rejected_preview = 
+entry_quality_ranked_symbols(feature_map, regime)
+> main.py:6436:    print(f'ENTRY QUALITY TOP 
+{ENTRY_QUALITY_TOP_N}:', top_ranked)
+  main.py:6437:    filtered = []
+  main.py:6438:    rejected = []
+  main.py:6439:    for order in orders:
+  main.py:6440:        symbol = order.get('symbol')
+  main.py:6441:        side = str(order.get('side', 
+'')).lower()
+  main.py:6442:        strategy = 
+str(order.get('strategy', ''))
+  main.py:6443:        if side == 'sell':
+  main.py:6444:            filtered.append(order)
+  main.py:6445:            continue
+  main.py:6446:        if strategy == 
+'raw_momentum_fallback':
+  main.py:6447:            rejected.append({'symbol': 
+symbol, 'reason': 
+'entry_quality_raw_momentum_fallback_disabled'})
+  main.py:6448:            continue
+  main.py:6449:        if symbol not in top_symbols:
+> main.py:6450:            rejected.append({'symbol': 
+symbol, 'reason': 
+f'entry_quality_not_top_{ENTRY_QUALITY_TOP_N}'})
+  main.py:6451:            continue
+  main.py:6452:        data = feature_map.get(symbol, {})
+  main.py:6453:        reason = 
+_entry_quality_reason(symbol, data, regime)
+  main.py:6454:        if reason:
+  main.py:6455:            rejected.append({'symbol': 
+symbol, 'reason': f'entry_quality_{reason}'})
+  main.py:6456:            continue
+  main.py:6457:        filtered.append(order)
+  main.py:6458:    if rejected:
+  main.py:6459:        print('ENTRY QUALITY REJECTED:', 
+rejected[:ENTRY_QUALITY_LOG_REJECTION_LIMIT])
+  main.py:6460:    return (filtered, rejected)
+  main.py:8510:
+  main.py:8511:
+  main.py:8512:
+  main.py:8513:# AGENT3_LEGACY_RESCUE_GATE_V1
+> main.py:8514:# Strict fail-closed sanitizer for legacy 
+main.py ALLOCATOR_RESCUE path.
+> main.py:8515:# Authorized scope: main.py 
+ALLOCATOR_RESCUE block only.
+  main.py:8516:def _agent3_float(value, default=0.0):
+  main.py:8517:    try:
+  main.py:8518:        return float(value if value is not 
+None else default)
+  main.py:8519:    except Exception:
+  main.py:8520:        return float(default)
+  main.py:8521:
+  main.py:8522:
+  main.py:8523:def _agent3_order_source(order):
+  main.py:8524:    if not isinstance(order, dict):
+  main.py:8525:        return ""
+  main.py:8534:    strategy = str(order.get("strategy", 
+"") or "").lower()
+  main.py:8535:    reason = str(order.get("entry_reason", 
+"") or "").lower()
+  main.py:8536:    return (
+  main.py:8537:        "allocator_opportunity_rescue" in 
+src
+> main.py:8538:        or "allocator_rescue" in src
+> main.py:8539:        or "evo_allocator_rescue" in 
+strategy
+> main.py:8540:        or "allocator_rescue" in reason
+  main.py:8541:    )
+  main.py:8542:
+  main.py:8543:
+  main.py:8544:def _agent3_extract_top_symbols(local_vars):
+  main.py:8545:    """
+  main.py:8546:    Extract visible ENTRY QUALITY TOP list 
+using likely variable names.
+  main.py:8547:    Fail closed if no list/set can be found.
+  main.py:8548:    """
+  main.py:8549:    candidates = []
+  main.py:8550:
+  main.py:8722:    enriched["feature"] = feature
+  main.py:8723:    enriched["feature_source"] = "NORMAL"
+  main.py:8724:    enriched["signal_strength"] = 
+signal_strength
+  main.py:8725:    enriched["symbol_regime"] = 
+symbol_regime
+> main.py:8726:    enriched["entry_reason"] = 
+"evo_allocator_rescue_entry_quality_top_normal"
+  main.py:8727:    enriched["confidence"] = confidence
+  main.py:8728:
+  main.py:8729:    return True, "passed", enriched
+  main.py:8730:
+  main.py:8731:
+  main.py:8732:def 
+_agent3_filter_legacy_rescue_orders(order_list, 
+local_vars):
+  main.py:8733:    if not isinstance(order_list, list):
+  main.py:8734:        return order_list
+  main.py:8735:
+  main.py:8736:    filtered = []
+  main.py:8742:            filtered.append(enriched)
+  main.py:8743:        else:
+  main.py:8744:            symbol = order.get("symbol") if 
+isinstance(order, dict) else None
+  main.py:8745:            blocked.append((symbol, reason))
+> main.py:8746:            print(f"[ALLOCATOR_RESCUE] 
+no_candidate_passed reason={reason} symbol={symbol}")
+  main.py:8747:
+  main.py:8748:    if blocked:
+> main.py:8749:        print(f"[ALLOCATOR_RESCUE] 
+blocked_legacy_orders count={len(blocked)} 
+details={blocked}")
+  main.py:8750:
+  main.py:8751:    return filtered
+  main.py:8752:
+  main.py:8753:
+  main.py:8754:
+  main.py:8755:# QFOS_PAUSE_REASON_CALLABLE_ASSERT
+  main.py:8756:try:
+  main.py:8757:    qfos_restore_pause_reason_callable()
+  main.py:8758:except Exception:
+  main.py:8759:    pass
+  main.py:8978:                        _qfos_ar_rescued = 
+_qfos_allocator_opportunity_rescue(result, locals())
+  main.py:8979:                        if 
+isinstance(_qfos_ar_rescued, list) and 
+len(_qfos_ar_rescued) > 0:
+  main.py:8980:                            
+result["orders"] = _qfos_ar_rescued
+  main.py:8981:            except Exception as 
+_qfos_ar_inline_error:
+> main.py:8982:                print(f"[ALLOCATOR_RESCUE] 
+inline_error={_qfos_ar_inline_error}", flush=True)
+  main.py:8983:
+  main.py:8984:            if not result.get('orders'):
+  main.py:8985:                scout_order = 
+qfos_build_scout_fallback_order(
+  main.py:8986:                    
+feature_map=state['features'],
+  main.py:8987:                    prices=prices,
+  main.py:8988:                    regime=regime,
+  main.py:8989:                    equity=equity,
+  main.py:8990:                    cash=portfolio.cash,
+  main.py:8991:                )
+  main.py:8992:                if scout_order:
+  main.py:12915:# override quarantine, cooldown, 
+already-holding, downtrend,
+  main.py:12916:# choppy, risk, or exposure hard blocks.
+  main.py:12917:# =========================================
+===================
+  main.py:12918:
+> main.py:12919:QFOS_ALLOCATOR_RESCUE_ENABLED = 
+globals().get("QFOS_ALLOCATOR_RESCUE_ENABLED", True)
+  main.py:12920:
+  main.py:12921:# Rescue runs only while account is safe 
+and low exposure.
+  
+main.py:12922:QFOS_ALLOC_RESCUE_ENABLE_BELOW_EXPOSURE_PCT 
+= globals().get("QFOS_ALLOC_RESCUE_ENABLE_BELOW_EXPOSURE_PC
+T", 0.035)
+  main.py:12923:QFOS_ALLOC_RESCUE_MAX_TOTAL_EXPOSURE_PCT = 
+globals().get("QFOS_ALLOC_RESCUE_MAX_TOTAL_EXPOSURE_PCT", 
+0.045)
+  main.py:12924:QFOS_ALLOC_RESCUE_MAX_ORDERS_SIDEWAYS = 
+globals().get("QFOS_ALLOC_RESCUE_MAX_ORDERS_SIDEWAYS", 1)
+  main.py:12925:QFOS_ALLOC_RESCUE_MAX_ORDERS_TREND = 
+globals().get("QFOS_ALLOC_RESCUE_MAX_ORDERS_TREND", 2)
+  main.py:12926:
+  main.py:12927:# Candidate thresholds.
+  main.py:12928:# These are deliberately looser than the 
+allocator, but still require
+  main.py:12929:# positive signal quality. They mainly 
+relax the "one_tick must be > 0 now"
+  main.py:12996:            "drawdown": drawdown,
+  main.py:12997:            "regime": regime,
+  main.py:12998:        }
+  main.py:12999:    except Exception as exc:
+> main.py:13000:        print(f"[ALLOCATOR_RESCUE] 
+state_error={exc}", flush=True)
+  main.py:13001:        return {
+  main.py:13002:            "equity": 100.0,
+  main.py:13003:            "cash": 100.0,
+  main.py:13004:            "exposure": 0.0,
+  main.py:13005:            "exposure_pct": 0.0,
+  main.py:13006:            "drawdown": 0.0,
+  main.py:13007:            "regime": "SIDEWAYS",
+  main.py:13008:        }
+  main.py:13009:    finally:
+  main.py:13010:        try:
+  main.py:13087:    except Exception:
+  main.py:13088:        pass
+  main.py:13089:
+  main.py:13090:    # Fallback still starts with evo_ so 
+Opportunity Mode treats it as evo path.
+> main.py:13091:    return "evo_allocator_rescue"
+  main.py:13092:
+  main.py:13093:def _qfos_ar_candidate_score(symbol, f):
+  main.py:13094:    signal = 
+_qfos_ar_float(f.get("signal_strength"))
+  main.py:13095:    breakout = 
+_qfos_ar_float(f.get("breakout_score"))
+  main.py:13096:    trend_quality = 
+_qfos_ar_float(f.get("trend_quality"))
+  main.py:13097:    momentum = 
+_qfos_ar_float(f.get("momentum"))
+  main.py:13098:    one_tick = 
+_qfos_ar_float(f.get("one_tick_momentum"))
+  main.py:13099:    trend = _qfos_ar_float(f.get("trend"))
+  main.py:13100:    volatility = 
+abs(_qfos_ar_float(f.get("volatility")))
+  main.py:13101:
+  main.py:13172:    """
+  main.py:13173:    Creates ranked evo buy orders only 
+when normal allocator returned zero orders.
+  main.py:13174:    This is the upstream counterpart to 
+Opportunity Mode tiered sizing.
+  main.py:13175:    """
+> main.py:13176:    if not QFOS_ALLOCATOR_RESCUE_ENABLED:
+  main.py:13177:        return []
+  main.py:13178:
+  main.py:13179:    local_vars = local_vars or {}
+  main.py:13180:
+  main.py:13181:    if not isinstance(result, dict):
+  main.py:13182:        return []
+  main.py:13183:
+  main.py:13184:    existing = result.get("orders") or []
+  main.py:13185:    if isinstance(existing, list) and 
+len(existing) > 0:
+  main.py:13186:        return existing
+  main.py:13187:
+  main.py:13188:    f_by_symbol = 
+result.get("f_by_symbol") or result.get("features") or 
+local_vars.get("features") or 
+local_vars.get("f_by_symbol") or {}
+  main.py:13189:    if not isinstance(f_by_symbol, dict) 
+or not f_by_symbol:
+> main.py:13190:        print("[ALLOCATOR_RESCUE] skipped 
+reason=no_feature_map", flush=True)
+  main.py:13191:        return []
+  main.py:13192:
+  main.py:13193:    state = _qfos_ar_state()
+  main.py:13194:    regime = str(state.get("regime") or 
+"SIDEWAYS").upper()
+  main.py:13195:
+  main.py:13196:    _pacing_ok, _pacing_reason = 
+_qfos_harden_rescue_pacing_allows(regime)
+  main.py:13197:    if not _pacing_ok:
+> main.py:13198:        print(f"[ALLOCATOR_RESCUE] skipped 
+reason={_pacing_reason}", flush=True)
+  main.py:13199:        return []
+  main.py:13200:
+  main.py:13201:    if state["exposure_pct"] >= 
+QFOS_RESCUE_ENABLE_BELOW_EXPOSURE_PCT_HARD:
+> main.py:13202:        print(f"[ALLOCATOR_RESCUE] skipped 
+reason=hard_exposure_gate 
+exposure_pct={state['exposure_pct']:.4f}", flush=True)
+  main.py:13203:        return []
+  main.py:13204:
+  main.py:13205:    if regime == "RISK_OFF":
+> main.py:13206:        print("[ALLOCATOR_RESCUE] skipped 
+reason=risk_off", flush=True)
+  main.py:13207:        return []
+  main.py:13208:
+  main.py:13209:    if state["drawdown"] <= -0.015:
+> main.py:13210:        print(f"[ALLOCATOR_RESCUE] skipped 
+reason=drawdown drawdown={state['drawdown']:.4f}", 
+flush=True)
+  main.py:13211:        return []
+  main.py:13212:
+  main.py:13213:    if state["exposure_pct"] >= 
+QFOS_ALLOC_RESCUE_ENABLE_BELOW_EXPOSURE_PCT:
+> main.py:13214:        print(f"[ALLOCATOR_RESCUE] skipped 
+reason=exposure exposure_pct={state['exposure_pct']:.4f}", 
+flush=True)
+  main.py:13215:        return []
+  main.py:13216:
+  main.py:13217:    candidates = []
+  main.py:13218:
+  main.py:13219:    for symbol, f in f_by_symbol.items():
+  main.py:13220:        symbol = str(symbol)
+  main.py:13221:
+  main.py:13222:        blocked, block_reason = 
+_qfos_ar_is_blocked_symbol(symbol)
+  main.py:13223:        if blocked:
+  main.py:13224:            continue
+  main.py:13275:            "strategy": strategy,
+  main.py:13276:            "signal_strength": 
+float(_qfos_ar_float(f.get("signal_strength"))),
+  main.py:13277:            "feature": dict(f),
+  main.py:13278:            "source": 
+"allocator_opportunity_rescue",
+> main.py:13279:            "qfos_allocator_rescue_score": 
+float(score),
+  main.py:13280:            "slippage_bps": 0,
+  main.py:13281:            "shadow_mode": False,
+  main.py:13282:        }
+  main.py:13283:
+  main.py:13284:        orders.append(order)
+  main.py:13285:        remaining_capacity -= target_value
+  main.py:13286:
+  main.py:13287:        print(
+> main.py:13288:            f"[ALLOCATOR_RESCUE] selected 
+symbol={symbol} strategy={strategy} "
+  main.py:13289:            f"score={score:.6f} 
+signal={_qfos_ar_float(f.get('signal_strength')):.6f} "
+  main.py:13290:            
+f"breakout={_qfos_ar_float(f.get('breakout_score')):.6f} "
+  main.py:13291:            
+f"trend={_qfos_ar_float(f.get('trend')):.6f} "
+  main.py:13292:            
+f"momentum={_qfos_ar_float(f.get('momentum')):.6f} "
+  main.py:13293:            f"one_tick={_qfos_ar_float(f.ge
+t('one_tick_momentum')):.6f} "
+  main.py:13294:            f"value={target_value:.4f} 
+confidence={confidence:.3f}",
+  main.py:13295:            flush=True,
+  main.py:13296:        )
+  main.py:13297:
+  main.py:13298:    if orders:
+  main.py:13299:        # 
+AGENT3_LEGACY_RESCUE_SANITIZER_CALL_V1
+  main.py:13300:        try:
+  main.py:13301:            orders = 
+_agent3_filter_legacy_rescue_orders(orders, locals())
+  main.py:13302:        except Exception as 
+_agent3_rescue_gate_error:
+> main.py:13303:            print(f"[ALLOCATOR_RESCUE] 
+no_candidate_passed reason=rescue_gate_error symbol=None 
+error={_agent3_rescue_gate_error}")
+  main.py:13304:            try:
+  main.py:13305:                orders = [o for o in 
+orders if not _agent3_is_rescue_order(o)]
+  main.py:13306:            except Exception:
+  main.py:13307:                orders = []
+> main.py:13308:        print(f"[ALLOCATOR_RESCUE] 
+injected_orders count={len(orders)}", flush=True)
+  main.py:13309:        # 
+QFOS_AGENT5_EXEC_BRIDGE_RESCUE_HOOK_V1
+  main.py:13310:        try:
+  main.py:13311:            if orders:
+> main.py:13312:                _qfos_exec_bridge_applied 
+= qfos_exec_bridge_process_orders(orders, 
+source="allocator_rescue_hook")
+  main.py:13313:                
+print(f"[EXEC_BRIDGE_AUDIT] stage=rescue_hook_result 
+applied={_qfos_exec_bridge_applied} 
+raw_orders={len(orders)}", flush=True)
+  main.py:13314:                if 
+_qfos_exec_bridge_applied > 0:
+  main.py:13315:                    orders = []
+  main.py:13316:        except Exception as 
+_qfos_exec_bridge_hook_error:
+  main.py:13317:            print(f"[EXEC_BRIDGE_AUDIT] 
+stage=rescue_hook_error 
+reason={_qfos_exec_bridge_hook_error}", flush=True)
+  main.py:13318:
+  main.py:13319:    else:
+> main.py:13320:        print("[ALLOCATOR_RESCUE] 
+no_candidate_passed", flush=True)
+  main.py:13321:
+  main.py:13322:    return orders
+  main.py:13323:
+  main.py:13324:
+  main.py:13325:
+  main.py:13326:
+  main.py:13327:# =========================================
+===================
+  main.py:13328:# QFOS FILL DEFAULT NORMALIZER
+  main.py:13329:# Purpose:
+  main.py:13330:#   Rescue-generated orders can miss 
+fields that the DB trade insert
+  main.py:13431:        row = cur.execute("""
+  main.py:13432:            SELECT COUNT(*)
+  main.py:13433:            FROM trades
+  main.py:13434:            WHERE side = 'buy'
+> main.py:13435:              AND strategy = 
+'evo_allocator_rescue'
+  main.py:13436:              AND created_at >= ?
+  main.py:13437:        """, (cutoff,)).fetchone()
+  main.py:13438:
+  main.py:13439:        return int(row[0] or 0)
+  main.py:13440:    except Exception:
+  main.py:13441:        return 0
+  main.py:13442:    finally:
+  main.py:13443:        try:
+  main.py:13444:            conn.close()
+  main.py:13445:        except Exception:
+  main.py:13456:        row = cur.execute("""
+  main.py:13457:            SELECT created_at
+  main.py:13458:            FROM trades
+  main.py:13459:            WHERE side = 'buy'
+> main.py:13460:              AND strategy = 
+'evo_allocator_rescue'
+  main.py:13461:            ORDER BY id DESC
+  main.py:13462:            LIMIT 1
+  main.py:13463:        """).fetchone()
+  main.py:13464:
+  main.py:13465:        if not row or not row[0]:
+  main.py:13466:            return 999999
+  main.py:13467:
+  main.py:13468:        s = str(row[0]).replace("T", " 
+").replace("Z", "").split(".")[0]
+  main.py:13469:        last = datetime.fromisoformat(s)
+  main.py:13470:        now = datetime.utcnow() + 
+timedelta(hours=3)
+  main.py:14062:
+  main.py:14063:# AGENT3_SAFE_RESCUE_SANITIZER_CACHE_V2
+  main.py:14064:# Safe top-level override. Do not insert 
+this inside runtime if/loop blocks.
+  main.py:14065:# Purpose:
+> main.py:14066:# - Prevent legacy ALLOCATOR_RESCUE bypass.
+  main.py:14067:# - Prevent over-blocking when ENTRY 
+QUALITY TOP 10 exists but is out of local scope.
+  main.py:14068:# - Keep source=NORMAL, ready=True, 
+regime, confidence, signal gates intact.
+  main.py:14069:
+  main.py:14070:AGENT3_LAST_ENTRY_QUALITY_TOP_SYMBOLS = 
+globals().get("AGENT3_LAST_ENTRY_QUALITY_TOP_SYMBOLS", 
+set())
+  main.py:14071:AGENT3_LAST_ENTRY_QUALITY_TOP_ROWS = 
+globals().get("AGENT3_LAST_ENTRY_QUALITY_TOP_ROWS", [])
+  main.py:14072:AGENT3_LAST_ENTRY_QUALITY_TOP_SOURCE = 
+globals().get("AGENT3_LAST_ENTRY_QUALITY_TOP_SOURCE", 
+"empty")
+  main.py:14073:
+  main.py:14074:
+  main.py:14075:def _agent3_safe_float(value, default=0.0):
+  main.py:14076:    try:
+  main.py:14194:            
+AGENT3_LAST_ENTRY_QUALITY_TOP_ROWS = list(rows)
+  main.py:14195:            
+AGENT3_LAST_ENTRY_QUALITY_TOP_SYMBOLS = set(symbols)
+  main.py:14196:            
+AGENT3_LAST_ENTRY_QUALITY_TOP_SOURCE = src
+  main.py:14197:            print(
+> main.py:14198:                
+f"[ALLOCATOR_RESCUE_SANITIZER] 
+top_source=cache_update:{src} "
+  main.py:14199:                f"top_count={len(symbols)} 
+symbols={symbols[:10]}",
+  main.py:14200:                flush=True,
+  main.py:14201:            )
+  main.py:14202:        else:
+  main.py:14203:            print(
+> main.py:14204:                
+"[ALLOCATOR_RESCUE_SANITIZER] 
+top_source=cache_update:empty top_count=0",
+  main.py:14205:                flush=True,
+  main.py:14206:            )
+  main.py:14207:
+  main.py:14208:    except Exception as exc:
+  main.py:14209:        print(
+> main.py:14210:            f"[ALLOCATOR_RESCUE_SANITIZER] 
+top_source=cache_update_error top_count=0 error={exc}",
+  main.py:14211:            flush=True,
+  main.py:14212:        )
+  main.py:14213:
+  main.py:14214:
+  main.py:14215:def 
+_agent3_safe_get_top_symbols(local_vars=None):
+  main.py:14216:    rows, src = 
+_agent3_safe_find_top_rows(local_vars)
+  main.py:14217:    symbols = set()
+  main.py:14218:
+  main.py:14219:    for row in rows:
+  main.py:14220:        sym = 
+_agent3_safe_symbol_from_any(row)
+  main.py:14222:            symbols.add(sym)
+  main.py:14223:
+  main.py:14224:    if symbols:
+  main.py:14225:        print(
+> main.py:14226:            f"[ALLOCATOR_RESCUE_SANITIZER] 
+top_source=local top_count={len(symbols)} 
+symbols={list(symbols)[:10]}",
+  main.py:14227:            flush=True,
+  main.py:14228:        )
+  main.py:14229:        return symbols, "local"
+  main.py:14230:
+  main.py:14231:    cached = 
+globals().get("AGENT3_LAST_ENTRY_QUALITY_TOP_SYMBOLS", 
+set()) or set()
+  main.py:14232:    if cached:
+  main.py:14233:        cached = set(cached)
+  main.py:14234:        print(
+> main.py:14235:            f"[ALLOCATOR_RESCUE_SANITIZER] 
+top_source=cache top_count={len(cached)} 
+symbols={list(cached)[:10]}",
+  main.py:14236:            flush=True,
+  main.py:14237:        )
+  main.py:14238:        return cached, "cache"
+  main.py:14239:
+> main.py:14240:    print("[ALLOCATOR_RESCUE_SANITIZER] 
+top_source=empty top_count=0", flush=True)
+  main.py:14241:    return set(), "empty"
+  main.py:14242:
+  main.py:14243:
+  main.py:14244:def 
+_agent3_extract_top_symbols(local_vars):
+  main.py:14245:    symbols, _src = 
+_agent3_safe_get_top_symbols(local_vars)
+  main.py:14246:    return set(symbols or [])
+  main.py:14247:
+  main.py:14248:
+  main.py:14249:def _agent3_rescue_order_gate(order, 
+local_vars):
+  main.py:14250:    if not isinstance(order, dict):
+> main.py:14251:        
+print("[ALLOCATOR_RESCUE_SANITIZER] symbol=None 
+decision=BLOCK reason=invalid_order", flush=True)
+  main.py:14252:        return False, "invalid_order", 
+order
+  main.py:14253:
+  main.py:14254:    try:
+  main.py:14255:        is_rescue = 
+_agent3_is_rescue_order(order)
+  main.py:14256:    except Exception:
+  main.py:14257:        src = str(order.get("source", "") 
+or "").lower()
+  main.py:14258:        strategy = 
+str(order.get("strategy", "") or "").lower()
+  main.py:14259:        reason = 
+str(order.get("entry_reason", "") or "").lower()
+  main.py:14260:        is_rescue = (
+  main.py:14261:            "allocator_opportunity_rescue" 
+in src
+> main.py:14262:            or "allocator_rescue" in src
+> main.py:14263:            or "evo_allocator_rescue" in 
+strategy
+> main.py:14264:            or "allocator_rescue" in reason
+  main.py:14265:        )
+  main.py:14266:
+  main.py:14267:    if not is_rescue:
+  main.py:14268:        return True, "not_rescue_order", 
+order
+  main.py:14269:
+  main.py:14270:    symbol = order.get("symbol")
+  main.py:14271:    if not symbol:
+> main.py:14272:        
+print("[ALLOCATOR_RESCUE_SANITIZER] symbol=None 
+decision=BLOCK reason=missing_symbol", flush=True)
+  main.py:14273:        return False, "missing_symbol", 
+order
+  main.py:14274:
+  main.py:14275:    # Refresh cache from local vars if 
+visible.
+  main.py:14276:    
+_agent3_safe_update_top_cache(local_vars)
+  main.py:14277:
+  main.py:14278:    top_symbols, top_source = 
+_agent3_safe_get_top_symbols(local_vars)
+  main.py:14279:
+  main.py:14280:    if not top_symbols:
+  main.py:14281:        print(
+> main.py:14282:            f"[ALLOCATOR_RESCUE_SANITIZER] 
+symbol={symbol} in_top=False source=unknown ready=unknown "
+  main.py:14283:            f"regime=unknown 
+confidence=unknown signal=unknown decision=BLOCK 
+reason=entry_quality_top_empty",
+  main.py:14284:            flush=True,
+  main.py:14285:        )
+  main.py:14286:        return False, 
+"entry_quality_top_empty", order
+  main.py:14287:
+  main.py:14288:    if symbol not in top_symbols:
+  main.py:14289:        print(
+> main.py:14290:            f"[ALLOCATOR_RESCUE_SANITIZER] 
+symbol={symbol} in_top=False top_source={top_source} "
+  main.py:14291:            f"decision=BLOCK 
+reason=not_in_entry_quality_top",
+  main.py:14292:            flush=True,
+  main.py:14293:        )
+  main.py:14294:        return False, 
+"not_in_entry_quality_top", order
+  main.py:14295:
+  main.py:14296:    try:
+  main.py:14297:        feature = 
+_agent3_lookup_feature(order, local_vars)
+  main.py:14298:    except Exception:
+  main.py:14299:        feature = order.get("feature") if 
+isinstance(order.get("feature"), dict) else {}
+  main.py:14300:
+  main.py:14301:    if not isinstance(feature, dict) or 
+not feature:
+  main.py:14302:        print(
+> main.py:14303:            f"[ALLOCATOR_RESCUE_SANITIZER] 
+symbol={symbol} in_top=True decision=BLOCK 
+reason=missing_feature_snapshot",
+  main.py:14304:            flush=True,
+  main.py:14305:        )
+  main.py:14306:        return False, 
+"missing_feature_snapshot", order
+  main.py:14307:
+  main.py:14308:    ready = bool(feature.get("ready", 
+False))
+  main.py:14309:    feature_source = 
+str(feature.get("source", "") or "").strip().upper()
+  main.py:14310:    symbol_regime = 
+str(feature.get("symbol_regime", "") or "").upper()
+  main.py:14311:    signal_strength = 
+_agent3_safe_float(feature.get("signal_strength", 
+order.get("signal_strength")), 0.0)
+  main.py:14312:    confidence = 
+_agent3_safe_float(order.get("confidence", 
+feature.get("confidence", 0.0)), 0.0)
+  main.py:14313:
+  main.py:14314:    def _block(reason):
+  main.py:14315:        print(
+> main.py:14316:            f"[ALLOCATOR_RESCUE_SANITIZER] 
+symbol={symbol} in_top=True source={feature_source} "
+  main.py:14317:            f"ready={ready} 
+regime={symbol_regime} confidence={confidence:.6f} 
+signal={signal_strength:.6f} "
+  main.py:14318:            f"decision=BLOCK 
+reason={reason}",
+  main.py:14319:            flush=True,
+  main.py:14320:        )
+  main.py:14321:        return False, reason, order
+  main.py:14322:
+  main.py:14323:    if feature_source != "NORMAL":
+  main.py:14324:        return _block("not_normal_source")
+  main.py:14325:
+  main.py:14326:    if ready is not True:
+  main.py:14360:    enriched["feature"] = feature
+  main.py:14361:    enriched["feature_source"] = "NORMAL"
+  main.py:14362:    enriched["signal_strength"] = 
+signal_strength
+  main.py:14363:    enriched["symbol_regime"] = 
+symbol_regime
+> main.py:14364:    enriched["entry_reason"] = 
+"evo_allocator_rescue_entry_quality_top_normal"
+  main.py:14365:    enriched["confidence"] = confidence
+  main.py:14366:
+  main.py:14367:    print(
+> main.py:14368:        f"[ALLOCATOR_RESCUE_SANITIZER] 
+symbol={symbol} in_top=True source={feature_source} "
+  main.py:14369:        f"ready={ready} 
+regime={symbol_regime} confidence={confidence:.6f} 
+signal={signal_strength:.6f} "
+  main.py:14370:        f"decision=ALLOW",
+  main.py:14371:        flush=True,
+  main.py:14372:    )
+  main.py:14373:
+  main.py:14374:    return True, "passed", enriched
+  main.py:14375:
+  main.py:14376:# AGENT3_SAFE_RESCUE_SANITIZER_CACHE_V2_END
+  main.py:14377:
+  main.py:14378:
+  main.py:14502:
+  main.py:14503:    if qty <= 0 and value > 0 and price > 
+0:
+  main.py:14504:        qty = value / price
+  main.py:14505:
+> main.py:14506:    if qty <= 0 and strategy == 
+"evo_allocator_rescue" and side == "buy":
+  main.py:14507:        default_value = 1.25
+  main.py:14508:        try:
+  main.py:14509:            a = 
+qfos_agent5_ledger_accounting_snapshot() if 
+"qfos_agent5_ledger_accounting_snapshot" in globals() else 
+{}
+  main.py:14510:            equity_hint = 
+qfos_exec_bridge_float(a.get("expected_equity"), 100.0) if 
+isinstance(a, dict) else 100.0
+  main.py:14511:            default_value = min(1.25, 
+max(0.50, equity_hint * 0.0125))
+  main.py:14512:        except Exception:
+  main.py:14513:            default_value = 1.25
+  main.py:14514:        qty = default_value / price
+  main.py:14515:        value = default_value
+  main.py:14516:
+  main.py:14524:    fill["quantity"] = float(qty)
+  main.py:14525:    fill["expected_price"] = 
+float(fill.get("expected_price") or price)
+  main.py:14526:    fill["fill_price"] = 
+float(fill.get("fill_price") or price)
+  main.py:14527:    fill["strategy"] = strategy
+> main.py:14528:    fill["confidence"] = 
+qfos_exec_bridge_float(fill.get("confidence"), 1.0 if 
+strategy == "evo_allocator_rescue" else 0.0)
+  main.py:14529:    fill["slippage_bps"] = 
+qfos_exec_bridge_float(fill.get("slippage_bps"), 0.0)
+  main.py:14530:    fill["shadow_mode"] = 
+bool(fill.get("shadow_mode", False))
+  main.py:14531:    fill["live"] = bool(fill.get("live", 
+False))
+  main.py:14532:    if source:
+  main.py:14533:        fill["source"] = source
+  main.py:14534:
+  main.py:14535:    
+qfos_exec_bridge_audit("normalize_order", index=index, 
+symbol=symbol, strategy=strategy, side=side, 
+qty=float(qty), price=float(fill["fill_price"]), 
+decision="ALLOW")
+  main.py:14536:    
+qfos_exec_bridge_audit("proposed_fill_created", 
+symbol=symbol, side=side, qty=float(qty), 
+fill_price=float(fill["fill_price"]), strategy=strategy)
+  main.py:14537:    return fill, "ok"
+  main.py:14538:
+
+

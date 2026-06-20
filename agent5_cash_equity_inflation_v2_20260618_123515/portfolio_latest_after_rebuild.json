@@ -1,0 +1,13 @@
+{
+    "equity":  100.06741,
+    "cash":  89.99988,
+    "exposure":  10.07,
+    "drawdown":  0.0,
+    "regime":  "SIDEWAYS",
+    "created_at":  "2026-06-18T09:37:35.744952",
+    "snapshot_exposure":  10.07,
+    "open_positions":  5,
+    "exposure_source":  "sum_postgres_positions",
+    "exposure_mismatch_delta":  0.0,
+    "exposure_pct":  0.100632
+}

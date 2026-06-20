@@ -1,4 +1,6 @@
-﻿from feature_store import FeatureStore
+﻿import os
+os.environ["QFOS_FEATURE_HISTORY_PATH"] = "data/agent4_test_feature_history_runtime.json"
+from feature_store import FeatureStore
 
 fs = FeatureStore()
 
@@ -29,3 +31,4 @@ assert all(v.get("ready") is True for v in features.values())
 assert all("confidence" in v for v in features.values())
 
 print("LOCAL_FEATURESTORE_CONTRACT_PASS")
+

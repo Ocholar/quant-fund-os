@@ -1,0 +1,12 @@
+{
+  "verdict": "FAIL",
+  "failures": [
+    "cleanup transaction did not commit",
+    "orphan archive does not show archived orphan rows",
+    "positive-quantity positions remain after restart",
+    "failed to parse status JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+  ],
+  "warnings": [
+    "could not confidently parse trades count"
+  ]
+}

@@ -172,3 +172,41 @@ class RiskEngine:
             return None
 
         return allocation
+
+
+
+# ============================================================
+# QFOS_AGENT2_CLEAN_LEDGER_RISK_SAFE_V1
+# Purpose:
+#   A clean ledger baseline must not produce BLOCKED/max_daily_loss
+#   without real trades or open positions proving loss.
+# ============================================================
+
+def qfos_clean_ledger_forces_safe(trades_count=0, open_position_count=0):
+    try:
+        return int(trades_count or 0) == 0 and int(open_position_count or 0) == 0
+    except Exception:
+        return False
+
+
+def qfos_clean_ledger_safe_status(default_status="SAFE", trades_count=0, open_position_count=0):
+    if qfos_clean_ledger_forces_safe(trades_count, open_position_count):
+        return "SAFE"
+    return default_status
+
+
+def qfos_clean_ledger_blocks_stale_max_daily_loss(reason="", trades_count=0, open_position_count=0):
+    if not qfos_clean_ledger_forces_safe(trades_count, open_position_count):
+        return False
+    r = str(reason or "").lower()
+    return (
+        "max_daily_loss_hit" in r
+        or "near_blocked_drawdown" in r
+        or "blocked_drawdown" in r
+        or "blocked" in r
+    )
+
+# ============================================================
+# End QFOS_AGENT2_CLEAN_LEDGER_RISK_SAFE_V1
+# ============================================================
+

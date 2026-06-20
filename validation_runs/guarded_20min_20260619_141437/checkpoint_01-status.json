@@ -1,0 +1,343 @@
+﻿{
+    "name":  "Quant Fund OS",
+    "mode":  "paper",
+    "live_trading":  false,
+    "exchange":  "mexc",
+    "exchange_type":  "spot",
+    "leverage":  1,
+    "risk_status":  "SAFE",
+    "portfolio":  {
+                      "equity":  100.01,
+                      "cash":  100.01,
+                      "exposure":  0.0,
+                      "exposure_pct":  0.0,
+                      "drawdown":  0.0,
+                      "regime":  "SIDEWAYS",
+                      "realized_pnl":  0.0117,
+                      "unrealized_pnl":  0.0,
+                      "total_pnl":  0.0117,
+                      "updated_at":  "2026-06-19T11:16:38.895073",
+                      "snapshot_exposure":  0.0,
+                      "exposure_source":  "no_open_positions",
+                      "equity_source":  "cash_plus_exposure",
+                      "equity_minus_cash_exposure":  0.0
+                  },
+    "positions":  [
+
+                  ],
+    "performance":  {
+                        "total_trades":  46,
+                        "buy_count":  23,
+                        "sell_count":  23,
+                        "win_rate":  1.0,
+                        "win_rate_estimate":  1.0,
+                        "realized_pnl":  0.0117,
+                        "unrealized_pnl":  0.0,
+                        "total_pnl":  0.0117,
+                        "take_profit_count":  12,
+                        "stop_loss_count":  0,
+                        "closed_outcome_count":  12,
+                        "other_exit_count":  11
+                    },
+    "trading":  {
+                    "total_trades":  46,
+                    "buy_count":  23,
+                    "sell_count":  23,
+                    "latest_trades":  [
+                                          {
+                                              "time":  "2026-06-19T11:16:38",
+                                              "created_at":  "2026-06-19T11:16:38",
+                                              "symbol":  "EDEN/USDT",
+                                              "side":  "sell",
+                                              "quantity":  23.10536,
+                                              "fill_price":  0.0541,
+                                              "strategy":  "sideways_take_profit_exit",
+                                              "confidence":  1.0,
+                                              "live":  false,
+                                              "raw_strategy":  "sideways_take_profit_exit",
+                                              "is_exit":  true,
+                                              "exit_reason":  "sideways_take_profit_exit",
+                                              "entry_strategy":  null,
+                                              "display_strategy":  "sideways_take_profit_exit"
+                                          },
+                                          {
+                                              "time":  "2026-06-19T11:16:38",
+                                              "created_at":  "2026-06-19T11:16:38",
+                                              "symbol":  "EDEN/USDT",
+                                              "side":  "buy",
+                                              "quantity":  23.10536,
+                                              "fill_price":  0.0541,
+                                              "strategy":  "evo_allocator_rescue",
+                                              "confidence":  0.5279,
+                                              "live":  false,
+                                              "raw_strategy":  "evo_allocator_rescue",
+                                              "is_exit":  false,
+                                              "exit_reason":  null,
+                                              "entry_strategy":  "evo_allocator_rescue",
+                                              "display_strategy":  "evo_allocator_rescue"
+                                          },
+                                          {
+                                              "time":  "2026-06-19T11:16:21",
+                                              "created_at":  "2026-06-19T11:16:21",
+                                              "symbol":  "BEAT/USDT",
+                                              "side":  "sell",
+                                              "quantity":  0.69014263,
+                                              "fill_price":  1.82615,
+                                              "strategy":  "sideways_take_profit_exit",
+                                              "confidence":  1.0,
+                                              "live":  false,
+                                              "raw_strategy":  "sideways_take_profit_exit",
+                                              "is_exit":  true,
+                                              "exit_reason":  "sideways_take_profit_exit",
+                                              "entry_strategy":  null,
+                                              "display_strategy":  "sideways_take_profit_exit"
+                                          },
+                                          {
+                                              "time":  "2026-06-19T11:14:59",
+                                              "created_at":  "2026-06-19T11:14:59",
+                                              "symbol":  "BEAT/USDT",
+                                              "side":  "buy",
+                                              "quantity":  0.6901426,
+                                              "fill_price":  1.81122,
+                                              "strategy":  "evo_allocator_rescue",
+                                              "confidence":  0.8106,
+                                              "live":  false,
+                                              "raw_strategy":  "evo_allocator_rescue",
+                                              "is_exit":  false,
+                                              "exit_reason":  null,
+                                              "entry_strategy":  "evo_allocator_rescue",
+                                              "display_strategy":  "evo_allocator_rescue"
+                                          },
+                                          {
+                                              "time":  "2026-06-19T11:14:37",
+                                              "created_at":  "2026-06-19T11:14:37",
+                                              "symbol":  "BEAT/USDT",
+                                              "side":  "sell",
+                                              "quantity":  0.6955495,
+                                              "fill_price":  1.79714,
+                                              "strategy":  "sideways_take_profit_exit",
+                                              "confidence":  1.0,
+                                              "live":  false,
+                                              "raw_strategy":  "sideways_take_profit_exit",
+                                              "is_exit":  true,
+                                              "exit_reason":  "sideways_take_profit_exit",
+                                              "entry_strategy":  null,
+                                              "display_strategy":  "sideways_take_profit_exit"
+                                          },
+                                          {
+                                              "time":  "2026-06-19T11:14:37",
+                                              "created_at":  "2026-06-19T11:14:37",
+                                              "symbol":  "BEAT/USDT",
+                                              "side":  "buy",
+                                              "quantity":  0.6955496,
+                                              "fill_price":  1.79714,
+                                              "strategy":  "evo_allocator_rescue",
+                                              "confidence":  0.6895,
+                                              "live":  false,
+                                              "raw_strategy":  "evo_allocator_rescue",
+                                              "is_exit":  false,
+                                              "exit_reason":  null,
+                                              "entry_strategy":  "evo_allocator_rescue",
+                                              "display_strategy":  "evo_allocator_rescue"
+                                          },
+                                          {
+                                              "time":  "2026-06-19T11:13:01",
+                                              "created_at":  "2026-06-19T11:13:01",
+                                              "symbol":  "BILL/USDT",
+                                              "side":  "sell",
+                                              "quantity":  20.151539,
+                                              "fill_price":  0.06203,
+                                              "strategy":  "sideways_stagnation_exit",
+                                              "confidence":  1.0,
+                                              "live":  false,
+                                              "raw_strategy":  "sideways_stagnation_exit",
+                                              "is_exit":  true,
+                                              "exit_reason":  "sideways_stagnation_exit",
+                                              "entry_strategy":  null,
+                                              "display_strategy":  "sideways_stagnation_exit"
+                                          },
+                                          {
+                                              "time":  "2026-06-19T11:13:01",
+                                              "created_at":  "2026-06-19T11:13:01",
+                                              "symbol":  "BILL/USDT",
+                                              "side":  "buy",
+                                              "quantity":  20.151539,
+                                              "fill_price":  0.06203,
+                                              "strategy":  "evo_allocator_rescue",
+                                              "confidence":  0.5302,
+                                              "live":  false,
+                                              "raw_strategy":  "evo_allocator_rescue",
+                                              "is_exit":  false,
+                                              "exit_reason":  null,
+                                              "entry_strategy":  "evo_allocator_rescue",
+                                              "display_strategy":  "evo_allocator_rescue"
+                                          },
+                                          {
+                                              "time":  "2026-06-19T11:12:06",
+                                              "created_at":  "2026-06-19T11:12:06",
+                                              "symbol":  "EDEN/USDT",
+                                              "side":  "sell",
+                                              "quantity":  23.20401,
+                                              "fill_price":  0.054,
+                                              "strategy":  "sideways_take_profit_exit",
+                                              "confidence":  1.0,
+                                              "live":  false,
+                                              "raw_strategy":  "sideways_take_profit_exit",
+                                              "is_exit":  true,
+                                              "exit_reason":  "sideways_take_profit_exit",
+                                              "entry_strategy":  null,
+                                              "display_strategy":  "sideways_take_profit_exit"
+                                          },
+                                          {
+                                              "time":  "2026-06-19T11:10:53",
+                                              "created_at":  "2026-06-19T11:10:53",
+                                              "symbol":  "EDEN/USDT",
+                                              "side":  "buy",
+                                              "quantity":  23.20401,
+                                              "fill_price":  0.05387,
+                                              "strategy":  "evo_allocator_rescue",
+                                              "confidence":  0.5982,
+                                              "live":  false,
+                                              "raw_strategy":  "evo_allocator_rescue",
+                                              "is_exit":  false,
+                                              "exit_reason":  null,
+                                              "entry_strategy":  "evo_allocator_rescue",
+                                              "display_strategy":  "evo_allocator_rescue"
+                                          }
+                                      ]
+                },
+    "take_profit_count":  0,
+    "stop_loss_count":  0,
+    "breakeven_protection_exit_count":  0,
+    "time_stop_exit_count":  0,
+    "risk_rules":  {
+                       "max_total_exposure_pct":  0.12,
+                       "max_symbol_exposure_pct":  0.04,
+                       "caution_exposure_pct":  0.09,
+                       "blocked_drawdown":  -0.08,
+                       "caution_drawdown":  -0.04,
+                       "sideways_max_entries_per_hour":  3,
+                       "sideways_min_confidence":  0.5,
+                       "max_trades_per_symbol":  3,
+                       "trade_count_window_hours":  1.0,
+                       "entry_quality_top_n":  10,
+                       "entry_min_signal_sideways":  0.0016
+                   },
+    "quarantine":  [
+
+                   ],
+    "strategy_scores":  [
+                            {
+                                "strategy":  "sideways_take_profit_exit",
+                                "score":  0.15062052,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "sideways_max_hold_exit",
+                                "score":  0.010654219,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4210",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_6408",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4951",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_9863",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_8909",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4951_m",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_6408_m",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_7947",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_4211",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_7657_m",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_3107",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_9299",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_9271",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_5195",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_2960",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_7657",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "evo_9882",
+                                "score":  0.0,
+                                "status":  "active"
+                            },
+                            {
+                                "strategy":  "sideways_stagnation_exit",
+                                "score":  -0.005379759,
+                                "status":  "blocked"
+                            }
+                        ],
+    "paused":  false,
+    "pause_reason":  "",
+    "bot_state":  "RUNNING",
+    "status_label":  "RUNNING",
+    "controls":  {
+                     "pause":  "/pause",
+                     "resume":  "/resume",
+                     "kill_switch":  "/kill-switch"
+                 },
+    "anomaly_warnings":  [
+                             "ANOMALY: win_rate=100% over 12 closed outcomes Ã¢â¬â verify trade history."
+                         ]
+}

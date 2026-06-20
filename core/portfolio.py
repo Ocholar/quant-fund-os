@@ -154,3 +154,35 @@ class Portfolio:
 
         if self.exposure_pct < -1e-12:
             raise ValueError("portfolio invariant failed: negative exposure_pct")
+
+
+
+# ============================================================
+# QFOS_AGENT1_PORTFOLIO_CLEAN_BASELINE_HELPER_V1
+# Purpose:
+#   Utility used by runtime baseline authority to reset portfolio-like
+#   objects to clean paper baseline.
+# ============================================================
+
+def qfos_force_portfolio_clean_baseline(portfolio, equity=100.0, cash=100.0):
+    try:
+        if hasattr(portfolio, "cash"):
+            portfolio.cash = float(cash)
+        if hasattr(portfolio, "equity"):
+            portfolio.equity = float(equity)
+        if hasattr(portfolio, "drawdown"):
+            portfolio.drawdown = 0.0
+        if hasattr(portfolio, "realized_pnl"):
+            portfolio.realized_pnl = 0.0
+        if hasattr(portfolio, "unrealized_pnl"):
+            portfolio.unrealized_pnl = 0.0
+        if hasattr(portfolio, "positions") and hasattr(portfolio.positions, "clear"):
+            portfolio.positions.clear()
+        return True
+    except Exception:
+        return False
+
+# ============================================================
+# End QFOS_AGENT1_PORTFOLIO_CLEAN_BASELINE_HELPER_V1
+# ============================================================
+

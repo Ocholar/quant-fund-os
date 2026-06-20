@@ -1,0 +1,98 @@
+[
+  {
+    "file": "inventory_execution_paths.py",
+    "type": "sql_mutation",
+    "function": "<module>",
+    "line_start": 14,
+    "line_end": 14,
+    "sql": "insert into trades"
+  },
+  {
+    "file": "inventory_execution_paths.py",
+    "type": "sql_mutation",
+    "function": "<module>",
+    "line_start": 17,
+    "line_end": 17,
+    "sql": "insert into positions"
+  },
+  {
+    "file": "inventory_execution_paths.py",
+    "type": "sql_mutation",
+    "function": "<module>",
+    "line_start": 18,
+    "line_end": 18,
+    "sql": "update positions"
+  },
+  {
+    "file": "inventory_execution_paths.py",
+    "type": "sql_mutation",
+    "function": "<module>",
+    "line_start": 19,
+    "line_end": 19,
+    "sql": "delete from positions"
+  },
+  {
+    "file": "inventory_execution_paths.py",
+    "type": "sql_mutation",
+    "function": "<module>",
+    "line_start": 20,
+    "line_end": 20,
+    "sql": "insert into portfolio_snapshots"
+  },
+  {
+    "file": "inventory_execution_paths.py",
+    "type": "sql_mutation",
+    "function": "<module>",
+    "line_start": 21,
+    "line_end": 21,
+    "sql": "update portfolio_snapshots"
+  },
+  {
+    "file": "inventory_execution_paths.py",
+    "type": "sql_mutation",
+    "function": "<module>",
+    "line_start": 148,
+    "line_end": 148,
+    "sql": "insert into trades"
+  },
+  {
+    "file": "inventory_execution_paths.py",
+    "type": "sql_mutation",
+    "function": "<module>",
+    "line_start": 149,
+    "line_end": 149,
+    "sql": "update positions"
+  },
+  {
+    "file": "inventory_execution_paths.py",
+    "type": "sql_mutation",
+    "function": "<module>",
+    "line_start": 150,
+    "line_end": 150,
+    "sql": "insert into positions"
+  },
+  {
+    "file": "inventory_execution_paths.py",
+    "type": "sql_mutation",
+    "function": "<module>",
+    "line_start": 151,
+    "line_end": 151,
+    "sql": "insert into portfolio_snapshots"
+  },
+  {
+    "file": "inventory_execution_paths.py",
+    "type": "sql_mutation",
+    "function": "<module>",
+    "line_start": 152,
+    "line_end": 152,
+    "sql": "update portfolio_snapshots"
+  },
+  {
+    "file": "inventory_execution_paths.py",
+    "type": "sql_mutation",
+    "function": "<module>",
+    "line_start": 153,
+    "line_end": 153,
+    "sql": "delete from positions"
+  }
+]

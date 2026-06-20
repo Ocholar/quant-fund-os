@@ -41,4 +41,47 @@ else:
 PY
 
 python -m uvicorn services.api:app --host 0.0.0.0 --port 8080 &
+API_PID=$!
+
+# QFOS_STARTUP_PAUSE_INTERLOCK_V3
+# Fail closed: main.py cannot start unless the API confirms PAUSED.
+python - <<'PY'
+import time
+import urllib.request
+
+last_error = None
+
+for attempt in range(240):
+    try:
+        req = urllib.request.Request(
+            "http://127.0.0.1:8080/pause",
+            data=b"",
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=3) as response:
+            if 200 <= response.status < 300:
+                print(
+                    f"[STARTUP_PAUSE_INTERLOCK] pause_confirmed attempt={attempt + 1}",
+                    flush=True,
+                )
+                break
+    except Exception as exc:
+        last_error = repr(exc)
+
+        # Fail immediately if the Uvicorn process itself died.
+        try:
+            import os
+            os.kill(int(os.environ.get("API_PID", "0")), 0)
+        except Exception:
+            raise SystemExit(
+                f"[STARTUP_PAUSE_INTERLOCK] api_process_not_alive error={last_error}"
+            )
+
+        time.sleep(0.25)
+else:
+    raise SystemExit(
+        f"[STARTUP_PAUSE_INTERLOCK] pause_failed_after_60_seconds error={last_error}"
+    )
+PY
+
 python main.py
