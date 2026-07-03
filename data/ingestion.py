@@ -23,6 +23,13 @@ MIN_VALID_PRICE = 1e-8
 MAX_STALE_SECONDS = 900
 MEXC_REST_TICKERS_URL = "https://api.mexc.com/api/v3/ticker/24hr"
 
+# Bounded network policy:
+# - one CCXT bulk attempt only;
+# - one public MEXC batch REST fallback;
+# - never serially wait through every symbol after a bulk failure.
+CCXT_BULK_TIMEOUT_MS = 5000
+MEXC_REST_TIMEOUT_SECONDS = 8
+
 STABLE_NEAR_ONE = {"USDC/USDT", "USD1/USDT"}
 NEAR_ONE_FX = {"EUR/USDT"}
 
@@ -134,7 +141,7 @@ class PaperMarketData:
 
             self.exchange = ccxt.mexc({
                 "enableRateLimit": True,
-                "timeout": 15000,
+                "timeout": CCXT_BULK_TIMEOUT_MS,
                 "options": {"defaultType": "spot"},
             })
         except Exception as e:
@@ -169,24 +176,15 @@ class PaperMarketData:
         except Exception as e:
             print(f"MARKET DATA WARNING: ccxt fetch_tickers failed: {e}")
 
-        # Individual fallback. Slower, but real.
-        for symbol in self.symbols:
-            try:
-                t = self.exchange.fetch_ticker(symbol)
-                px = (
-                    t.get("last")
-                    or t.get("close")
-                    or t.get("bid")
-                    or t.get("ask")
-                )
-                px = _safe_float(px)
-                if px > 0:
-                    prices[symbol] = px
-                time.sleep(0.04)
-            except Exception as e:
-                print(f"MARKET DATA WARNING: ccxt ticker failed {symbol}: {e}")
-
-        return prices
+        # Do not degrade into serial per-symbol CCXT calls. One bulk failure
+        # must not turn a market cycle into dozens of slow metadata requests.
+        # _fetch_real_prices() immediately tries the single REST batch path.
+        print(
+            "[MARKET_FETCH_POLICY] ccxt_bulk_failed "
+            "serial_symbol_fallback=disabled",
+            flush=True,
+        )
+        return {}
 
     def _fetch_mexc_rest_prices(self) -> Dict[str, float]:
         """
@@ -204,7 +202,10 @@ class PaperMarketData:
                     "Accept": "application/json",
                 },
             )
-            with urllib.request.urlopen(req, timeout=20) as resp:
+            with urllib.request.urlopen(
+                req,
+                timeout=MEXC_REST_TIMEOUT_SECONDS,
+            ) as resp:
                 data = json.loads(resp.read().decode("utf-8", errors="ignore"))
 
             if isinstance(data, dict):
@@ -239,14 +240,28 @@ class PaperMarketData:
         return prices
 
     def _fetch_real_prices(self) -> Dict[str, float]:
-        prices = self._fetch_ccxt_prices()
+        ccxt_prices = self._fetch_ccxt_prices()
+        required_count = min(
+            len(self.symbols),
+            max(5, int(len(self.symbols) * 0.50)),
+        )
+        prices = ccxt_prices
 
-        # If ccxt gives too few symbols, try REST.
-        if len(prices) < max(5, int(len(self.symbols) * 0.50)):
+        # The REST endpoint is one bounded batch request. Prefer whichever
+        # complete source returns more usable symbols, without merging
+        # incomparable snapshots.
+        if len(ccxt_prices) < required_count:
             rest_prices = self._fetch_mexc_rest_prices()
-            if len(rest_prices) > len(prices):
+            if len(rest_prices) > len(ccxt_prices):
                 prices = rest_prices
 
+        print(
+            "[MARKET_FETCH_POLICY] "
+            f"ccxt_count={len(ccxt_prices)} "
+            f"required_count={required_count} "
+            f"selected_count={len(prices)}",
+            flush=True,
+        )
         return prices
 
     def _fresh_last_good(self) -> Dict[str, float]:

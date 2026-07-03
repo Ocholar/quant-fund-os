@@ -129,7 +129,13 @@ def cycle_from_locals(ctx):
 
         raw_orders = len(ctx.get("raw_result_orders") or [])
         proposed_fills = len(ctx.get("proposed_fills") or [])
-        final_applied_fills = len(ctx.get("applied_fills") or [])
+        persisted_fills = int(
+            ctx.get("persisted_fills_count")
+            if ctx.get("persisted_fills_count") is not None
+            else len(ctx.get("persisted_fills") or [])
+        )
+        rejected_fills = int(ctx.get("rejected_fills") or 0)
+        final_applied_fills = int(ctx.get("final_applied_fills") or persisted_fills)
 
         ranked = len(ctx.get("entry_quality_top_symbols") or [])
         broad = len(ctx.get("proposed_agent_orders") or [])
@@ -155,6 +161,8 @@ def cycle_from_locals(ctx):
             quality_candidates=ranked,
             raw_orders=raw_orders,
             proposed_fills=proposed_fills,
+            persisted_fills=persisted_fills,
+            rejected_fills=rejected_fills,
             final_applied_fills=final_applied_fills,
         )
 
@@ -179,7 +187,8 @@ def cycle_from_locals(ctx):
         )
         print(
             f"[QFOS_EXECUTION_CYCLE] cycle_id={cycle_id} raw_orders={raw_orders} "
-            f"proposed_fills={proposed_fills} final_applied_fills={final_applied_fills}",
+            f"proposed_fills={proposed_fills} persisted_fills={persisted_fills} "
+            f"rejected_fills={rejected_fills} final_applied_fills={final_applied_fills}",
             flush=True,
         )
         print(
@@ -187,7 +196,8 @@ def cycle_from_locals(ctx):
             f"valid_prices={len(prices)} feature_symbols={feature_symbols} "
             f"normal_features={normal_features} ready_features={ready_features} "
             f"quality_candidates={ranked} raw_orders={raw_orders} "
-            f"proposed_fills={proposed_fills} final_applied_fills={final_applied_fills} "
+            f"proposed_fills={proposed_fills} persisted_fills={persisted_fills} "
+            f"rejected_fills={rejected_fills} final_applied_fills={final_applied_fills} "
             f"updated_at={now}",
             flush=True,
         )

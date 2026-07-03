@@ -1,4 +1,4 @@
-﻿from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -49,7 +49,7 @@ class Settings(BaseSettings):
 
     # Entry Quality Lockdown.
     entry_quality_top_n: int = 2
-    entry_min_signal_sideways: float = 0.025
+    entry_min_signal_sideways: float = 0.006
 
     # SIDEWAYS entry pacing / exceptional ladder.
     sideways_entry_min_gap_minutes: float = 15

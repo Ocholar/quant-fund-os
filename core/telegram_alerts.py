@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 # Load .env from project root/current working directory.
 # override=True ensures .env wins over stale shell values.
-load_dotenv(override=True)
+load_dotenv(override=False)
 
 try:
     from core.config import settings
