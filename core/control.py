@@ -9,8 +9,8 @@ except Exception:
     redis = None
 
 
-_PAUSED_FALLBACK = False
-_REASON_FALLBACK = ""
+_PAUSED_FALLBACK = True
+_REASON_FALLBACK = "startup_interlock_no_control_state"
 
 
 def _redis_client():

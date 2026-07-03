@@ -26,6 +26,13 @@ if db_url and db_url.startswith("postgresql"):
                             if stmt:
                                 conn.execute(text(stmt))
                                 
+                if os.path.exists('bootstrap_accounting.sql'):
+                    with open('bootstrap_accounting.sql', 'r') as f:
+                        accounting_sql = f.read().strip()
+                    if accounting_sql:
+                        conn.execute(text(accounting_sql))
+                        print("[STARTUP_DB_INIT] accounting_bootstrap_applied")
+
                 conn.commit()
             print("[STARTUP_DB_INIT] DB_OK (PostgreSQL)")
             break

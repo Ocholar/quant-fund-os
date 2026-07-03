@@ -14,7 +14,7 @@ class FeatureStore:
     """
 
     def __init__(self, window=120):
-        self.window = window
+        self.window = max(60, int(window))
         self.history = defaultdict(lambda: deque(maxlen=window))
 
     def update(self, prices: dict[str, float]):
@@ -83,7 +83,7 @@ class FeatureStore:
     def features(self, symbol: str) -> dict:
         arr = np.array(self.history[symbol], dtype=float)
 
-        if len(arr) < 20:
+        if len(arr) < 60:
             return {
                 "ready": False,
                 "symbol_regime": "WARMING_UP",
@@ -100,7 +100,7 @@ class FeatureStore:
 
         short_ma = float(arr[-5:].mean())
         medium_ma = float(arr[-20:].mean())
-        long_ma = float(arr[-60:].mean()) if len(arr) >= 60 else medium_ma
+        long_ma = float(arr[-60:].mean())
 
         trend = (short_ma / medium_ma) - 1 if medium_ma else 0.0
         long_trend = (medium_ma / long_ma) - 1 if long_ma else 0.0
