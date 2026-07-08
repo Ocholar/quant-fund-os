@@ -111,7 +111,7 @@ import math
 import statistics
 
 # ============================================================
-# QFOS OUTLIER LOSS CAP ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â percentage based, equity-scaled
+# QFOS OUTLIER LOSS CAP ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â percentage based, equity-scaled
 # Purpose:
 #   Prevent one bad trade from wiping out many small wins.
 #   These are percentages of CURRENT equity, not fixed dollars.
@@ -900,7 +900,7 @@ def _qfos_expectancy_guard_with_cycle_log_inner(proposed_fills=None, context=Non
             _after_orders = list(_after_orders or [])
     except Exception as _exc:
 
-        # QFOS FALLBACK SCOUT QUALITY GUARD ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â inline pre-expectancy filter
+        # QFOS FALLBACK SCOUT QUALITY GUARD ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â inline pre-expectancy filter
         try:
             _qfos_fb_locals = locals()
             for _qfos_fb_name in ("orders", "proposed_fills", "fills", "proposed_orders"):
@@ -978,7 +978,7 @@ def qfos_expectancy_guard_with_cycle_log(proposed_fills=None, context=None):
       - avoids unbound proposed_fills crashes
       - calls the original expectancy guard if available
 
-      # QFOS FALLBACK SCOUT QUALITY GUARD ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â inline pre-expectancy filter
+      # QFOS FALLBACK SCOUT QUALITY GUARD ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â inline pre-expectancy filter
       try:
           _qfos_fb_locals = locals()
           for _qfos_fb_name in ("orders", "proposed_fills", "fills", "proposed_orders"):
@@ -1038,7 +1038,7 @@ def qfos_expectancy_guard_with_cycle_log(proposed_fills=None, context=None):
             f.write(_json.dumps(row, sort_keys=True) + "\n")
     except Exception as log_exc:
 
-        # QFOS FALLBACK SCOUT QUALITY GUARD ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â inline pre-expectancy filter
+        # QFOS FALLBACK SCOUT QUALITY GUARD ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â inline pre-expectancy filter
         try:
             _qfos_fb_locals = locals()
             for _qfos_fb_name in ("orders", "proposed_fills", "fills", "proposed_orders"):
@@ -4650,10 +4650,20 @@ def save_trade(conn, fill):
 
 def ensure_positions_table():
     with engine.begin() as conn:
-        conn.execute(text("\n            CREATE TABLE IF NOT EXISTS positions (\n                symbol TEXT PRIMARY KEY,\n                quantity REAL NOT NULL DEFAULT 0,\n                avg_entry REAL NOT NULL DEFAULT 0,\n                realized_pnl REAL NOT NULL DEFAULT 0,\n                unrealized_pnl REAL NOT NULL DEFAULT 0,\n                last_price REAL NOT NULL DEFAULT 0,\n                exposure REAL NOT NULL DEFAULT 0,\n                strategy TEXT,\n                updated_at DATETIME DEFAULT (CURRENT_TIMESTAMP + interval '3 hours')\n            )\n        "))
+        conn.execute(text("\n            CREATE TABLE IF NOT EXISTS positions (\n                symbol TEXT PRIMARY KEY,\n                quantity REAL NOT NULL DEFAULT 0,\n                avg_entry REAL NOT NULL DEFAULT 0,\n                realized_pnl REAL NOT NULL DEFAULT 0,\n                unrealized_pnl REAL NOT NULL DEFAULT 0,\n                last_price REAL NOT NULL DEFAULT 0,\n                exposure REAL NOT NULL DEFAULT 0,\n                strategy TEXT,\n                trade_uuid TEXT,\n                highest_price_seen REAL DEFAULT 0,\n                lowest_price_seen REAL DEFAULT 0,\n                max_unrealized_profit REAL DEFAULT 0,\n                max_unrealized_loss REAL DEFAULT 0,\n                updated_at DATETIME DEFAULT (CURRENT_TIMESTAMP + interval '3 hours')\n            )\n        "))
         cols = [r[0] for r in conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'positions' AND table_schema = 'public'"))]
         if 'strategy' not in cols:
             conn.execute(text('ALTER TABLE positions ADD COLUMN strategy TEXT'))
+        if 'trade_uuid' not in cols:
+            conn.execute(text('ALTER TABLE positions ADD COLUMN trade_uuid TEXT'))
+        if 'highest_price_seen' not in cols:
+            conn.execute(text('ALTER TABLE positions ADD COLUMN highest_price_seen REAL DEFAULT 0'))
+        if 'lowest_price_seen' not in cols:
+            conn.execute(text('ALTER TABLE positions ADD COLUMN lowest_price_seen REAL DEFAULT 0'))
+        if 'max_unrealized_profit' not in cols:
+            conn.execute(text('ALTER TABLE positions ADD COLUMN max_unrealized_profit REAL DEFAULT 0'))
+        if 'max_unrealized_loss' not in cols:
+            conn.execute(text('ALTER TABLE positions ADD COLUMN max_unrealized_loss REAL DEFAULT 0'))
         conn.execute(text("\n            CREATE TABLE IF NOT EXISTS symbol_quarantine (\n                symbol TEXT PRIMARY KEY,\n                reason TEXT NOT NULL,\n                blocked_until DATETIME,\n                created_at DATETIME DEFAULT (CURRENT_TIMESTAMP + interval '3 hours')\n            )\n        "))
 
 def quarantine_symbol(symbol: str, reason: str, hours: int=24):
@@ -4838,6 +4848,15 @@ def qfos_ensure_trades_schema(conn):
             "live": "BOOLEAN DEFAULT 0",
             "shadow_mode": "BOOLEAN DEFAULT 0",
             "created_at": "DATETIME DEFAULT CURRENT_TIMESTAMP",
+            "trade_uuid": "TEXT",
+            "regime": "TEXT",
+            "experiment_id": "TEXT",
+            "software_version": "TEXT",
+            "configuration_hash": "TEXT",
+            "mfe": "REAL",
+            "mae": "REAL",
+            "peak_price": "REAL",
+            "trough_price": "REAL",
         }
 
         for col, ddl in required_cols.items():
@@ -5016,9 +5035,53 @@ def mark_positions_to_market(conn, prices):
             continue
         qty = float(row['quantity'] or 0)
         avg_entry = float(row['avg_entry'] or 0)
+        if qty <= 0:
+            continue
         exposure = qty * float(price)
-        unrealized_pnl = qty * (float(price) - avg_entry) if qty > 0 else 0.0
-        conn.execute(text("\n            UPDATE positions\n            SET last_price = :last_price,\n                exposure = :exposure,\n                unrealized_pnl = :unrealized_pnl,\n                updated_at = CURRENT_TIMESTAMP + interval '3 hours'\n            WHERE symbol = :symbol\n        "), {'symbol': symbol, 'last_price': float(price), 'exposure': exposure, 'unrealized_pnl': unrealized_pnl})
+        unrealized_pnl = qty * (float(price) - avg_entry) if avg_entry > 0 else 0.0
+
+        # ---- MFE / MAE lifecycle tracking ----
+        # Update highest_price_seen and lowest_price_seen using a single atomic
+        # SQL statement so there is no Python read-modify-write race window.
+        # GREATEST/LEAST are standard PostgreSQL functions; they also work in
+        # SQLite >= 3.38 via the MAX()/MIN() scalar form — but we guard with a
+        # COALESCE so that a NULL initial value is treated as 0.
+        try:
+            cols = _qfos_table_columns(conn, "positions")
+            has_peak = "highest_price_seen" in cols and "lowest_price_seen" in cols
+        except Exception:
+            has_peak = False
+
+        if has_peak:
+            conn.execute(text("""
+                UPDATE positions
+                SET last_price = :last_price,
+                    exposure = :exposure,
+                    unrealized_pnl = :unrealized_pnl,
+                    highest_price_seen = GREATEST(COALESCE(highest_price_seen, 0), :price),
+                    lowest_price_seen = CASE
+                        WHEN COALESCE(lowest_price_seen, 0) <= 0
+                        THEN :price
+                        ELSE LEAST(lowest_price_seen, :price)
+                    END,
+                    updated_at = CURRENT_TIMESTAMP + interval '3 hours'
+                WHERE symbol = :symbol
+            """), {
+                'symbol': symbol,
+                'last_price': float(price),
+                'exposure': exposure,
+                'unrealized_pnl': unrealized_pnl,
+                'price': float(price),
+            })
+        else:
+            conn.execute(text("""
+                UPDATE positions
+                SET last_price = :last_price,
+                    exposure = :exposure,
+                    unrealized_pnl = :unrealized_pnl,
+                    updated_at = CURRENT_TIMESTAMP + interval '3 hours'
+                WHERE symbol = :symbol
+            """), {'symbol': symbol, 'last_price': float(price), 'exposure': exposure, 'unrealized_pnl': unrealized_pnl})
 # C11_IMPORT_SAFE_GUARD_V1
 if str(__import__("os").getenv("QFOS_IMPORT_SAFE", "")).strip().lower() in ("1", "true", "yes", "on"):
     print("[QFOS_IMPORT_SAFE] skipped database_wait_and_post_wait_reset", flush=True)
@@ -6207,7 +6270,7 @@ def log_cycle_diagnostic(market_data=None, features=None, orders=None, portfolio
     else:
         no_trade_reason = 'orders_created_or_applied'
     print('\n' + '=' * 72)
-    print('QUANT FUND OS ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â CYCLE DIAGNOSTIC')
+    print('QUANT FUND OS ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â CYCLE DIAGNOSTIC')
     print(f'Time: {datetime.utcnow().isoformat()}Z')
     print(f'Market symbols: {market_count}')
     print(f'Feature symbols: {feature_count}')
@@ -8376,17 +8439,6 @@ def _qfos_now_utc_text():
     return _qfos_datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
 
-def _qfos_table_columns(conn, table_name):
-    try:
-        rows = _qfos_exec(
-            conn,
-            f"SELECT column_name FROM information_schema.columns WHERE table_name = '{table_name}' AND table_schema = 'public'"
-        ).fetchall()
-        return [r[0] for r in rows]
-    except Exception:
-        return []
-
-
 def _qfos_first_existing_column(columns, candidates):
     for c in candidates:
         if c in columns:
@@ -8431,11 +8483,16 @@ def _qfos_get_position_row(conn, symbol):
         select_cols.append(avg_col)
     if realized_col:
         select_cols.append(realized_col)
+    
+    extra_cols = ["trade_uuid", "highest_price_seen", "lowest_price_seen", "max_unrealized_profit", "max_unrealized_loss"]
+    for ec in extra_cols:
+        if ec in cols:
+            select_cols.append(ec)
 
     sql = f"SELECT {', '.join(select_cols)} FROM positions WHERE symbol=:symbol LIMIT 1"
     result = _qfos_exec(conn, sql, {"symbol": symbol})
 
-    # Fetch the row Ã¢â‚¬â€ handle both SQLAlchemy result (has .mappings()) and raw sqlite3 cursor
+    # Fetch the row — handle both SQLAlchemy result (has .mappings()) and raw sqlite3 cursor
     row = None
     try:
         row = result.mappings().first()
@@ -8451,6 +8508,11 @@ def _qfos_get_position_row(conn, symbol):
             "quantity": 0.0,
             "avg_entry": 0.0,
             "realized_pnl": 0.0,
+            "trade_uuid": None,
+            "highest_price_seen": 0.0,
+            "lowest_price_seen": 0.0,
+            "max_unrealized_profit": 0.0,
+            "max_unrealized_loss": 0.0,
             "columns": cols,
             "qty_col": qty_col,
             "avg_col": avg_col,
@@ -8459,19 +8521,20 @@ def _qfos_get_position_row(conn, symbol):
 
     def _row_get(r, key, index, default=0.0):
         try:
-            return _qfos_float(r[key], default)
+            return r[key]
         except Exception:
             pass
         try:
-            return _qfos_float(r[index], default)
+            return r[index]
         except Exception:
             return default
 
-    qty = _row_get(row, qty_col, 1)
-    avg_entry = _row_get(row, avg_col, 2) if avg_col else 0.0
-    realized = _row_get(row, realized_col, 3 if avg_col else 2) if realized_col else 0.0
+    # Re-map columns accurately by finding their indices or keys
+    qty = _qfos_float(_row_get(row, qty_col, 1), 0.0)
+    avg_entry = _qfos_float(_row_get(row, avg_col, 2), 0.0) if avg_col else 0.0
+    realized = _qfos_float(_row_get(row, realized_col, 3 if avg_col else 2), 0.0) if realized_col else 0.0
 
-    return {
+    ret_dict = {
         "exists": True,
         "quantity": qty,
         "avg_entry": avg_entry,
@@ -8482,8 +8545,24 @@ def _qfos_get_position_row(conn, symbol):
         "realized_col": realized_col,
     }
 
+    # Populate extra columns
+    for idx, ec in enumerate(extra_cols):
+        if ec in cols:
+            val = _row_get(row, ec, None, None)
+            if ec in ("highest_price_seen", "lowest_price_seen", "max_unrealized_profit", "max_unrealized_loss"):
+                ret_dict[ec] = _qfos_float(val, 0.0)
+            else:
+                ret_dict[ec] = str(val) if val is not None else None
+        else:
+            if ec in ("highest_price_seen", "lowest_price_seen", "max_unrealized_profit", "max_unrealized_loss"):
+                ret_dict[ec] = 0.0
+            else:
+                ret_dict[ec] = None
 
-def _qfos_upsert_position_atomic(conn, symbol, fill_price, strategy, new_qty, new_avg_entry, new_realized_pnl):
+    return ret_dict
+
+
+def _qfos_upsert_position_atomic(conn, symbol, fill_price, strategy, new_qty, new_avg_entry, new_realized_pnl, trade_uuid=None, highest_price_seen=None, lowest_price_seen=None, max_unrealized_profit=None, max_unrealized_loss=None):
     cols = _qfos_table_columns(conn, "positions")
     if not cols:
         raise RuntimeError("positions table missing or unreadable")
@@ -8527,6 +8606,17 @@ def _qfos_upsert_position_atomic(conn, symbol, fill_price, strategy, new_qty, ne
 
     if strategy_col:
         values[strategy_col] = str(strategy or "unknown")
+
+    if "trade_uuid" in cols:
+        values["trade_uuid"] = trade_uuid
+    if "highest_price_seen" in cols:
+        values["highest_price_seen"] = float(highest_price_seen) if highest_price_seen is not None else None
+    if "lowest_price_seen" in cols:
+        values["lowest_price_seen"] = float(lowest_price_seen) if lowest_price_seen is not None else None
+    if "max_unrealized_profit" in cols:
+        values["max_unrealized_profit"] = float(max_unrealized_profit) if max_unrealized_profit is not None else None
+    if "max_unrealized_loss" in cols:
+        values["max_unrealized_loss"] = float(max_unrealized_loss) if max_unrealized_loss is not None else None
 
     if updated_col:
         values[updated_col] = _qfos_now_utc_text()
@@ -8581,6 +8671,15 @@ def _qfos_insert_trade_atomic(conn, normalized_fill):
         "created_at": created_at,
         "updated_at": created_at,
         "timestamp": created_at,
+        "trade_uuid": normalized_fill.get("trade_uuid"),
+        "regime": normalized_fill.get("regime"),
+        "experiment_id": normalized_fill.get("experiment_id"),
+        "software_version": normalized_fill.get("software_version"),
+        "configuration_hash": normalized_fill.get("configuration_hash"),
+        "mfe": float(normalized_fill.get("mfe")) if normalized_fill.get("mfe") is not None else None,
+        "mae": float(normalized_fill.get("mae")) if normalized_fill.get("mae") is not None else None,
+        "peak_price": float(normalized_fill.get("peak_price")) if normalized_fill.get("peak_price") is not None else None,
+        "trough_price": float(normalized_fill.get("trough_price")) if normalized_fill.get("trough_price") is not None else None,
     }
 
     insert_cols = []
@@ -9938,6 +10037,38 @@ def qfos_persist_fill_atomic(conn, fill, source="main_loop"):
             source=source,
         )
 
+        # ----------------------------------------------------------------
+        # Lifecycle metadata injection
+        # ----------------------------------------------------------------
+
+        # BUY: generate a trade_uuid if the fill doesn't carry one already.
+        # This UUID follows the position until close and is copied to the
+        # exit trade row so both legs share the same lifecycle key.
+        if side == "buy":
+            import uuid as _uuid
+            fill_trade_uuid = fill.get("trade_uuid") or str(_uuid.uuid4())
+        else:
+            # SELL: inherit the uuid from the open position row (if present)
+            fill_trade_uuid = pos.get("trade_uuid") or fill.get("trade_uuid")
+
+        # Harvest lifecycle price extremes captured by mark_positions_to_market
+        pos_highest = _qfos_float(pos.get("highest_price_seen"), 0.0)
+        pos_lowest  = _qfos_float(pos.get("lowest_price_seen"),  0.0)
+        pos_avg     = _qfos_float(pos.get("avg_entry"), 0.0) or existing_avg
+
+        # Compute MFE / MAE only for exit trades where we have a valid avg_entry
+        exit_mfe = None
+        exit_mae = None
+        exit_peak_price  = None
+        exit_trough_price = None
+        if side == "sell" and pos_avg > _QFOS_EPSILON:
+            if pos_highest > _QFOS_EPSILON:
+                exit_mfe = float(final_qty * (pos_highest - pos_avg))
+                exit_peak_price = pos_highest
+            if pos_lowest > _QFOS_EPSILON:
+                exit_mae = float(final_qty * (pos_lowest - pos_avg))   # negative value = adverse
+                exit_trough_price = pos_lowest
+
         normalized = dict(fill)
         normalized.update({
             "symbol": symbol,
@@ -9955,7 +10086,21 @@ def qfos_persist_fill_atomic(conn, fill, source="main_loop"):
             "is_exit": bool(exit_is_exit),
             "exit_reason": exit_reason,
             "created_at": fill.get("created_at") or _qfos_now_utc_text(),
+            # Lifecycle fields
+            "trade_uuid": fill_trade_uuid,
+            "regime": fill.get("regime"),
+            "experiment_id": fill.get("experiment_id"),
+            "software_version": fill.get("software_version"),
+            "configuration_hash": fill.get("configuration_hash"),
+            # MFE / MAE — NULL for BUY rows and for historical trades (Option A)
+            "mfe": exit_mfe,
+            "mae": exit_mae,
+            "peak_price": exit_peak_price,
+            "trough_price": exit_trough_price,
         })
+
+        # On close, reset lifecycle price trackers so the next entry starts clean
+        reset_peak = side == "sell" and new_qty <= _QFOS_EPSILON
 
         _qfos_upsert_position_atomic(
             conn=conn,
@@ -9965,6 +10110,9 @@ def qfos_persist_fill_atomic(conn, fill, source="main_loop"):
             new_qty=new_qty,
             new_avg_entry=new_avg,
             new_realized_pnl=new_realized,
+            trade_uuid=fill_trade_uuid if side == "buy" else None,
+            highest_price_seen=0.0 if reset_peak else None,
+            lowest_price_seen=0.0 if reset_peak else None,
         )
 
         _qfos_insert_trade_atomic(conn, normalized)
@@ -10191,14 +10339,16 @@ def _qfos_find_sqlite_db_path():
 
 def qfos_run_stale_position_reconciler_once(source="auto_phase2h_reconciler"):
     try:
-        db_path = _qfos_find_sqlite_db_path()
-        if not db_path or not _qfos_os.path.exists(db_path):
-            return []
+        from core.db import engine
 
-        conn = _qfos_sqlite3.connect(db_path, timeout=30)
-        try:
-            symbols = qfos_reconcile_stale_closed_positions(conn, source=source)
+        with engine.begin() as conn:
+            symbols = qfos_reconcile_stale_closed_positions(
+                conn,
+                source=source,
+            )
+
             no_buy_symbols = []
+
             try:
                 no_buy_symbols = qfos_reconcile_positions_without_buy_lifecycle(
                     conn,
@@ -10211,26 +10361,30 @@ def qfos_run_stale_position_reconciler_once(source="auto_phase2h_reconciler"):
                     flush=True,
                 )
 
-            all_symbols = sorted(set((symbols or []) + (no_buy_symbols or [])))
+            all_symbols = sorted(
+                set((symbols or []) + (no_buy_symbols or []))
+            )
 
-            conn.commit()
             if all_symbols:
                 print(
                     "[QFOS_AUTO_STALE_RECONCILER] reconciled=%s source=%s"
                     % (",".join(all_symbols), source),
                     flush=True,
                 )
+
             return all_symbols
-        finally:
-            conn.close()
+
     except Exception as exc:
         try:
-            print("[QFOS_AUTO_STALE_RECONCILER_ERROR] error=%s" % repr(exc), flush=True)
+            print(
+                "[QFOS_AUTO_STALE_RECONCILER_ERROR] error=%s"
+                % repr(exc),
+                flush=True,
+            )
         except Exception:
             pass
+
         return []
-
-
 def qfos_start_stale_position_reconciler_daemon(interval_seconds=10):
     global _QFOS_STALE_RECONCILER_STARTED
 
@@ -10264,7 +10418,7 @@ def qfos_start_stale_position_reconciler_daemon(interval_seconds=10):
 
 # Start at module import so it runs under uvicorn/start.sh as well as normal main loop.
 try:
-    print("[QFOS_POSTGRES_ONLY] disabled startup: qfos_start_stale_position_reconciler_daemon (SQLite-backed stale-position reconciler)", flush=True)
+    qfos_start_stale_position_reconciler_daemon()
 except Exception as _qfos_reconciler_start_error:
     try:
         print(
@@ -10527,9 +10681,160 @@ try:
 except Exception:
     pass
 
+
+def _qfos_log_transaction_failure(exc, context):
+    """
+    Structured, unmissable logging for any exception that aborts the main
+    trade-persistence transaction (the `with engine.begin() as conn:` block
+    in the trading loop).
+
+    This replaces the old behavior where such failures surfaced only as a
+    generic "Bot loop error: <message>" line with no indication of which
+    trade, symbol, or SQL statement was involved, and no distinction between
+    a DB-level failure and any other kind of exception. Every rollback of
+    the persistence transaction must emit one of these structured lines.
+    """
+    import traceback as _qfos_traceback
+
+    orig = exc
+    sqlalchemy_statement = None
+    sqlalchemy_params = None
+    try:
+        # SQLAlchemy wraps DBAPI errors; pull out the failing statement/params
+        # if this is one of those (works for IntegrityError, OperationalError,
+        # ProgrammingError, etc. raised via SQLAlchemy).
+        sqlalchemy_statement = getattr(exc, "statement", None)
+        sqlalchemy_params = getattr(exc, "params", None)
+    except Exception:
+        pass
+
+    sql_statement_repr = repr(str(sqlalchemy_statement)) if sqlalchemy_statement else "None"
+    sql_params_repr = repr(sqlalchemy_params) if sqlalchemy_params else "None"
+    print(
+        "[QFOS_TRANSACTION_ROLLBACK] "
+        f"exception_type={type(orig).__name__} "
+        f"exception_message={str(orig)!r} "
+        f"symbols_in_cycle={context.get('symbols')} "
+        f"last_strategy={context.get('last_strategy')} "
+        f"sql_statement={sql_statement_repr} "
+        f"sql_params={sql_params_repr}",
+        flush=True,
+    )
+    # Full traceback on its own line so it doesn't get swallowed by
+    # log-line-oriented tooling grepping for the structured line above.
+    print("[QFOS_TRANSACTION_ROLLBACK_TRACEBACK]", flush=True)
+    _qfos_traceback.print_exc()
+
+
+def _qfos_ensure_strategy_scores_constraint():
+    """
+    Self-healing schema guard, run once at startup (not per-cycle).
+
+    strategy_scores is the one table in this app whose ON CONFLICT(strategy)
+    usage (see the main trading loop) was never backed by a matching
+    UNIQUE/PRIMARY KEY constraint on `strategy` -- every other ON CONFLICT
+    target table in this file creates itself with the right constraint
+    in-line; this one was created elsewhere with PRIMARY KEY(id) only.
+    This mirrors that same self-healing pattern for this table so a fresh
+    or already-migrated environment both work without manual intervention.
+
+    Safe to call on every process start: checks pg_constraint first and is
+    a no-op if the constraint (or an equivalent unique index) already exists.
+    Does not attempt to deduplicate existing rows -- that is a one-time,
+    reviewed data migration (see migration_001_fix_strategy_scores_constraint.sql),
+    not something to run silently on every boot.
+    """
+    try:
+        with engine.begin() as conn:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS strategy_scores (
+                    id SERIAL PRIMARY KEY,
+                    strategy TEXT NOT NULL,
+                    sharpe REAL NOT NULL DEFAULT 0,
+                    drawdown REAL NOT NULL DEFAULT 0,
+                    score REAL NOT NULL DEFAULT 0,
+                    status TEXT NOT NULL DEFAULT 'active',
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+            has_constraint = conn.execute(text("""
+                SELECT 1
+                FROM pg_constraint
+                WHERE conname = 'strategy_scores_strategy_key'
+            """)).first()
+            if not has_constraint:
+                has_dupes = conn.execute(text("""
+                    SELECT 1 FROM (
+                        SELECT strategy FROM strategy_scores
+                        GROUP BY strategy HAVING COUNT(*) > 1
+                    ) t LIMIT 1
+                """)).first()
+                if has_dupes:
+                    print(
+                        "[QFOS_STARTUP_SCHEMA_CHECK] strategy_scores has duplicate "
+                        "`strategy` rows and is missing its UNIQUE constraint. "
+                        "Refusing to add it automatically because that requires "
+                        "merging historical data -- run "
+                        "migration_001_fix_strategy_scores_constraint.sql manually "
+                        "first. The app will continue to run, but ON CONFLICT(strategy) "
+                        "will keep failing (and the enclosing trade transaction will "
+                        "keep rolling back) until this migration is applied.",
+                        flush=True,
+                    )
+                else:
+                    conn.execute(text("""
+                        ALTER TABLE strategy_scores
+                            ADD CONSTRAINT strategy_scores_strategy_key UNIQUE (strategy)
+                    """))
+                    print(
+                        "[QFOS_STARTUP_SCHEMA_CHECK] added missing UNIQUE(strategy) "
+                        "constraint to strategy_scores.",
+                        flush=True,
+                    )
+    except Exception as e:
+        print(
+            f"[QFOS_STARTUP_SCHEMA_CHECK_ERROR] could not verify/repair "
+            f"strategy_scores schema: {e!r}",
+            flush=True,
+        )
+
+
+def _qfos_apply_strategy_score_updates(updates):
+    """
+    Best-effort, non-fatal application of strategy_scores writes.
+
+    Deliberately runs in its OWN transaction, separate from the trade/
+    position/snapshot transaction that already committed by the time this
+    is called. Every failure here is caught, logged, and skipped -- it
+    must never be allowed to affect the trading ledger, which is already
+    durable, and it must never block Telegram notification either.
+    Analytics consumes truth; it does not gate it.
+    """
+    for update in updates:
+        try:
+            with engine.begin() as score_conn:
+                score_conn.execute(text("""
+                    INSERT INTO strategy_scores (strategy, sharpe, drawdown, score, status)
+                    VALUES (:strategy, 0, 0, :pnl, CASE WHEN :pnl < 0 THEN 'blocked' ELSE 'active' END)
+                    ON CONFLICT(strategy) DO UPDATE SET
+                        score = strategy_scores.score + excluded.score,
+                        status = CASE WHEN strategy_scores.score + excluded.score < 0 THEN 'blocked' ELSE 'active' END
+                """), update)
+        except Exception as e:
+            print(
+                "[QFOS_STRATEGY_SCORE_UPDATE_FAILED] "
+                f"strategy={update.get('strategy')} pnl={update.get('pnl')} "
+                f"exception_type={type(e).__name__} exception_message={str(e)!r} "
+                "-- trade/position/snapshot already committed and are NOT "
+                "affected by this failure.",
+                flush=True,
+            )
+
+
 def main():
     positions = globals().get('positions', [])
     load_state_from_db()
+    _qfos_ensure_strategy_scores_constraint()
     while True:
         try:
             tick = market.tick()
@@ -10592,7 +10897,7 @@ def main():
                 )
             except Exception as _agent4_feature_log_error:
                 print(f"[FEATURE_HANDOFF_ERROR] log_failed={repr(_agent4_feature_log_error)}", flush=True)
-            # POLICY V2 FIXED ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â persist normal feature map immediately after feature build
+            # POLICY V2 FIXED ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â persist normal feature map immediately after feature build
 
             # AGENT4_HARD_NORMAL_FEATURE_HANDOFF_V2
             try:
@@ -10715,7 +11020,7 @@ def main():
                     print('FALLBACK FEATURES DIAGNOSTIC ONLY:', fallback_features)
                 else:
 
-                    # POLICY V2 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â persist current feature map for trade classification
+                    # POLICY V2 ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â persist current feature map for trade classification
                     try:
                         if "features" in locals() and isinstance(features, dict):
                             _qfos_v2_upsert_feature_snapshot(features)
@@ -10741,7 +11046,7 @@ def main():
             except Exception as entry_quality_error:
                 print('ENTRY QUALITY LOCKDOWN ERROR:', entry_quality_error)
 
-            # QFOS ALLOCATOR OPPORTUNITY RESCUE ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â upstream rescue before fallback scout
+            # QFOS ALLOCATOR OPPORTUNITY RESCUE ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â upstream rescue before fallback scout
             try:
                 if isinstance(result, dict):
                     _qfos_ar_orders = result.get("orders") or []
@@ -10760,7 +11065,7 @@ def main():
 
             print('FEATURES:', {k: v for k, v in state['features'].items() if isinstance(v, dict) and v.get('ready')})
 
-            # POLICY V2 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â block weak fallback scout before ORDERS/EXPECTANCY
+            # POLICY V2 ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â block weak fallback scout before ORDERS/EXPECTANCY
             try:
                 _qfos_v2_locals = locals()
                 for _qfos_v2_name in ("proposed_fills", "orders", "fills", "proposed_orders"):
@@ -10772,7 +11077,7 @@ def main():
             except Exception as _qfos_v2_filter_error:
                 print(f"[POLICY_V2] fallback_filter_inline_error={_qfos_v2_filter_error}", flush=True)
 
-            # POLICY V2 FIXED ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â block weak fallback orders in the real result['orders'] list
+            # POLICY V2 FIXED ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â block weak fallback orders in the real result['orders'] list
             try:
                 if isinstance(result, dict) and isinstance(result.get('orders'), list):
                     result['orders'] = _qfos_v2_filter_fallback_orders(
@@ -11178,199 +11483,232 @@ def main():
                 proposed_fills = []
                 applied_fills = []
                 rejected.append({'symbol': 'ALL', 'reason': 'max_daily_loss_auto_pause'})
-            with engine.begin() as conn:
-                filtered_fills = []
-                applied_fills = _qfos_normalize_fill_list(list(applied_fills or []))
-                applied_fills = qfos_final_exit_bridge_add_db_sells(applied_fills, regime)
-                applied_fills = qfos_agent5_direct_prepare_exit_sells(applied_fills)
-                applied_fills = qfos_agent5_active_filter_exit_sells(applied_fills)
+            qfos_pending_trade_notifications = []
+            qfos_pending_strategy_score_updates = []
+            qfos_txn_trade_context = {"symbols": [], "last_strategy": None}
+            try:
+                with engine.begin() as conn:
+                    filtered_fills = []
+                    applied_fills = _qfos_normalize_fill_list(list(applied_fills or []))
+                    applied_fills = qfos_final_exit_bridge_add_db_sells(applied_fills, regime)
+                    applied_fills = qfos_agent5_direct_prepare_exit_sells(applied_fills)
+                    applied_fills = qfos_agent5_active_filter_exit_sells(applied_fills)
 
-                qfos_non_exit_fills = []
-                qfos_exit_candidates = []
+                    qfos_non_exit_fills = []
+                    qfos_exit_candidates = []
 
-                for qfos_candidate_fill in list(applied_fills or []):
-                    if (
-                        isinstance(qfos_candidate_fill, dict)
-                        and str(qfos_candidate_fill.get("side") or "").lower() == "sell"
-                    ):
-                        qfos_exit_candidates.append(qfos_candidate_fill)
-                    else:
-                        qfos_non_exit_fills.append(qfos_candidate_fill)
+                    for qfos_candidate_fill in list(applied_fills or []):
+                        if (
+                            isinstance(qfos_candidate_fill, dict)
+                            and str(qfos_candidate_fill.get("side") or "").lower() == "sell"
+                        ):
+                            qfos_exit_candidates.append(qfos_candidate_fill)
+                        else:
+                            qfos_non_exit_fills.append(qfos_candidate_fill)
 
-                qfos_canonical_exit_fills, qfos_duplicate_exit_rejections = (
-                    deduplicate_exit_intents(
-                        qfos_exit_candidates,
-                        default_source="main_loop",
-                    )
-                )
-
-                if qfos_duplicate_exit_rejections:
-                    rejected.extend(qfos_duplicate_exit_rejections)
-                    print(
-                        "[CANONICAL_EXIT_INTENTS] "
-                        f"accepted={len(qfos_canonical_exit_fills)} "
-                        f"duplicates_rejected={len(qfos_duplicate_exit_rejections)}",
-                        flush=True,
+                    qfos_canonical_exit_fills, qfos_duplicate_exit_rejections = (
+                        deduplicate_exit_intents(
+                            qfos_exit_candidates,
+                            default_source="main_loop",
+                        )
                     )
 
-                applied_fills = qfos_non_exit_fills + qfos_canonical_exit_fills
-
-                for fill in applied_fills:
-                    allowed, reason = qfos_exec_risk_authority_firewall(fill, regime)
-                    if allowed:
-                        filtered_fills.append(fill)
-                    else:
+                    if qfos_duplicate_exit_rejections:
+                        rejected.extend(qfos_duplicate_exit_rejections)
                         print(
-                            f"[EXECUTION_STAGE] final_firewall_rejected "
-                            f"symbol={fill.get('symbol', 'UNKNOWN')} strategy={fill.get('strategy')} reason={reason}",
+                            "[CANONICAL_EXIT_INTENTS] "
+                            f"accepted={len(qfos_canonical_exit_fills)} "
+                            f"duplicates_rejected={len(qfos_duplicate_exit_rejections)}",
                             flush=True,
                         )
-                        if str(fill.get('side', '')).lower() == 'buy':
-                            qfos_rollback_unpersisted_buy(fill, source=f"final_firewall:{reason}")
-                            try:
-                                from observability import events, RejectionReason, _manager
-                                cycle_id = globals().get('cycle_id', 0)
-                                sym = fill.get('symbol', 'UNKNOWN')
-                                info = _manager.get_candidate_info(cycle_id, sym)
-                                if info and info.get("candidate_id"):
-                                    trade_id = _manager.get_trade_id(cycle_id, sym)
-                                    if trade_id:
-                                        events.trade_execution_failed(
-                                            candidate_id=info["candidate_id"],
-                                            trade_id=trade_id,
-                                            cycle_id=cycle_id,
-                                            symbol=sym,
-                                            gate="final_firewall",
-                                            reason=RejectionReason.RISK_MANAGER_REJECTED,
-                                            raw_reason=str(reason)
-                                        )
-                            except Exception as e:
-                                print("[OBSERVABILITY_ERROR] " + repr(e), flush=True)
 
-                        rejected.append({'symbol': fill.get('symbol', 'UNKNOWN'), 'reason': reason})
-                applied_fills = filtered_fills
-                execution_telemetry = ExecutionCycleTelemetry(
-                    raw_orders=len(raw_result_orders or []),
-                    proposed_fills=len(proposed_fills or []),
-                )
-                persisted_fills = []
-                rejected_persistence_fills = []
+                    applied_fills = qfos_non_exit_fills + qfos_canonical_exit_fills
 
-                for raw_fill in applied_fills:
-                    persisted_fill = qfos_persist_fill_atomic(conn, raw_fill, source='main_loop')
-
-                    if not execution_telemetry.record_persistence_result(
-                        raw_fill,
-                        persisted_fill,
-                        "atomic_persistence_rejected",
-                    ):
-                        sym = str((raw_fill or {}).get("symbol") or "UNKNOWN")
-                        rejection = {
-                            "symbol": sym,
-                            "reason": "atomic_persistence_rejected",
-                        }
-                        if str((raw_fill or {}).get('side', '')).lower() == 'buy':
-                            try:
-                                from observability import events, RejectionReason, _manager
-                                cycle_id = globals().get('cycle_id', 0)
-                                info = _manager.get_candidate_info(cycle_id, sym)
-                                if info and info.get("candidate_id"):
-                                    trade_id = _manager.get_trade_id(cycle_id, sym)
-                                    if trade_id:
-                                        events.trade_execution_failed(
-                                            candidate_id=info["candidate_id"],
-                                            trade_id=trade_id,
-                                            cycle_id=cycle_id,
-                                            symbol=sym,
-                                            gate="atomic_persistence",
-                                            reason=RejectionReason.ATOMIC_PERSISTENCE_FAILED,
-                                            raw_reason="atomic_persistence_rejected"
-                                        )
-                            except Exception as e:
-                                print("[OBSERVABILITY_ERROR] " + repr(e), flush=True)
-
-                        rejected_persistence_fills.append(rejection)
-                        rejected.append(rejection)
-                        continue
-
-                    persisted_fills.append(persisted_fill)
-                    fill = persisted_fill
-                    fill_pnl = float(fill.get('pnl', 0.0) or 0.0)
-                    original_strat = fill.get('applied_strategy', fill.get('strategy', 'unknown'))
-                    trades_total.inc()
-                    side = fill.get('side', '').upper()
-                    symbol = fill.get('symbol', '')
-                    qty = float(fill.get('quantity', 0) or 0)
-                    price = float(fill.get('fill_price', 0) or 0)
-                    strategy = fill.get('strategy', 'unknown')
-                    confidence = float(fill.get('confidence', 0) or 0)
-                    is_shadow = fill.get('shadow_mode', False)
-                    if not is_shadow:
-                        pos_row = conn.execute(text('SELECT quantity FROM positions WHERE symbol = :s'), {'s': symbol}).mappings().first()
-                        if pos_row:
-                            portfolio.positions[symbol] = float(pos_row['quantity'])
+                    for fill in applied_fills:
+                        allowed, reason = qfos_exec_risk_authority_firewall(fill, regime)
+                        if allowed:
+                            filtered_fills.append(fill)
                         else:
-                            portfolio.positions[symbol] = 0.0
+                            print(
+                                f"[EXECUTION_STAGE] final_firewall_rejected "
+                                f"symbol={fill.get('symbol', 'UNKNOWN')} strategy={fill.get('strategy')} reason={reason}",
+                                flush=True,
+                            )
+                            if str(fill.get('side', '')).lower() == 'buy':
+                                qfos_rollback_unpersisted_buy(fill, source=f"final_firewall:{reason}")
+                                try:
+                                    from observability import events, RejectionReason, _manager
+                                    cycle_id = globals().get('cycle_id', 0)
+                                    sym = fill.get('symbol', 'UNKNOWN')
+                                    info = _manager.get_candidate_info(cycle_id, sym)
+                                    if info and info.get("candidate_id"):
+                                        trade_id = _manager.get_trade_id(cycle_id, sym)
+                                        if trade_id:
+                                            events.trade_execution_failed(
+                                                candidate_id=info["candidate_id"],
+                                                trade_id=trade_id,
+                                                cycle_id=cycle_id,
+                                                symbol=sym,
+                                                gate="final_firewall",
+                                                reason=RejectionReason.RISK_MANAGER_REJECTED,
+                                                raw_reason=str(reason)
+                                            )
+                                except Exception as e:
+                                    print("[OBSERVABILITY_ERROR] " + repr(e), flush=True)
+
+                            rejected.append({'symbol': fill.get('symbol', 'UNKNOWN'), 'reason': reason})
+                    applied_fills = filtered_fills
+                    execution_telemetry = ExecutionCycleTelemetry(
+                        raw_orders=len(raw_result_orders or []),
+                        proposed_fills=len(proposed_fills or []),
+                    )
+                    persisted_fills = []
+                    rejected_persistence_fills = []
+
+                    for raw_fill in applied_fills:
+                        persisted_fill = qfos_persist_fill_atomic(conn, raw_fill, source='main_loop')
+
+                        if not execution_telemetry.record_persistence_result(
+                            raw_fill,
+                            persisted_fill,
+                            "atomic_persistence_rejected",
+                        ):
+                            sym = str((raw_fill or {}).get("symbol") or "UNKNOWN")
+                            rejection = {
+                                "symbol": sym,
+                                "reason": "atomic_persistence_rejected",
+                            }
+                            if str((raw_fill or {}).get('side', '')).lower() == 'buy':
+                                try:
+                                    from observability import events, RejectionReason, _manager
+                                    cycle_id = globals().get('cycle_id', 0)
+                                    info = _manager.get_candidate_info(cycle_id, sym)
+                                    if info and info.get("candidate_id"):
+                                        trade_id = _manager.get_trade_id(cycle_id, sym)
+                                        if trade_id:
+                                            events.trade_execution_failed(
+                                                candidate_id=info["candidate_id"],
+                                                trade_id=trade_id,
+                                                cycle_id=cycle_id,
+                                                symbol=sym,
+                                                gate="atomic_persistence",
+                                                reason=RejectionReason.ATOMIC_PERSISTENCE_FAILED,
+                                                raw_reason="atomic_persistence_rejected"
+                                            )
+                                except Exception as e:
+                                    print("[OBSERVABILITY_ERROR] " + repr(e), flush=True)
+
+                            rejected_persistence_fills.append(rejection)
+                            rejected.append(rejection)
+                            continue
+
+                        persisted_fills.append(persisted_fill)
+                        fill = persisted_fill
+                        fill_pnl = float(fill.get('pnl', 0.0) or 0.0)
+                        original_strat = fill.get('applied_strategy', fill.get('strategy', 'unknown'))
+                        trades_total.inc()
+                        side = fill.get('side', '').upper()
+                        symbol = fill.get('symbol', '')
+                        qty = float(fill.get('quantity', 0) or 0)
+                        price = float(fill.get('fill_price', 0) or 0)
+                        strategy = fill.get('strategy', 'unknown')
+                        confidence = float(fill.get('confidence', 0) or 0)
+                        is_shadow = fill.get('shadow_mode', False)
+                        if not is_shadow:
+                            pos_row = conn.execute(text('SELECT quantity FROM positions WHERE symbol = :s'), {'s': symbol}).mappings().first()
+                            if pos_row:
+                                portfolio.positions[symbol] = float(pos_row['quantity'])
+                            else:
+                                portfolio.positions[symbol] = 0.0
+
+                        print(
+                            f"[EXECUTION_STAGE] db_trade_written side={side} symbol={symbol} "
+                            f"qty={qty:.8f} price={price:.8f} pnl={fill_pnl:.6f} "
+                            f"position_qty={portfolio.positions.get(symbol, 0.0)}",
+                            flush=True,
+                        )
+
+                        if side == 'BUY':
+                            try:
+                                from observability import events, _manager
+                                cycle_id = globals().get('cycle_id', 0)
+                                info = _manager.get_candidate_info(cycle_id, symbol)
+                                if info and info.get("candidate_id"):
+                                    trade_id = _manager.get_trade_id(cycle_id, symbol)
+                                    if trade_id:
+                                        events.trade_persisted(
+                                            candidate_id=info["candidate_id"],
+                                            trade_id=trade_id,
+                                            cycle_id=cycle_id,
+                                            symbol=symbol,
+                                            quantity=qty,
+                                            fill_price=price
+                                        )
+                                        events.trade_opened(
+                                            candidate_id=info["candidate_id"],
+                                            trade_id=trade_id,
+                                            cycle_id=cycle_id,
+                                            symbol=symbol
+                                        )
+                            except Exception as e:
+                                print("[OBSERVABILITY_ERROR] " + repr(e), flush=True)
+                        qfos_pending_trade_notifications.append(
+                            f"<b>{side} {('(SHADOW)' if is_shadow else '')}</b> {symbol}\n"
+                            f"Qty: {qty:.6f}\nPrice: {price:.4f}\nPnL: {fill_pnl:.2f}\n"
+                            f"Strategy: {strategy}\nConfidence: {confidence:.2f}\n"
+                            f"Live: {settings.live_trading}"
+                        )
+                        qfos_txn_trade_context["symbols"].append(symbol)
+                        qfos_txn_trade_context["last_strategy"] = strategy
+                        score_strategy = original_strat if side == 'SELL' else strategy
+                        if score_strategy and score_strategy not in ('take_profit', 'single_full_take_profit', 'breakeven_protection_exit', 'time_stop_exit', 'trailing_profit_exit', 'stop_loss', 'adaptive_take_profit', 'adaptive_stop_loss', 'risk_off_exit', 'emergency_exposure_reduction', 'unknown'):
+                            # QFOS_STRATEGY_SCORE_DECOUPLED_V1: this used to
+                            # execute INSERT INTO strategy_scores ... ON
+                            # CONFLICT(strategy) right here, inside the same
+                            # transaction as the trade/position/snapshot.
+                            # That's what let a schema defect in an
+                            # analytics-only table (strategy_scores) silently
+                            # roll back an already-executed, financially real
+                            # trade. Analytics must consume the trade ledger,
+                            # never gate it. The actual write now happens
+                            # after this transaction commits -- see
+                            # qfos_pending_strategy_score_updates below and
+                            # its post-commit, non-fatal execution in the
+                            # `else:` clause of the enclosing try/except.
+                            qfos_pending_strategy_score_updates.append(
+                                {'strategy': score_strategy, 'pnl': fill_pnl}
+                            )
+                    persisted_fills_count = execution_telemetry.persisted_fills
+                    rejected_fills = execution_telemetry.rejected_fills
+                    final_applied_fills = execution_telemetry.final_applied_fills
 
                     print(
-                        f"[EXECUTION_STAGE] db_trade_written side={side} symbol={symbol} "
-                        f"qty={qty:.8f} price={price:.8f} pnl={fill_pnl:.6f} "
-                        f"position_qty={portfolio.positions.get(symbol, 0.0)}",
+                        "[EXECUTION_STAGE] persistence_summary "
+                        f"proposed_fills={execution_telemetry.proposed_fills} "
+                        f"persisted_fills={persisted_fills_count} "
+                        f"rejected_fills={rejected_fills} "
+                        f"final_applied_fills={final_applied_fills}",
                         flush=True,
                     )
 
-                    if side == 'BUY':
-                        try:
-                            from observability import events, _manager
-                            cycle_id = globals().get('cycle_id', 0)
-                            info = _manager.get_candidate_info(cycle_id, symbol)
-                            if info and info.get("candidate_id"):
-                                trade_id = _manager.get_trade_id(cycle_id, symbol)
-                                if trade_id:
-                                    events.trade_persisted(
-                                        candidate_id=info["candidate_id"],
-                                        trade_id=trade_id,
-                                        cycle_id=cycle_id,
-                                        symbol=symbol,
-                                        quantity=qty,
-                                        fill_price=price
-                                    )
-                                    events.trade_opened(
-                                        candidate_id=info["candidate_id"],
-                                        trade_id=trade_id,
-                                        cycle_id=cycle_id,
-                                        symbol=symbol
-                                    )
-                        except Exception as e:
-                            print("[OBSERVABILITY_ERROR] " + repr(e), flush=True)
-                    send_telegram_alert(f"<b>{side} {('(SHADOW)' if is_shadow else '')}</b> {symbol}\nQty: {qty:.6f}\nPrice: {price:.4f}\nPnL: {fill_pnl:.2f}\nStrategy: {strategy}\nConfidence: {confidence:.2f}\nLive: {settings.live_trading}")
-                    score_strategy = original_strat if side == 'SELL' else strategy
-                    if score_strategy and score_strategy not in ('take_profit', 'single_full_take_profit', 'breakeven_protection_exit', 'time_stop_exit', 'trailing_profit_exit', 'stop_loss', 'adaptive_take_profit', 'adaptive_stop_loss', 'risk_off_exit', 'emergency_exposure_reduction', 'unknown'):
-                        conn.execute(text("\n                            INSERT INTO strategy_scores (strategy, sharpe, drawdown, score, status)\n                            VALUES (:strategy, 0, 0, :pnl, 'active')\n                            ON CONFLICT DO NOTHING\n                        "), {'strategy': score_strategy, 'pnl': fill_pnl})
-                        conn.execute(text("\n                            UPDATE strategy_scores\n                            SET score = score + :pnl, status = CASE WHEN score + :pnl < 0 THEN 'blocked' ELSE 'active' END\n                            WHERE strategy = :strategy\n                        "), {'strategy': score_strategy, 'pnl': fill_pnl})
-                persisted_fills_count = execution_telemetry.persisted_fills
-                rejected_fills = execution_telemetry.rejected_fills
-                final_applied_fills = execution_telemetry.final_applied_fills
+                    qfos_cycle_from_locals(locals())
 
-                print(
-                    "[EXECUTION_STAGE] persistence_summary "
-                    f"proposed_fills={execution_telemetry.proposed_fills} "
-                    f"persisted_fills={persisted_fills_count} "
-                    f"rejected_fills={rejected_fills} "
-                    f"final_applied_fills={final_applied_fills}",
-                    flush=True,
-                )
-
-                qfos_cycle_from_locals(locals())
-
-                qfos_ensure_trades_schema(conn)
-                qfos_db_sync_positions_from_portfolio(conn, portfolio, prices)
-                mark_positions_to_market(conn, prices)
-                # QFOS_C7_AUDIT_SNAPSHOT_GUARD_V1
-                if _QFOS_AUDIT_BOOT:
-                    print("[QFOS_AUDIT_BOOT] portfolio_snapshot_write_blocked source=main_loop", flush=True)
-                else:
-                    conn.execute(text('\n                    INSERT INTO portfolio_snapshots(\n                        equity, cash, exposure, drawdown, regime\n                    )\n                    VALUES(\n                        :equity, :cash, :exposure, :drawdown, :regime\n                    )\n                '), {'equity': equity, 'cash': portfolio.cash, 'exposure': exposure, 'drawdown': portfolio.drawdown, 'regime': regime})
+                    qfos_ensure_trades_schema(conn)
+                    qfos_db_sync_positions_from_portfolio(conn, portfolio, prices)
+                    mark_positions_to_market(conn, prices)
+                    # QFOS_C7_AUDIT_SNAPSHOT_GUARD_V1
+                    if _QFOS_AUDIT_BOOT:
+                        print("[QFOS_AUDIT_BOOT] portfolio_snapshot_write_blocked source=main_loop", flush=True)
+                    else:
+                        conn.execute(text('\n                    INSERT INTO portfolio_snapshots(\n                        equity, cash, exposure, drawdown, regime\n                    )\n                    VALUES(\n                        :equity, :cash, :exposure, :drawdown, :regime\n                    )\n                '), {'equity': equity, 'cash': portfolio.cash, 'exposure': exposure, 'drawdown': portfolio.drawdown, 'regime': regime})
+            except Exception as qfos_txn_exc:
+                _qfos_log_transaction_failure(qfos_txn_exc, qfos_txn_trade_context)
+                qfos_pending_trade_notifications = []
+                raise
+            else:
+                _qfos_apply_strategy_score_updates(qfos_pending_strategy_score_updates)
+                for qfos_msg in qfos_pending_trade_notifications:
+                    send_telegram_alert(qfos_msg)
             equity_gauge.set(equity)
             drawdown_gauge.set(portfolio.drawdown)
             current_risk_status = 'SAFE'
@@ -11430,99 +11768,19 @@ def main():
 #   when explicit exit labels are available.
 # ============================================================
 
-def qfo_safe_lower(value):
-    try:
-        return str(value or "").strip().lower()
-    except Exception:
-        return ""
-
-def qfo_trade_get(trade, key, default=None):
-    try:
-        if isinstance(trade, dict):
-            return trade.get(key, default)
-        return getattr(trade, key, default)
-    except Exception:
-        return default
-
-def qfo_trade_label(trade):
-    """
-    Return a normalized label for why/how a trade happened.
-    Supports both dict trades and object/ORM trades.
-    """
-    fields = (
-        "strategy",
-        "exit_reason",
-        "reason",
-        "close_reason",
-        "exit_type",
-        "signal",
-        "tag",
-        "comment",
-    )
-    parts = []
-    for field in fields:
-        value = qfo_trade_get(trade, field, "")
-        if value:
-            parts.append(qfo_safe_lower(value))
-    return " ".join(parts)
-
-def qfo_trade_side(trade):
-    return qfo_safe_lower(qfo_trade_get(trade, "side", ""))
-
-def qfo_is_buy_trade(trade):
-    return qfo_trade_side(trade) == "buy"
-
-def qfo_is_sell_trade(trade):
-    return qfo_trade_side(trade) == "sell"
-
-def qfo_is_stop_loss_label(label):
-    label = qfo_safe_lower(label)
-
-    # Explicit stop-loss family. This intentionally catches:
-    # - stop_loss
-    # - stop_loss_exit
-    # - sideways_scalp_stop_loss
-    # - quality_initial_stop_loss
-    # - initial_stop_loss
-    # - trailing_stop_loss
-    # - emergency_stop_loss
-    if "stop_loss" in label:
-        return True
-
-    # Conservative aliases, but avoid false positives from normal risk_off.
-    aliases = (
-        " stop loss ",
-        " stopped out ",
-        " stopped_out ",
-        " initial sl ",
-        " hard_sl ",
-        " hard sl ",
-    )
-    padded = f" {label} "
-    return any(alias in padded for alias in aliases)
-
-def qfo_is_take_profit_label(label):
-    label = qfo_safe_lower(label)
-
-    if qfo_is_stop_loss_label(label):
-        return False
-
-    profit_markers = (
-        "take_profit",
-        "take profit",
-        "adaptive_take_profit",
-        "trailing_profit_exit",
-        "profit_exit",
-        "scalp_take_profit",
-        "tp_exit",
-    )
-    return any(marker in label for marker in profit_markers)
-
-def qfo_is_stop_loss_trade(trade):
-    return qfo_is_sell_trade(trade) and qfo_is_stop_loss_label(qfo_trade_label(trade))
-
-def qfo_is_take_profit_trade(trade):
-    return qfo_is_sell_trade(trade) and qfo_is_take_profit_label(qfo_trade_label(trade))
+from services.truth_metrics import (
+    qfo_safe_lower,
+    qfo_trade_get,
+    qfo_trade_label,
+    qfo_trade_side,
+    qfo_is_buy_trade,
+    qfo_is_sell_trade,
+    qfo_is_stop_loss_label,
+    qfo_is_take_profit_label,
+    qfo_is_stop_loss_trade,
+    qfo_is_take_profit_trade,
+    qfo_compute_truth_metrics_from_trades
+)
 
 def qfo_collect_metric_trades(local_vars=None):
     """
@@ -11565,39 +11823,16 @@ def qfo_collect_metric_trades(local_vars=None):
 
 def qfo_compute_truth_metrics(local_vars=None):
     trades = qfo_collect_metric_trades(local_vars)
-
-    buy_count = 0
-    sell_count = 0
-    take_profit_count = 0
-    stop_loss_count = 0
-
-    for trade in trades:
-        if qfo_is_buy_trade(trade):
-            buy_count += 1
-        elif qfo_is_sell_trade(trade):
-            sell_count += 1
-
-        if qfo_is_take_profit_trade(trade):
-            take_profit_count += 1
-
-        if qfo_is_stop_loss_trade(trade):
-            stop_loss_count += 1
-
-    completed_classified = take_profit_count + stop_loss_count
-
-    if completed_classified > 0:
-        win_rate = take_profit_count / completed_classified
-    else:
-        win_rate = 0.0
-
+    truth = qfo_compute_truth_metrics_from_trades(trades)
+    
     return {
-        "total_trades": qfo_metric_value(locals(), "total_trades", buy_count + sell_count),
-        "buy_count": qfo_metric_value(locals(), "buy_count", buy_count),
-        "sell_count": qfo_metric_value(locals(), "sell_count", sell_count),
-        "take_profit_count": qfo_metric_value(locals(), "take_profit_count", take_profit_count),
-        "stop_loss_count": qfo_metric_value(locals(), "stop_loss_count", stop_loss_count),
-        "win_rate": qfo_metric_value(locals(), "win_rate", win_rate),
-        "win_rate_estimate": qfo_metric_value(locals(), "win_rate_estimate", win_rate),
+        "total_trades": qfo_metric_value(locals(), "total_trades", truth["total_trades"]),
+        "buy_count": qfo_metric_value(locals(), "buy_count", truth["buy_count"]),
+        "sell_count": qfo_metric_value(locals(), "sell_count", truth["sell_count"]),
+        "take_profit_count": qfo_metric_value(locals(), "take_profit_count", truth["take_profit_count"]),
+        "stop_loss_count": qfo_metric_value(locals(), "stop_loss_count", truth["stop_loss_count"]),
+        "win_rate": qfo_metric_value(locals(), "win_rate", truth["win_rate"]),
+        "win_rate_estimate": qfo_metric_value(locals(), "win_rate_estimate", truth["win_rate_estimate"]),
     }
 
 def qfo_metric_value(local_vars, key, fallback=None):
@@ -11772,7 +12007,7 @@ def live_status():
 
 
 # ============================================================
-# QFOS SAFE WRAPPER PATCH ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ACTIVE OUTLIER LOSS + BIG LOSER COOLDOWN
+# QFOS SAFE WRAPPER PATCH ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ACTIVE OUTLIER LOSS + BIG LOSER COOLDOWN
 # Added as wrappers to avoid fragile inline edits.
 # Percentages scale with equity across $10, $50, $100, $500, $1000+ accounts.
 # ============================================================
@@ -12189,7 +12424,7 @@ print("[QFOS_POSTGRES_ONLY] disabled startup: _qfos_safe_install_wrappers (SQLit
 
 
 # ============================================================
-# QFOS BASKET LOSS GUARD ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ACTIVE WRAPPER
+# QFOS BASKET LOSS GUARD ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ACTIVE WRAPPER
 # Purpose:
 #   Prevent several small losing positions from combining into
 #   one large portfolio-level drawdown.
@@ -12384,7 +12619,7 @@ print("[QFOS_POSTGRES_ONLY] disabled startup: _qfos_basket_install_wrapper (SQLi
 
 
 # ============================================================
-# QFOS EMERGENCY BASKET WATCHDOG ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â DB-LEVEL PAPER EXIT
+# QFOS EMERGENCY BASKET WATCHDOG ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DB-LEVEL PAPER EXIT
 # Purpose:
 #   The previous wrappers load correctly, but logs show exits=0
 #   when no proposed exits/orders are created. This watchdog does
@@ -13043,7 +13278,7 @@ def _qfos_fbs_filter_proposed_fills(order_list, local_vars=None, source="source"
 
 
 # ============================================================
-# QFOS ACTIVE POSITION WATCHDOG ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â DB-LEVEL EXIT PROTECTION
+# QFOS ACTIVE POSITION WATCHDOG ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â DB-LEVEL EXIT PROTECTION
 # Purpose:
 #   1. Stop any single position from reaching oversized loss.
 #   2. Protect positions that were in profit but give it back.
@@ -13397,7 +13632,7 @@ print("[QFOS_POSTGRES_ONLY] disabled startup: _qfos_start_active_position_watchd
 
 
 # ============================================================
-# QFOS PROFIT ENGINE V1 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â TRADE CLASS + PARTIAL TP + RUNNERS
+# QFOS PROFIT ENGINE V1 ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â TRADE CLASS + PARTIAL TP + RUNNERS
 # Purpose:
 #   Fix negative expectancy caused by tiny full exits and larger
 #   losses. This engine separates fallback, sideways scalp, and
@@ -14053,23 +14288,12 @@ def _qfos_acct_now_local():
     from datetime import datetime, timedelta
     return datetime.utcnow() + timedelta(hours=3)
 
-def _qfos_acct_table_columns(cur, table):
+def _qfos_acct_latest_regime(conn):
     try:
-        cur.execute(f"SELECT column_name FROM information_schema.columns WHERE table_name = '{table}' AND table_schema = 'public'")
-        return [r[0] for r in cur.fetchall()]
-    except Exception:
-        try:
-            cur.execute(f"PRAGMA table_info({table})")
-            return [r[1] for r in cur.fetchall()]
-        except Exception:
-            return []
-
-def _qfos_acct_latest_regime(cur):
-    try:
-        cols = _qfos_acct_table_columns(cur, "portfolio_snapshots")
+        cols = _qfos_table_columns(conn, "portfolio_snapshots")
         if "regime" not in cols:
             return "SIDEWAYS"
-        row = cur.execute("""
+        row = _qfos_exec(conn, """
             SELECT regime
             FROM portfolio_snapshots
             ORDER BY id DESC
@@ -14081,19 +14305,24 @@ def _qfos_acct_latest_regime(cur):
         pass
     return "SIDEWAYS"
 
-def _qfos_acct_realized_pnl(cur):
+def _qfos_acct_realized_pnl(conn):
     try:
-        row = cur.execute("SELECT COALESCE(SUM(pnl), 0.0) FROM trades").fetchone()
+        if not _qfos_table_exists(conn, "trades"):
+            return 0.0
+        row = _qfos_exec(conn, "SELECT COALESCE(SUM(pnl), 0.0) FROM trades").fetchone()
         return _qfos_acct_float(row[0] if row else 0.0, 0.0)
     except Exception:
         return 0.0
 
-def _qfos_acct_open_position_totals(cur):
+def _qfos_acct_open_position_totals(conn):
     exposure = 0.0
     unrealized = 0.0
 
     try:
-        rows = cur.execute("""
+        if not _qfos_table_exists(conn, "positions"):
+            return exposure, unrealized
+
+        rows = _qfos_exec(conn, """
             SELECT quantity, avg_entry, last_price, exposure, unrealized_pnl
             FROM positions
             WHERE quantity > 0
@@ -14116,8 +14345,8 @@ def _qfos_acct_open_position_totals(cur):
 
     return exposure, unrealized
 
-def _qfos_acct_ensure_snapshot_table(cur):
-    cur.execute("""
+def _qfos_acct_ensure_snapshot_table(conn):
+    _qfos_exec(conn, """
         CREATE TABLE IF NOT EXISTS portfolio_snapshots (
             id SERIAL PRIMARY KEY,
             equity REAL,
@@ -14129,11 +14358,15 @@ def _qfos_acct_ensure_snapshot_table(cur):
         )
     """)
 
-def _qfos_acct_insert_snapshot(cur, equity, cash, exposure, drawdown, regime, now_s):
-    cols = _qfos_acct_table_columns(cur, "portfolio_snapshots")
+def _qfos_acct_insert_snapshot(conn, equity, cash, exposure, drawdown, regime, now_s):
+    cols = _qfos_table_columns(conn, "portfolio_snapshots")
     if not cols:
-        _qfos_acct_ensure_snapshot_table(cur)
-        cols = _qfos_acct_table_columns(cur, "portfolio_snapshots")
+        try:
+            with conn.begin_nested():
+                _qfos_acct_ensure_snapshot_table(conn)
+        except Exception:
+            pass
+        cols = _qfos_table_columns(conn, "portfolio_snapshots")
 
     values = {}
     if "equity" in cols:
@@ -14159,62 +14392,62 @@ def _qfos_acct_insert_snapshot(cur, equity, cash, exposure, drawdown, regime, no
         return
 
     col_names = list(values.keys())
-    placeholders = ",".join(["?"] * len(col_names))
+    placeholders = ",".join([f":{c}" for c in col_names])
     sql = f"INSERT INTO portfolio_snapshots ({','.join(col_names)}) VALUES ({placeholders})"
-    cur.execute(sql, [values[c] for c in col_names])
+    _qfos_exec(conn, sql, values)
 
 def _qfos_acct_reconcile_once(verbose=False):
-    import sqlite3
-
-    conn = sqlite3.connect(_qfos_acct_db_path(), timeout=10)
-    cur = conn.cursor()
-
     try:
-        _qfos_acct_ensure_snapshot_table(cur)
+        with engine.begin() as conn:
+            try:
+                with conn.begin_nested():
+                    _qfos_acct_ensure_snapshot_table(conn)
+            except Exception:
+                # Benign race: another concurrent reconcile pass (e.g. the
+                # background _qfos_acct_loop tick) created portfolio_snapshots
+                # between our existence check and our own CREATE TABLE IF NOT
+                # EXISTS. Postgres does not guarantee IF NOT EXISTS is race-free
+                # under concurrent DDL, unlike the old single-threaded sqlite
+                # cursor model. Roll back just this savepoint; the table exists
+                # either way, so the rest of the reconcile pass can proceed.
+                pass
 
-        now = _qfos_acct_now_local()
-        now_s = now.strftime("%Y-%m-%d %H:%M:%S")
+            now = _qfos_acct_now_local()
+            now_s = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        regime = _qfos_acct_latest_regime(cur)
-        realized = _qfos_acct_realized_pnl(cur)
-        exposure, unrealized = _qfos_acct_open_position_totals(cur)
+            regime = _qfos_acct_latest_regime(conn)
+            realized = _qfos_acct_realized_pnl(conn)
+            exposure, unrealized = _qfos_acct_open_position_totals(conn)
 
-        equity = float(QFOS_STARTING_EQUITY) + realized + unrealized
-        cash = equity - exposure
-        drawdown = (equity - float(QFOS_STARTING_EQUITY)) / max(float(QFOS_STARTING_EQUITY), 1.0)
+            equity = float(QFOS_STARTING_EQUITY) + realized + unrealized
+            cash = equity - exposure
+            drawdown = (equity - float(QFOS_STARTING_EQUITY)) / max(float(QFOS_STARTING_EQUITY), 1.0)
 
-        _qfos_acct_insert_snapshot(
-            cur,
-            round(equity, 8),
-            round(cash, 8),
-            round(exposure, 8),
-            round(drawdown, 8),
-            regime,
-            now_s,
-        )
-
-        conn.commit()
-
-        if verbose:
-            print(
-                "[PORTFOLIO_RECONCILER] synced "
-                f"equity={equity:.4f} cash={cash:.4f} exposure={exposure:.4f} "
-                f"realized={realized:.4f} unrealized={unrealized:.4f} "
-                f"drawdown={drawdown:.4%} regime={regime}",
-                flush=True,
+            _qfos_acct_insert_snapshot(
+                conn,
+                round(equity, 8),
+                round(cash, 8),
+                round(exposure, 8),
+                round(drawdown, 8),
+                regime,
+                now_s,
             )
 
+            # engine.begin() commits automatically on clean exit and rolls
+            # back automatically if an exception propagates out of the
+            # "with" block, so no explicit commit/rollback/close is needed.
+
+            if verbose:
+                print(
+                    "[PORTFOLIO_RECONCILER] synced "
+                    f"equity={equity:.4f} cash={cash:.4f} exposure={exposure:.4f} "
+                    f"realized={realized:.4f} unrealized={unrealized:.4f} "
+                    f"drawdown={drawdown:.4%} regime={regime}",
+                    flush=True,
+                )
+
     except Exception as exc:
-        try:
-            conn.rollback()
-        except Exception:
-            pass
         print(f"[PORTFOLIO_RECONCILER] error={exc}", flush=True)
-    finally:
-        try:
-            conn.close()
-        except Exception:
-            pass
 
 def _qfos_acct_loop():
     import time
@@ -14242,13 +14475,13 @@ def _qfos_start_portfolio_reconciler():
     except Exception as exc:
         print(f"[PORTFOLIO_RECONCILER] start_error={exc}", flush=True)
 
-print("[QFOS_POSTGRES_ONLY] disabled startup: _qfos_start_portfolio_reconciler (SQLite-backed portfolio reconciler)", flush=True)
+_qfos_start_portfolio_reconciler()
 
 
 
 
 # ============================================================
-# QFOS POLICY V2 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â CONSOLIDATED ENTRY CLASSIFICATION + RUNNER LOGIC
+# QFOS POLICY V2 ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â CONSOLIDATED ENTRY CLASSIFICATION + RUNNER LOGIC
 # Purpose:
 #   Fix confused scalper/trend-following behavior.
 #
@@ -17602,7 +17835,7 @@ if __name__ == '__main__':
 
 
 # QFOS_AGENT5_FULL_EXIT_DB_QTY_PATCH_V1
-# Agent 5 â€” SELL execution/filter authority
+# Agent 5 Ã¢â‚¬â€ SELL execution/filter authority
 # Problem:
 #   DB has open positions, but FULL_PROFIT_MODE rejects exit lifecycle SELLs
 #   with reject_sell_no_open_position.
@@ -17996,6 +18229,7 @@ except Exception as exc:
 # ============================================================
 # End QFOS_DUPLICATE_PROFIT_ENGINE_SELL_GUARD_V1
 # ============================================================
+
 
 
 
