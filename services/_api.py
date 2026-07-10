@@ -398,28 +398,9 @@ def ensure_positions_table(conn):
             last_price REAL NOT NULL DEFAULT 0,
             exposure REAL NOT NULL DEFAULT 0,
             strategy TEXT,
-            trade_uuid TEXT,
-            highest_price_seen REAL DEFAULT 0,
-            lowest_price_seen REAL DEFAULT 0,
-            max_unrealized_profit REAL DEFAULT 0,
-            max_unrealized_loss REAL DEFAULT 0,
             updated_at DATETIME DEFAULT (CURRENT_TIMESTAMP + interval '3 hours')
         )
     """))
-    try:
-        cols = [r[0] for r in conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'positions' AND table_schema = 'public'"))]
-        if 'trade_uuid' not in cols:
-            conn.execute(text('ALTER TABLE positions ADD COLUMN trade_uuid TEXT'))
-        if 'highest_price_seen' not in cols:
-            conn.execute(text('ALTER TABLE positions ADD COLUMN highest_price_seen REAL DEFAULT 0'))
-        if 'lowest_price_seen' not in cols:
-            conn.execute(text('ALTER TABLE positions ADD COLUMN lowest_price_seen REAL DEFAULT 0'))
-        if 'max_unrealized_profit' not in cols:
-            conn.execute(text('ALTER TABLE positions ADD COLUMN max_unrealized_profit REAL DEFAULT 0'))
-        if 'max_unrealized_loss' not in cols:
-            conn.execute(text('ALTER TABLE positions ADD COLUMN max_unrealized_loss REAL DEFAULT 0'))
-    except Exception:
-        pass
     conn.execute(text("""
         CREATE TABLE IF NOT EXISTS symbol_quarantine (
             symbol TEXT PRIMARY KEY,
@@ -482,24 +463,20 @@ def get_positions(conn):
     ]
 
 
-from services.truth_metrics import qfo_compute_truth_metrics_from_trades
-
 def get_performance(conn, equity):
     ensure_positions_table(conn)
 
     summary = conn.execute(text("""
         SELECT
+            COUNT(*) AS total_trades,
+            SUM(CASE WHEN UPPER(side) = 'BUY' THEN 1 ELSE 0 END) AS buy_count,
+            SUM(CASE WHEN UPPER(side) = 'SELL' THEN 1 ELSE 0 END) AS sell_count,
+            SUM(CASE WHEN LOWER(TRIM(strategy)) IN ('take_profit', 'adaptive_take_profit', 'single_full_take_profit', 'fast_take_profit_stage_1', 'fast_take_profit_stage_2') THEN 1 ELSE 0 END) AS take_profit_count,
+            SUM(CASE WHEN LOWER(TRIM(strategy)) IN ('stop_loss', 'adaptive_stop_loss', 'stop_loss_exit') THEN 1 ELSE 0 END) AS stop_loss_count,
             SUM(CASE WHEN LOWER(TRIM(strategy)) IN ('risk_off_exit') THEN 1 ELSE 0 END) AS risk_off_exit_count,
             SUM(CASE WHEN LOWER(TRIM(strategy)) IN ('emergency_exposure_reduction') THEN 1 ELSE 0 END) AS emergency_exit_count
         FROM trades
     """)).mappings().first()
-
-    trades = conn.execute(text("""
-        SELECT symbol, side, quantity, fill_price, expected_price, price, strategy, created_at, updated_at
-        FROM trades
-    """)).mappings().all()
-    
-    truth = qfo_compute_truth_metrics_from_trades(trades)
 
     pnl_row = conn.execute(text("""
         SELECT
@@ -521,22 +498,27 @@ def get_performance(conn, equity):
         LIMIT 10
     """)).mappings().all()
 
+    sell_count = int(summary["sell_count"] or 0) if summary else 0
+    take_profit_count = int(summary["take_profit_count"] or 0) if summary else 0
+    stop_loss_count = int(summary["stop_loss_count"] or 0) if summary else 0
+
+    closed_count = take_profit_count + stop_loss_count
+    win_rate_estimate = take_profit_count / closed_count if closed_count else 0
+
     realized_pnl = float(pnl_row["realized_pnl"] or 0) if pnl_row else 0.0
     unrealized_pnl = float(pnl_row["unrealized_pnl"] or 0) if pnl_row else 0.0
 
     return {
-        "total_trades": truth["total_trades"],
-        "buy_count": truth["buy_count"],
-        "sell_count": truth["sell_count"],
-        "win_rate": round(truth["win_rate"], 4),
-        "win_rate_estimate": round(truth["win_rate_estimate"], 4),
+        "total_trades": int(summary["total_trades"] or 0) if summary else 0,
+        "buy_count": int(summary["buy_count"] or 0) if summary else 0,
+        "sell_count": int(summary["sell_count"] or 0) if summary else 0,
+        "win_rate": round(win_rate_estimate, 4),
+        "win_rate_estimate": round(win_rate_estimate, 4),
         "realized_pnl": round(realized_pnl, 2),
         "unrealized_pnl": round(unrealized_pnl, 2),
         "total_pnl": round(realized_pnl + unrealized_pnl, 2),
-        "take_profit_count": truth["take_profit_count"],
-        "stop_loss_count": truth["stop_loss_count"],
-        "breakeven_protection_exit_count": truth["breakeven_protection_exit_count"],
-        "time_stop_exit_count": truth["time_stop_exit_count"],
+        "take_profit_count": take_profit_count,
+        "stop_loss_count": stop_loss_count,
         "risk_off_exit_count": int(summary["risk_off_exit_count"] or 0) if summary else 0,
         "emergency_exit_count": int(summary["emergency_exit_count"] or 0) if summary else 0,
         "by_symbol": [
@@ -575,16 +557,7 @@ def qfo_api_ensure_trades_table(conn):
                 strategy TEXT,
                 confidence REAL DEFAULT 0,
                 live BOOLEAN DEFAULT 0,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                trade_uuid TEXT,
-                regime TEXT,
-                experiment_id TEXT,
-                software_version TEXT,
-                configuration_hash TEXT,
-                mfe REAL,
-                mae REAL,
-                peak_price REAL,
-                trough_price REAL
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
         """))
         try:
@@ -646,16 +619,7 @@ def qfo_status_preensure_trades_table(conn):
                 strategy TEXT,
                 confidence REAL DEFAULT 0,
                 live BOOLEAN DEFAULT 0,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                trade_uuid TEXT,
-                regime TEXT,
-                experiment_id TEXT,
-                software_version TEXT,
-                configuration_hash TEXT,
-                mfe REAL,
-                mae REAL,
-                peak_price REAL,
-                trough_price REAL
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
         """))
         # Do NOT call conn.commit() here.
@@ -768,12 +732,7 @@ def get_status_payload():
             "sell_count": performance["sell_count"],
             "latest_trades": qfos_normalize_trade_list([dict(t) for t in latest_trades]),
         },
-        "take_profit_count": performance.get("take_profit_count", 0),
-        "stop_loss_count": performance.get("stop_loss_count", 0),
-        "breakeven_protection_exit_count": performance.get("breakeven_protection_exit_count", 0),
-        "time_stop_exit_count": performance.get("time_stop_exit_count", 0),
-        "risk_off_exit_count": performance.get("risk_off_exit_count", 0),
-        "emergency_exit_count": performance.get("emergency_exit_count", 0),
+        **_count_exit_strategies(),
         "risk_rules": {
             "max_total_exposure_pct": float(getattr(settings, "max_total_exposure_pct", 0.08)),
             "max_symbol_exposure_pct": float(getattr(settings, "max_symbol_exposure_pct", 0.03)),
@@ -977,6 +936,58 @@ def _compute_anomaly_warnings(payload: dict) -> list:
     return warnings
 
 
+def _count_exit_strategies():
+    """
+    Counts real exit types from the trades table.
+    This fixes dashboard/status counters so adaptive exits are included.
+    """
+    counts = {
+        "take_profit_count": 0,
+        "stop_loss_count": 0,
+        "breakeven_protection_exit_count": 0,
+        "time_stop_exit_count": 0,
+    }
+
+    try:
+        with engine.begin() as conn:
+            rows = conn.execute(text("""
+                SELECT strategy, COUNT(*) AS count
+                FROM trades
+                WHERE side = 'sell'
+                GROUP BY strategy
+            """)).mappings().all()
+
+        for row in rows:
+            strategy = str(row.get("strategy") or "")
+            count = int(row.get("count") or 0)
+
+            if strategy in (
+                "take_profit",
+                "adaptive_take_profit",
+                "single_full_take_profit",
+                "fast_take_profit_stage_1",
+                "fast_take_profit_stage_2",
+            ):
+                counts["take_profit_count"] += count
+
+            elif strategy in (
+                "stop_loss",
+                "adaptive_stop_loss",
+            ):
+                counts["stop_loss_count"] += count
+
+            elif strategy == "breakeven_protection_exit":
+                counts["breakeven_protection_exit_count"] += count
+
+            elif strategy == "time_stop_exit":
+                counts["time_stop_exit_count"] += count
+
+    except Exception as e:
+        print("EXIT COUNTER ERROR:", e)
+
+    return counts
+
+
 @app.get("/status")
 def status():
     payload = get_status_payload()
@@ -985,6 +996,10 @@ def status():
     reason = control.get("reason") or ""
     
     trades = payload.get("trading", {}).get("total_trades", 0)
+    if trades == 0 and "max_daily_loss" in reason:
+        paused = False
+        reason = ""
+        resume_bot()
         
     payload["paused"] = paused
     payload["pause_reason"] = reason

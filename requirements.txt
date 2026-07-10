@@ -13,3 +13,4 @@ requests==2.32.3
 pytest==8.3.4
 ccxt
 psycopg2-binary==2.9.9
+httpx

@@ -1,4 +1,4 @@
-﻿.git
+.git
 .gitignore
 __pycache__/
 *.pyc
@@ -16,7 +16,31 @@ main_backup_*.py
 main_before_safe_patch_*.py
 services/api_backup_*.py
 
-# Local logs/temp
+# Large directories to exclude from build context
+logs/
+old_logs/
+data/
+db_backups/
+experiments/
+validation_runs/
+validation_reports/
+agent*
+qfos*
+!qfos_runtime/
+paper_reset*
+phase*
+runtime_*
+joint_*
+forensic*
+startsh*
+
+# Local logs/temp/data
 *.log
 *.tmp
+*.txt
+!requirements.txt
+*.sql
+*.jsonl
+*.tar.gz
+*.bak
 .DS_Store

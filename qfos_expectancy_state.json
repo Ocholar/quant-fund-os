@@ -1,0 +1,309 @@
+{
+  "losses": {},
+  "positions": {
+    "9BIT/USDT": {
+      "entry_price": 0.0433549974,
+      "entry_ts": 1781949705.3946161,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 0.0433549974,
+      "signal_strength": 0.007072631892066972,
+      "strategy": "evo_9736"
+    },
+    "ASTER/USDT": {
+      "entry_price": 0.6543924,
+      "entry_ts": 1782020466.1174393,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 0.6543924,
+      "signal_strength": 0.003992878392504506,
+      "strategy": "evo_5505"
+    },
+    "ATLA/USDT": {
+      "entry_price": 153.19876414,
+      "entry_ts": 1781962583.001926,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 153.19876414,
+      "signal_strength": 0.002366059371162188,
+      "strategy": "evo_6460_m"
+    },
+    "ATOM/USDT": {
+      "entry_price": 1.8100854,
+      "entry_ts": 1781992829.499316,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 1.8100854,
+      "signal_strength": 0.0038849747602007767,
+      "strategy": "evo_1417"
+    },
+    "AVAX/USDT": {
+      "entry_price": 6.2887710000000006,
+      "entry_ts": 1782016621.3648992,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 6.2887710000000006,
+      "signal_strength": 0.004482143516006398,
+      "strategy": "evo_6696_m"
+    },
+    "BDX/USDT": {
+      "entry_price": 0.080518282,
+      "entry_ts": 1782018312.6736805,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 0.080518282,
+      "signal_strength": 0.0033903577089551273,
+      "strategy": "evo_8966"
+    },
+    "BEAT/USDT": {
+      "entry_price": 1.7772056840000001,
+      "entry_ts": 1782019923.2203465,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 1.7772056840000001,
+      "signal_strength": 0.00914648695090614,
+      "strategy": "evo_5505"
+    },
+    "BILL/USDT": {
+      "entry_price": 0.055663378,
+      "entry_ts": 1782022645.0746136,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 0.055663378,
+      "signal_strength": 0.0031183649891431964,
+      "strategy": "evo_7311"
+    },
+    "BOB/USDT": {
+      "entry_price": 0.005406241799999999,
+      "entry_ts": 1782021999.9066677,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 0.005406241799999999,
+      "signal_strength": 0.004643033093958748,
+      "strategy": "evo_7311"
+    },
+    "BSB/USDT": {
+      "entry_price": 0.357024086,
+      "entry_ts": 1782016178.8572166,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 0.357024086,
+      "signal_strength": 0.005687559611245341,
+      "strategy": "evo_6696_m"
+    },
+    "CAKE/USDT": {
+      "entry_price": 1.4138478,
+      "entry_ts": 1782014491.2635534,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 1.4138478,
+      "signal_strength": 0.008934947267502102,
+      "strategy": "evo_6435"
+    },
+    "DASH/USDT": {
+      "entry_price": 37.162284,
+      "entry_ts": 1782000784.931733,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 37.162284,
+      "signal_strength": 0.005393441806240462,
+      "strategy": "evo_7895"
+    },
+    "DOT/USDT": {
+      "entry_price": 0.97418416,
+      "entry_ts": 1782003733.552022,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 0.97418416,
+      "signal_strength": 0.0023897489098270164,
+      "strategy": "evo_4343"
+    },
+    "EDEN/USDT": {
+      "entry_price": 0.047938746000000004,
+      "entry_ts": 1782022279.3607483,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 0.047938746000000004,
+      "signal_strength": 0.012205991560680474,
+      "strategy": "evo_7097"
+    },
+    "ETHFI/USDT": {
+      "entry_price": 0.34980976,
+      "entry_ts": 1782014746.6542768,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 0.34980976,
+      "signal_strength": 0.003269897767250174,
+      "strategy": "evo_6696"
+    },
+    "FIL/USDT": {
+      "entry_price": 0.79587724,
+      "entry_ts": 1782014065.95429,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 0.79587724,
+      "signal_strength": 0.0025263079417153778,
+      "strategy": "evo_3270"
+    },
+    "GENIUS/USDT": {
+      "entry_price": 0.422783518,
+      "entry_ts": 1782021637.6006536,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 0.422783518,
+      "signal_strength": 0.0029068337592851323,
+      "strategy": "evo_7311"
+    },
+    "GUA/USDT": {
+      "entry_price": 1.046567564,
+      "entry_ts": 1782021759.3571713,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 1.046567564,
+      "signal_strength": 0.025125834105247158,
+      "strategy": "evo_5573"
+    },
+    "HYPE/USDT": {
+      "entry_price": 70.682384,
+      "entry_ts": 1782003806.1460974,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 70.682384,
+      "signal_strength": 0.0026912692666279936,
+      "strategy": "evo_4343"
+    },
+    "IN/USDT": {
+      "entry_price": 0.07398436400000001,
+      "entry_ts": 1782021798.617388,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 0.07398436400000001,
+      "signal_strength": 0.004364991576388588,
+      "strategy": "evo_7311"
+    },
+    "INJ/USDT": {
+      "entry_price": 5.1170684,
+      "entry_ts": 1782016986.4489152,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 5.1170684,
+      "signal_strength": 0.0022376621545683317,
+      "strategy": "evo_5505"
+    },
+    "LTC/USDT": {
+      "entry_price": 44.626760000000004,
+      "entry_ts": 1782023289.8920674,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 44.626760000000004,
+      "signal_strength": 0.0030090742686661454,
+      "strategy": "evo_7016"
+    },
+    "NEAR/USDT": {
+      "entry_price": 2.22043146,
+      "entry_ts": 1782021719.900506,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 2.22043146,
+      "signal_strength": 0.007660181289298573,
+      "strategy": "evo_7097"
+    },
+    "ONDO/USDT": {
+      "entry_price": 0.34153479800000003,
+      "entry_ts": 1782016802.2694278,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 0.34153479800000003,
+      "signal_strength": 0.0036823569587718374,
+      "strategy": "evo_5505"
+    },
+    "PENDLE/USDT": {
+      "entry_price": 1.4918946000000002,
+      "entry_ts": 1782016656.1345155,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 1.4918946000000002,
+      "signal_strength": 0.0193848270599577,
+      "strategy": "evo_6696_m"
+    },
+    "PENGU/USDT": {
+      "entry_price": 0.006799077,
+      "entry_ts": 1782012559.785999,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 0.006799077,
+      "signal_strength": 0.004567403158840522,
+      "strategy": "evo_3270"
+    },
+    "PLAY/USDT": {
+      "entry_price": 0.035091041999999996,
+      "entry_ts": 1782023168.4375684,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 0.035091041999999996,
+      "signal_strength": 0.00392489266192908,
+      "strategy": "evo_7016"
+    },
+    "SOL/USDT": {
+      "entry_price": 73.92432799999999,
+      "entry_ts": 1781994568.6295495,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 73.92432799999999,
+      "signal_strength": 0.012982198022579605,
+      "strategy": "evo_4873"
+    },
+    "TAO/USDT": {
+      "entry_price": 238.252866,
+      "entry_ts": 1782020003.6233277,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 238.252866,
+      "signal_strength": 0.0069471315745501805,
+      "strategy": "evo_5505"
+    },
+    "TIA/USDT": {
+      "entry_price": 0.36732026,
+      "entry_ts": 1782023327.7292511,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 0.36732026,
+      "signal_strength": 0.0020257106242941303,
+      "strategy": "evo_7016"
+    },
+    "TRIA/USDT": {
+      "entry_price": 0.025735432,
+      "entry_ts": 1782018218.008182,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 0.025735432,
+      "signal_strength": 0.017342891226881485,
+      "strategy": "evo_9872"
+    },
+    "TRUMP/USDT": {
+      "entry_price": 1.8200914,
+      "entry_ts": 1782005921.3910644,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 1.8200914,
+      "signal_strength": 0.004375720379995562,
+      "strategy": "evo_4343"
+    },
+    "TRX/USDT": {
+      "entry_price": 0.32589542,
+      "entry_ts": 1781961659.9573915,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 0.32589542,
+      "signal_strength": 0.0017626402522485929,
+      "strategy": "evo_3570"
+    },
+    "TTN/USDT": {
+      "entry_price": 0.06498897,
+      "entry_ts": 1781992371.501836,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 0.06498897,
+      "signal_strength": 0.007934878733068418,
+      "strategy": "evo_4873"
+    },
+    "ULTIMA/USDT": {
+      "entry_price": 2066.1689579999997,
+      "entry_ts": 1782022683.8492537,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 2066.1689579999997,
+      "signal_strength": 0.005623779505377735,
+      "strategy": "evo_5573"
+    },
+    "WXT/USDT": {
+      "entry_price": 0.0161156636,
+      "entry_ts": 1781994609.9889374,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 0.0161156636,
+      "signal_strength": 0.008027627665404324,
+      "strategy": "evo_4873"
+    },
+    "XMR/USDT": {
+      "entry_price": 322.053116,
+      "entry_ts": 1782023086.4529235,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 322.053116,
+      "signal_strength": 0.004225271353768267,
+      "strategy": "evo_7016"
+    },
+    "ZEC/USDT": {
+      "entry_price": 472.463308,
+      "entry_ts": 1782012275.780696,
+      "highest_pnl_pct": 0.0,
+      "highest_price": 472.463308,
+      "signal_strength": 0.007512929350755981,
+      "strategy": "evo_3270"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+schema_version: "1.0"
+log_root: "logs"
+candidates_dir: "logs/candidates"
+trades_dir: "logs/trades"
+retention_days: 90
+fail_safe: true

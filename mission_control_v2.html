@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Mission Control</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Pinned to v4.2.0 — v5 renamed addCandlestickSeries -->
+    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg:      #0d1117;
+            --bg2:     #161b22;
+            --bg3:     #1c2128;
+            --border:  rgba(255,255,255,0.07);
+            --text:    #e6edf3;
+            --muted:   #7d8590;
+            --cyan:    #58a6ff;
+            --green:   #3fb950;
+            --red:     #f85149;
+            --amber:   #d29922;
+            --purple:  #bc8cff;
+        }
+
+        html, body { height: 100%; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            overflow: hidden;
+        }
+
+        /* ============================================================
+           PAGE GRID — every direct child below has an explicit
+           grid-area. This is deliberate: the previous layout relied on
+           implicit row auto-placement (grid-template-rows with no
+           grid-template-areas), and the page had one more flow child
+           (two ".heat-strip" elements) than rows defined, silently
+           shifting every element after it down by one row. Named areas
+           make that class of bug impossible — an unassigned child would
+           be visibly absent, not silently misplaced.
+           ============================================================ */
+        .page-grid {
+            height: 100vh;
+            display: grid;
+            grid-template-areas:
+                "topbar topbar topbar"
+                "heat   heat   heat"
+                "left   center right"
+                "bottom bottom bottom";
+            grid-template-rows: 60px 40px 1fr 210px;
+            grid-template-columns: minmax(320px, 400px) 1fr minmax(320px, 380px);
+            gap: 1px;
+            background: var(--border);
+            overflow: hidden;
+        }
+
+        @media (max-width: 1180px), (max-height: 800px) {
+            .page-grid {
+                height: auto;
+                min-height: 100vh;
+                grid-template-areas:
+                    "topbar" "heat" "left" "center" "right" "bottom";
+                grid-template-rows: auto auto auto auto auto auto;
+                grid-template-columns: 1fr;
+                overflow-y: auto;
+            }
+            .region { min-height: 420px; }
+            .hbar, .health-cluster { flex-wrap: wrap; row-gap: 6px; }
+        }
+
+        /* ── Top bar (KPIs + system status, merged into one row) ──── */
+        header {
+            grid-area: topbar;
+            background: var(--bg2);
+            display: flex; align-items: center; padding: 0 20px; gap: 18px;
+            overflow-x: auto;
+        }
+        .logo {
+            display: flex; align-items: center; gap: 10px;
+            font-weight: 700; font-size: 14px; white-space: nowrap;
+        }
+        #pulse-dot {
+            width: 9px; height: 9px; border-radius: 50%;
+            background: var(--green); box-shadow: 0 0 8px var(--green);
+            transition: transform .12s, background .12s, box-shadow .12s;
+        }
+        #pulse-dot.flash { transform: scale(2.2); }
+        #pulse-dot.flash-blue   { background: var(--cyan);  box-shadow: 0 0 16px var(--cyan); }
+        #pulse-dot.flash-yellow { background: var(--amber); box-shadow: 0 0 16px var(--amber); }
+        #pulse-dot.flash-green  { background: var(--green); box-shadow: 0 0 16px var(--green); }
+        #pulse-dot.flash-red    { background: var(--red);   box-shadow: 0 0 16px var(--red); }
+
+        .vdiv { width: 1px; height: 26px; background: var(--border); flex-shrink: 0; }
+        .hbar { display: flex; gap: 22px; flex-shrink: 0; }
+        .hm  { display: flex; flex-direction: column; }
+        .hml { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .9px; margin-bottom: 2px; white-space: nowrap; }
+        .hmv { font-family: 'JetBrains Mono'; font-size: 13px; font-weight: 700; white-space: nowrap; }
+        .pos { color: var(--green); }
+        .neg { color: var(--red); }
+
+        .health-cluster {
+            display: flex; gap: 14px; align-items: center; flex-shrink: 0;
+            font-size: 10px; color: var(--muted); font-family: 'JetBrains Mono';
+        }
+        .health-item { display: flex; gap: 5px; align-items: center; white-space: nowrap; }
+        .health-item b { color: var(--text); font-weight: 600; }
+
+        .badge {
+            margin-left: auto; padding: 3px 10px; border-radius: 99px;
+            font-size: 10px; font-weight: 700; letter-spacing: .6px; flex-shrink: 0;
+            background: rgba(63,185,80,.15); color: var(--green); border: 1px solid rgba(63,185,80,.3);
+            white-space: nowrap;
+        }
+
+        /* ── Heatmap strip ───────────────────────────────────────── */
+        .heat-strip {
+            grid-area: heat;
+            display: flex; gap: 8px; padding: 6px 20px; align-items: center;
+            background: var(--bg2);
+            overflow-x: auto; overflow-y: hidden;
+        }
+        .heat-strip::-webkit-scrollbar { display: none; }
+        .heat-card {
+            display: flex; flex-direction: column; gap: 2px;
+            background: var(--bg3); padding: 3px 8px; border-radius: 4px;
+            min-width: 70px; border: 1px solid transparent; flex-shrink: 0;
+        }
+        .heat-card.hot { border-color: rgba(63,185,80,.3); background: rgba(63,185,80,.1); }
+        .heat-card.warm { border-color: rgba(88,166,255,.3); background: rgba(88,166,255,.1); }
+        .heat-sym { font-family: 'JetBrains Mono'; font-size: 10px; font-weight: 700; }
+        .heat-score { font-family: 'JetBrains Mono'; font-size: 11px; color: var(--text); }
+
+        /* ── Regions (left / center / right) ─────────────────────── */
+        .region { display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; background: var(--border); gap: 1px; }
+        .region-left   { grid-area: left; }
+        .region-center { grid-area: center; }
+        .region-right  { grid-area: right; }
+
+        .section-label {
+            padding: 4px 16px 2px; font-size: 9px; font-weight: 700; letter-spacing: 1.4px;
+            text-transform: uppercase; color: var(--purple); background: var(--bg2);
+            flex-shrink: 0;
+        }
+
+        .panel {
+            background: var(--bg);
+            display: flex; flex-direction: column; overflow: hidden; position: relative;
+        }
+        /* Fixed-content panels keep their natural height; scrollable /
+           variable-length panels use flex:1 with min-height:0 so they
+           shrink and scroll internally instead of overflowing their
+           region (the min-height:0 is what the old height:NN% panels
+           were missing a robust equivalent of). */
+        .panel-auto  { flex: 0 0 auto; }
+        .panel-grow  { flex: 1 1 0; min-height: 90px; transition: flex-grow .4s ease; }
+        /* Panels still showing their "waiting for data" empty state claim
+           less of the shared row until qfosMarkHasData() (additive, see
+           script) marks them active -- quieter markets leave more room
+           for panels that actually have something to show. */
+        .panel-grow:not(.has-data) { flex-grow: 0.35; }
+
+        .ph {
+            padding: 9px 16px 7px; border-bottom: 1px solid var(--border);
+            font-size: 9px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+            color: var(--muted); display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+        }
+        .ph-badge { font-size: 10px; font-family: 'JetBrains Mono'; margin-left: auto; color: var(--cyan); }
+        .pb { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+
+        /* ── Chart ───────────────────────────────────────────────── */
+        #chart-el { flex: 1; min-height: 0; }
+
+        /* ── Current Focus card (NEW — built from existing leaderboard
+               + rejections data already streamed over SSE; no new
+               backend fields) ─────────────────────────────────────── */
+        .focus-grid { padding: 10px 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .focus-card {
+            background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+            padding: 8px 10px; display: flex; flex-direction: column; gap: 2px;
+        }
+        .focus-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .7px; }
+        .focus-val { font-family: 'JetBrains Mono'; font-size: 14px; font-weight: 700; margin-top: 2px; }
+        .focus-val.unavailable { color: var(--muted); font-weight: 500; font-size: 12px; }
+
+        /* ── AI Pipeline (funnel) ────────────────────────────────── */
+        .pipeline { flex: 1; padding: 10px 16px; display: flex; flex-direction: column; gap: 0; justify-content: space-evenly; }
+        .pipe-stage { display: flex; flex-direction: column; gap: 4px; position: relative; }
+        .pipe-row { display: flex; align-items: center; gap: 8px; }
+        .pipe-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .7px; flex: 1; }
+        .pipe-count { font-family: 'JetBrains Mono'; font-size: 17px; font-weight: 700; color: var(--text); }
+        .pipe-pct { font-size: 10px; color: var(--muted); font-family: 'JetBrains Mono'; }
+        .pipe-delta {
+            font-size: 10px; font-family: 'JetBrains Mono'; color: var(--cyan);
+            opacity: 0; transition: opacity .4s; min-width: 40px; text-align: right;
+        }
+        .pipe-delta.show { opacity: 1; }
+        .pipe-bar-track { height: 3px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+        .pipe-bar-fill { height: 100%; border-radius: 2px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+        .pipe-bar-fill.cyan  { background: linear-gradient(90deg, var(--cyan), rgba(88,166,255,.4)); }
+        .pipe-bar-fill.green { background: linear-gradient(90deg, var(--green), rgba(63,185,80,.4)); }
+        .pipe-connector { display: flex; align-items: center; gap: 4px; padding: 1px 0; }
+        .pipe-line { flex: 1; height: 1px; background: var(--border); }
+        .pipe-arrow { color: var(--border); font-size: 10px; }
+
+        /* ── Candidate Race ──────────────────────────────────────── */
+        .race { flex: 1; padding: 8px 14px; display: flex; flex-direction: column; gap: 5px; overflow-y: auto; }
+        .race-row { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .race-sym { font-family: 'JetBrains Mono'; font-size: 11px; font-weight: 700; width: 72px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .race-bar-track { flex: 1; height: 18px; background: var(--bg3); border-radius: 4px; overflow: hidden; position: relative; }
+        .race-bar-fill {
+            height: 100%; border-radius: 4px;
+            background: linear-gradient(90deg, rgba(88,166,255,.7), rgba(88,166,255,.2));
+            transition: width .8s cubic-bezier(.4,0,.2,1);
+            display: flex; align-items: center; justify-content: flex-end; padding-right: 6px;
+        }
+        .race-bar-fill.approved { background: linear-gradient(90deg, rgba(63,185,80,.7), rgba(63,185,80,.2)); }
+        .race-bar-fill.rejected { background: linear-gradient(90deg, rgba(248,81,73,.5), rgba(248,81,73,.1)); }
+        .race-score { font-family: 'JetBrains Mono'; font-size: 10px; font-weight: 700; color: rgba(255,255,255,.9); }
+        .race-status { font-size: 10px; width: 120px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+        .race-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 12px; }
+
+        /* ── Portfolio Cards ─────────────────────────────────────── */
+        .port-grid { padding: 10px 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .port-card {
+            background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+            padding: 9px 11px; display: flex; flex-direction: column; gap: 2px;
+        }
+        .pc-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
+        .pc-val { font-family: 'JetBrains Mono'; font-size: 15px; font-weight: 700; margin-top: 2px; }
+        .pc-sub { font-size: 9px; color: var(--muted); margin-top: 2px; }
+
+        /* ── Last Action (NEW) ───────────────────────────────────── */
+        .last-action { padding: 10px 14px; position: relative; min-height: 40px; }
+        .la-time { font-family: 'JetBrains Mono'; font-size: 10px; color: var(--muted); }
+        .la-text { font-size: 13px; margin-top: 3px; line-height: 1.4; }
+        .la-meta { display: flex; gap: 16px; margin-top: 6px; font-size: 10px; color: var(--muted); font-family: 'JetBrains Mono'; }
+        .la-meta b { color: var(--text); font-weight: 600; }
+
+        /* ── Recent Executions (NEW — filtered client-side from the
+               same event timeline already streamed; no new backend
+               fields) ────────────────────────────────────────────── */
+        .exec-list { flex: 1; overflow-y: auto; padding: 6px 12px; display: flex; flex-direction: column; gap: 3px; font-family: 'JetBrains Mono'; font-size: 11px; }
+        .exec-row { display: flex; gap: 8px; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,.02); }
+        .exec-t { color: var(--muted); flex-shrink: 0; }
+
+        /* ── Open Positions Table ────────────────────────────────── */
+        .pos-table-wrap { flex: 1; min-height: 0; padding: 0 12px 8px; overflow-y: auto; }
+        .pos-table-wrap::-webkit-scrollbar { width: 3px; }
+        .pos-table-wrap::-webkit-scrollbar-thumb { background: var(--border); }
+        .pos-table { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono'; font-size: 10px; }
+        .pos-table th {
+            font-size: 9px; color: var(--muted); font-weight: 600; letter-spacing: .6px;
+            text-transform: uppercase; text-align: left; padding: 4px 6px;
+            border-bottom: 1px solid var(--border); position: sticky; top: 0;
+            background: var(--bg); font-family: 'Inter';
+        }
+        .pos-table td { padding: 5px 6px; border-bottom: 1px solid rgba(255,255,255,.03); }
+        .pos-table tr:last-child td { border-bottom: none; }
+        .pos-sym { font-weight: 700; color: var(--cyan); }
+        .pos-pnl-pos { color: var(--green); }
+        .pos-pnl-neg { color: var(--red); }
+        .pos-empty { padding: 14px 12px; font-size: 11px; color: var(--muted); text-align: center; }
+
+        /* ── AI Brain SVG ────────────────────────────────────────── */
+        .brain-wrap { padding: 6px 16px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        #brain-svg { width: 100%; max-height: 66px; }
+        .brain-label { font-size: 10px; color: var(--muted); text-align: center; letter-spacing: .5px; font-family: 'JetBrains Mono'; }
+        .brain-cycle { font-size: 11px; color: var(--cyan); font-family: 'JetBrains Mono'; font-weight: 700; }
+
+        /* ── Rejection Radar ─────────────────────────────────────── */
+        .rej { flex: 1; padding: 8px 14px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; }
+        .rej-row { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .rej-name { font-size: 10px; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .rej-track { width: 80px; height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; flex-shrink: 0; }
+        .rej-fill { height: 100%; border-radius: 2px; background: var(--red); transition: width .5s; }
+        .rej-pct { font-size: 10px; font-family: 'JetBrains Mono'; color: var(--muted); width: 28px; text-align: right; flex-shrink: 0; }
+        .rej-cnt { font-size: 10px; font-family: 'JetBrains Mono'; color: var(--muted); width: 36px; text-align: right; flex-shrink: 0; }
+
+        /* ── System Health rows ──────────────────────────────────── */
+        .sys-health { padding: 8px 14px; display: flex; flex-direction: column; gap: 7px; font-family: 'JetBrains Mono'; font-size: 11px; }
+        .sh-row { display: flex; align-items: center; gap: 8px; }
+        .sh-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: var(--muted); }
+        .sh-dot.ok { background: var(--green); box-shadow: 0 0 6px var(--green); }
+        .sh-dot.bad { background: var(--red); box-shadow: 0 0 6px var(--red); }
+        .sh-dot.warn { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+        .sh-name { color: var(--muted); flex: 1; }
+        .sh-val { color: var(--text); font-weight: 600; }
+        .sh-val.unavailable { color: var(--muted); font-weight: 400; font-style: italic; font-size: 10px; }
+
+        /* ── Bottom region: live log stream + research ribbon ───── */
+        .region-bottom {
+            grid-area: bottom;
+            display: flex; flex-direction: column; overflow: hidden;
+            background: var(--border); gap: 1px;
+        }
+        .tl { flex: 1; min-height: 0; padding: 8px 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; font-family: 'JetBrains Mono'; font-size: 11px; background: var(--bg); }
+        .tl::-webkit-scrollbar { width: 3px; }
+        .tl::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+        .tl-row { display: flex; gap: 6px; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,.02); animation: fadeIn .3s ease; }
+        .tl-t { color: var(--muted); flex-shrink: 0; }
+        .tl-blue   { color: var(--cyan); }
+        .tl-yellow { color: var(--amber); }
+        .tl-green  { color: var(--green); }
+        .tl-red    { color: var(--red); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+        footer {
+            background: var(--bg2);
+            display: flex; align-items: center; gap: 0; overflow: hidden;
+            font-size: 11px; height: 28px; flex-shrink: 0;
+        }
+        .ribbon-label {
+            padding: 0 12px; font-size: 9px; font-weight: 700; letter-spacing: 1px;
+            text-transform: uppercase; color: var(--cyan); border-right: 1px solid var(--border);
+            white-space: nowrap; height: 100%; display: flex; align-items: center;
+        }
+        .ribbon-track { flex: 1; overflow: hidden; position: relative; height: 100%; }
+        .ribbon-inner {
+            display: flex; gap: 32px; align-items: center; height: 100%;
+            animation: marquee 30s linear infinite; white-space: nowrap;
+        }
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        .ribbon-item { color: var(--muted); flex-shrink: 0; }
+        .ribbon-item span { color: var(--text); font-weight: 600; }
+        .ribbon-sep { color: var(--border); flex-shrink: 0; font-size: 16px; }
+
+        /* ── Debug / Diagnostics overlay ────────────────────────── */
+        #dbg {
+            display: none; position: fixed; bottom: 44px; right: 12px; z-index: 9999;
+            background: rgba(0,0,0,.94); border: 1px solid var(--cyan); border-radius: 8px;
+            padding: 10px 14px; font-family: 'JetBrains Mono'; font-size: 11px; color: var(--cyan);
+            min-width: 260px; line-height: 1.8;
+        }
+        .dbg-row { display: flex; justify-content: space-between; gap: 8px; }
+        .dbg-row span { color: var(--text); }
+
+        /* ── Empty states ────────────────────────────────────────── */
+        .empty {
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            color: var(--muted); font-size: 12px; pointer-events: none; transition: opacity .4s;
+        }
+        .empty.gone { opacity: 0; }
+
+        /* ── Stall Banner ────────────────────────────────────────── */
+        #stall-banner {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 10000;
+            background: rgba(248,81,73,.15); border-bottom: 1px solid var(--red);
+            color: var(--red); font-size: 12px; font-weight: 600; letter-spacing: .4px;
+            padding: 6px 20px; text-align: center;
+            transition: opacity .4s, transform .4s;
+        }
+        #stall-banner.gone { opacity: 0; pointer-events: none; transform: translateY(-100%); }
+    </style>
+</head>
+<body>
+
+<!-- ── Engine Stall Banner (hidden by default, shown by watchdog JS) ──────── -->
+<div id="stall-banner" class="gone">
+  ⚠ ENGINE STALLED — No progress detected for 2 consecutive minutes. Check logs immediately.
+</div>
+
+<div class="page-grid">
+
+<!-- ── Top bar: KPIs + system status merged into one row ──────────────────── -->
+<header>
+    <div class="logo"><div id="pulse-dot"></div> AI Mission Control</div>
+    <div class="vdiv"></div>
+    <div class="hbar">
+        <div class="hm"><span class="hml">Equity</span><span class="hmv" id="h-equity">—</span></div>
+        <div class="hm"><span class="hml">Realized PnL</span><span class="hmv" id="h-pnl">—</span></div>
+        <div class="hm"><span class="hml">Exposure</span><span class="hmv" id="h-exp">—</span></div>
+        <div class="hm"><span class="hml">Open</span><span class="hmv" id="h-open">—</span></div>
+        <div class="hm"><span class="hml">Cycle</span><span class="hmv" id="h-cycle">—</span></div>
+        <div class="hm"><span class="hml">Uptime</span><span class="hmv" id="h-uptime">—</span></div>
+        <div class="hm"><span class="hml">Evaluated</span><span class="hmv" id="h-ranked">—</span></div>
+    </div>
+    <div class="vdiv"></div>
+    <div class="health-cluster">
+        <div class="health-item">Engine <b id="obs-engine" style="color:var(--amber)">Waiting...</b></div>
+        <div class="health-item">DB <b id="obs-db" style="color:var(--red)">Disconnected</b></div>
+        <div class="health-item">Redis <b id="obs-redis" style="color:var(--red)">Disconnected</b></div>
+        <div class="health-item">SSE <b id="obs-sse" style="color:var(--red)">Disconnected</b></div>
+        <div class="health-item">Exchange <b id="obs-exchange" style="color:var(--muted)">—</b></div>
+        <div class="health-item">Latency <b id="obs-latency">—</b></div>
+    </div>
+    <div class="badge" id="status-badge">● RUNNING</div>
+</header>
+
+<!-- ── Heatmap Strip ────────────────────────────────────────────────────────── -->
+<div class="heat-strip" id="heat-strip"></div>
+
+<!-- ── LEFT: Portfolio, Recent Executions, Open Positions ──────────────────── -->
+<div class="region region-left">
+
+    <!-- Last Action — the single most recent entry from the same
+         filtered execution feed as Recent Executions, surfaced
+         prominently. Confidence is only shown when it can be honestly
+         attributed (the last action's symbol matches the CURRENT
+         top-ranked candidate) -- otherwise showing a confidence number
+         from a different candidate next to a past trade would be
+         misleading. Latency is the same system/SSE latency already
+         measured elsewhere, labeled as such rather than implied to be
+         specific to that trade (no per-trade latency field exists). -->
+    <div class="panel panel-auto">
+        <div class="ph">⚡ Last Action</div>
+        <div class="last-action">
+            <div class="empty" id="last-action-empty" style="position:static;padding:10px 0;">Waiting for the first event...</div>
+            <div id="last-action-body" style="display:none;">
+                <div class="la-time" id="last-action-time">—</div>
+                <div class="la-text" id="last-action-text">—</div>
+                <div class="la-meta">
+                    <span>Confidence <b id="last-action-conf">—</b></span>
+                    <span>System latency <b id="last-action-latency">—</b></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-auto">
+        <div class="ph">❤️ Portfolio</div>
+        <div class="pb">
+            <div class="port-grid">
+                <div class="port-card"><span class="pc-label">Equity</span><span class="pc-val" id="pc-equity">—</span></div>
+                <div class="port-card"><span class="pc-label">Cash</span><span class="pc-val" id="pc-cash">—</span></div>
+                <div class="port-card"><span class="pc-label">Realized PnL</span><span class="pc-val" id="pc-pnl">—</span></div>
+                <div class="port-card"><span class="pc-label">Unrealized</span><span class="pc-val" id="pc-unreal">—</span></div>
+                <div class="port-card"><span class="pc-label">Exposure</span><span class="pc-val" id="pc-exp">—</span><span class="pc-sub" id="pc-exp-pct"></span></div>
+                <div class="port-card"><span class="pc-label">Open Positions</span><span class="pc-val" id="pc-open">—</span></div>
+                <div class="port-card"><span class="pc-label">Today's Return</span><span class="pc-val" id="pc-today">—</span></div>
+                <div class="port-card"><span class="pc-label">Drawdown</span><span class="pc-val" id="pc-dd">—</span></div>
+                <div class="port-card"><span class="pc-label">Runtime</span><span class="pc-val" id="pc-runtime">—</span></div>
+                <div class="port-card"><span class="pc-label">Trades</span><span class="pc-val" id="pc-trades">—</span></div>
+                <div class="port-card"><span class="pc-label">Win Rate</span><span class="pc-val" id="pc-winrate">—</span></div>
+                <div class="port-card"><span class="pc-label">Profit Factor</span><span class="pc-val" id="pc-pf">—</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Executions — client-side filter of the same event timeline
+         already streamed via SSE (BUY / SELL / position-opened text
+         matches). No new backend field. -->
+    <div class="panel panel-grow">
+        <div class="ph">🧾 Recent Executions</div>
+        <div class="pb">
+            <div class="empty" id="exec-empty">Waiting for the first fill...</div>
+            <div class="exec-list" id="exec-list"></div>
+        </div>
+    </div>
+
+    <div class="panel panel-grow">
+        <div class="ph">📂 Open Positions <span class="ph-badge" id="pos-count-badge"></span></div>
+        <div class="pb">
+            <div id="pos-empty" class="pos-empty">No open positions</div>
+            <div class="pos-table-wrap" id="pos-table-wrap" style="display:none;">
+                <table class="pos-table">
+                    <thead><tr>
+                        <th>Symbol</th><th>Qty</th><th>Entry</th><th>Mark</th><th>PnL</th>
+                    </tr></thead>
+                    <tbody id="pos-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── CENTER: market context + AI "thinking" panel ─────────────────────────── -->
+<div class="region region-center">
+
+    <div class="panel panel-auto" style="flex-basis: 34%;">
+        <div class="ph">📈 Live Market · <span id="chart-symbol-label">BTCUSDT</span> <span class="ph-badge" id="btc-price">—</span></div>
+        <div class="pb"><div id="chart-el">
+            <div class="empty" id="chart-empty">Connecting to market feed...</div>
+        </div></div>
+    </div>
+
+    <!-- Groups Current Focus + AI Brain + Decision Pipeline under one
+         visual heading rather than building a second, duplicate set of
+         stage bars -- the Pipeline panel below already IS the
+         stage-by-stage "how many candidates made it this far" view;
+         repeating it under a different name would just be the same
+         numbers twice. -->
+    <div class="section-label">AI Thinking</div>
+
+    <!-- Current Focus — built entirely from leaderboard[0] and the
+         rejection-reason tally already in the SSE payload. "Regime"
+         and "Strategy" are shown as unavailable rather than invented:
+         the current /stream payload does not include those fields. -->
+    <div class="panel panel-auto">
+        <div class="ph">🎯 Current Focus</div>
+        <div class="focus-grid">
+            <div class="focus-card"><span class="focus-label">Candidate</span><span class="focus-val" id="focus-symbol">—</span></div>
+            <div class="focus-card"><span class="focus-label">Approval</span><span class="focus-val" id="focus-conf">—</span></div>
+            <div class="focus-card"><span class="focus-label">Status</span><span class="focus-val" id="focus-status">—</span></div>
+            <div class="focus-card"><span class="focus-label">Top Reject Reason</span><span class="focus-val" id="focus-rejreason">—</span></div>
+            <div class="focus-card"><span class="focus-label">Regime</span><span class="focus-val unavailable" id="focus-regime" title="Not reported by the current /stream payload">not reported</span></div>
+            <div class="focus-card"><span class="focus-label">Strategy</span><span class="focus-val unavailable" id="focus-strategy" title="Not reported by the current /stream payload">not reported</span></div>
+        </div>
+    </div>
+
+    <div class="panel panel-auto">
+        <div class="brain-wrap">
+            <svg id="brain-svg" viewBox="0 0 200 70">
+                <!-- nodes -->
+                <circle id="bn0" cx="20"  cy="35" r="5" fill="var(--bg3)" stroke="var(--cyan)" stroke-width="1.5"/>
+                <circle id="bn1" cx="60"  cy="15" r="5" fill="var(--bg3)" stroke="var(--border)" stroke-width="1"/>
+                <circle id="bn2" cx="60"  cy="55" r="5" fill="var(--bg3)" stroke="var(--border)" stroke-width="1"/>
+                <circle id="bn3" cx="100" cy="25" r="5" fill="var(--bg3)" stroke="var(--border)" stroke-width="1"/>
+                <circle id="bn4" cx="100" cy="45" r="5" fill="var(--bg3)" stroke="var(--border)" stroke-width="1"/>
+                <circle id="bn5" cx="140" cy="20" r="5" fill="var(--bg3)" stroke="var(--border)" stroke-width="1"/>
+                <circle id="bn6" cx="140" cy="50" r="5" fill="var(--bg3)" stroke="var(--border)" stroke-width="1"/>
+                <circle id="bn7" cx="180" cy="35" r="5" fill="var(--bg3)" stroke="var(--green)" stroke-width="1.5"/>
+                <!-- edges -->
+                <line x1="25" y1="35" x2="55" y2="15" stroke="var(--border)" stroke-width="1"/>
+                <line x1="25" y1="35" x2="55" y2="55" stroke="var(--border)" stroke-width="1"/>
+                <line x1="65" y1="15" x2="95" y2="25" stroke="var(--border)" stroke-width="1"/>
+                <line x1="65" y1="15" x2="95" y2="45" stroke="var(--border)" stroke-width="1"/>
+                <line x1="65" y1="55" x2="95" y2="25" stroke="var(--border)" stroke-width="1"/>
+                <line x1="65" y1="55" x2="95" y2="45" stroke="var(--border)" stroke-width="1"/>
+                <line x1="105" y1="25" x2="135" y2="20" stroke="var(--border)" stroke-width="1"/>
+                <line x1="105" y1="25" x2="135" y2="50" stroke="var(--border)" stroke-width="1"/>
+                <line x1="105" y1="45" x2="135" y2="20" stroke="var(--border)" stroke-width="1"/>
+                <line x1="105" y1="45" x2="135" y2="50" stroke="var(--border)" stroke-width="1"/>
+                <line x1="145" y1="20" x2="175" y2="35" stroke="var(--border)" stroke-width="1"/>
+                <line x1="145" y1="50" x2="175" y2="35" stroke="var(--border)" stroke-width="1"/>
+                <!-- animated pulse dot -->
+                <circle id="brain-pulse" cx="20" cy="35" r="3" fill="var(--cyan)" opacity="0"/>
+            </svg>
+            <div style="display:flex;gap:16px;align-items:center;">
+                <div class="brain-label" id="brain-state">Evaluating...</div>
+                <div class="brain-cycle" id="brain-cycle">Cycle —</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-grow">
+        <div class="ph">🧠 AI Decision Pipeline</div>
+        <div class="pb">
+            <div class="empty" id="funnel-empty">Monitoring pipeline...</div>
+            <div class="pipeline" id="pipeline">
+
+                <div class="pipe-stage">
+                    <div class="pipe-row">
+                        <span class="pipe-label">Ranked Candidates</span>
+                        <span class="pipe-delta" id="d-ranked"></span>
+                        <span class="pipe-count" id="v-ranked">—</span>
+                    </div>
+                    <div class="pipe-bar-track"><div class="pipe-bar-fill cyan" id="b-ranked" style="width:100%"></div></div>
+                </div>
+
+                <div class="pipe-connector"><div class="pipe-line"></div><span class="pipe-arrow">▼</span><div class="pipe-line"></div></div>
+
+                <div class="pipe-stage">
+                    <div class="pipe-row">
+                        <span class="pipe-label">Stage 1 Pass</span>
+                        <span class="pipe-delta" id="d-s1"></span>
+                        <span class="pipe-pct" id="p-s1"></span>
+                        <span class="pipe-count" id="v-s1">—</span>
+                    </div>
+                    <div class="pipe-bar-track"><div class="pipe-bar-fill cyan" id="b-s1" style="width:0%"></div></div>
+                </div>
+
+                <div class="pipe-connector"><div class="pipe-line"></div><span class="pipe-arrow">▼</span><div class="pipe-line"></div></div>
+
+                <div class="pipe-stage">
+                    <div class="pipe-row">
+                        <span class="pipe-label">Allocator Pass</span>
+                        <span class="pipe-delta" id="d-alloc"></span>
+                        <span class="pipe-pct" id="p-alloc"></span>
+                        <span class="pipe-count" id="v-alloc">—</span>
+                    </div>
+                    <div class="pipe-bar-track"><div class="pipe-bar-fill cyan" id="b-alloc" style="width:0%"></div></div>
+                </div>
+
+                <div class="pipe-connector"><div class="pipe-line"></div><span class="pipe-arrow">▼</span><div class="pipe-line"></div></div>
+
+                <div class="pipe-stage">
+                    <div class="pipe-row">
+                        <span class="pipe-label">Positions Opened</span>
+                        <span class="pipe-delta" id="d-opened"></span>
+                        <span class="pipe-pct" id="p-opened"></span>
+                        <span class="pipe-count" id="v-opened" style="color:var(--green)">—</span>
+                    </div>
+                    <div class="pipe-bar-track"><div class="pipe-bar-fill green" id="b-opened" style="width:0%"></div></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-grow">
+        <div class="ph">🏁 Live Candidate Race <span class="ph-badge" id="race-cycle">—</span></div>
+        <div class="pb">
+            <div class="empty" id="race-empty">Waiting for next ranking cycle...</div>
+            <div class="race-head" style="display:flex;align-items:center;gap:8px;padding:6px 14px 2px;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;">
+                <span style="width:72px;flex-shrink:0;">Rank / Sym</span>
+                <span style="width:14px;text-align:center;flex-shrink:0;">Trd</span>
+                <span style="flex:1;">Score</span>
+                <span style="width:120px;text-align:right;flex-shrink:0;">Status</span>
+            </div>
+            <div class="race" id="race-container"></div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── RIGHT: System Health + Rejection Radar ───────────────────────────────── -->
+<div class="region region-right">
+
+    <div class="panel panel-auto">
+        <div class="ph">🩺 System Health</div>
+        <div class="sys-health">
+            <div class="sh-row"><span class="sh-dot" id="sh-dot-engine"></span><span class="sh-name">Engine</span><span class="sh-val" id="sh-engine">—</span></div>
+            <div class="sh-row"><span class="sh-dot" id="sh-dot-db"></span><span class="sh-name">Database</span><span class="sh-val" id="sh-db">—</span></div>
+            <div class="sh-row"><span class="sh-dot" id="sh-dot-redis"></span><span class="sh-name">Redis</span><span class="sh-val" id="sh-redis">—</span></div>
+            <div class="sh-row"><span class="sh-dot" id="sh-dot-exchange"></span><span class="sh-name">Exchange</span><span class="sh-val" id="sh-exchange">—</span></div>
+            <div class="sh-row"><span class="sh-dot" id="sh-dot-sse"></span><span class="sh-name">SSE Stream</span><span class="sh-val" id="sh-sse">—</span></div>
+            <div class="sh-row"><span class="sh-dot" id="sh-dot-watchdog"></span><span class="sh-name">Watchdog</span><span class="sh-val" id="sh-watchdog">—</span></div>
+            <div class="sh-row"><span class="sh-dot" id="sh-dot-control"></span><span class="sh-name">Control State</span><span class="sh-val" id="sh-control">—</span></div>
+            <div class="sh-row"><span class="sh-name">Heartbeat Age</span><span class="sh-val" id="sh-heartbeat">—</span></div>
+            <div class="sh-row"><span class="sh-name">Latency</span><span class="sh-val" id="sh-latency">—</span></div>
+            <div class="sh-row"><span class="sh-name">Telegram</span><span class="sh-val unavailable" id="sh-telegram" title="Not reported by the current /stream payload">not reported</span></div>
+            <div class="sh-row"><span class="sh-name">CPU</span><span class="sh-val unavailable" title="Not reported by the current /stream payload">not reported</span></div>
+            <div class="sh-row"><span class="sh-name">Memory</span><span class="sh-val unavailable" title="Not reported by the current /stream payload">not reported</span></div>
+            <div class="sh-row"><span class="sh-name">Docker</span><span class="sh-val unavailable" title="Not reported by the current /stream payload">not reported</span></div>
+        </div>
+    </div>
+
+    <div class="panel panel-grow">
+        <div class="ph">🎯 Rejection Radar</div>
+        <div class="pb">
+            <div class="empty" id="rej-empty">Waiting for AI decisions...</div>
+            <div class="rej" id="rej-container"></div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── BOTTOM: full-width live log stream + research ribbon ─────────────────── -->
+<div class="region-bottom">
+    <div class="panel panel-grow">
+        <div class="ph">🛰️ Live Log Stream</div>
+        <div class="pb">
+            <div class="empty" id="tl-empty">Listening for events...</div>
+            <div class="tl" id="tl"></div>
+        </div>
+    </div>
+    <footer>
+        <div class="ribbon-label">Research</div>
+        <div class="ribbon-track">
+            <div class="ribbon-inner" id="ribbon">
+                <span class="ribbon-item">Loading insights...</span>
+            </div>
+        </div>
+    </footer>
+</div>
+
+</div><!-- /.page-grid -->
+
+<!-- Runtime Diagnostics Panel (toggle with ?debug=1) -->
+<div id="dbg">
+    <h4 style="margin-bottom:6px;color:var(--cyan);font-size:11px;letter-spacing:.8px;text-transform:uppercase;">Runtime Diagnostics</h4>
+    <div class="dbg-row">SSE: <span id="dbg-conn" style="color:var(--red)">Disconnected</span></div>
+    <div class="dbg-row">Msgs/sec: <span id="dbg-eps">0</span> &nbsp;·&nbsp; Total: <span id="dbg-total">0</span></div>
+    <div class="dbg-row">Last event: <span id="dbg-last">—</span></div>
+    <div class="dbg-row">Files watched: <span id="dbg-files">—</span></div>
+    <div style="border-top:1px solid var(--border);margin:6px 0"></div>
+    <div class="dbg-row">Engine heartbeat: <span id="dbg-hb-age">—</span></div>
+    <div class="dbg-row">Last candidate: <span id="dbg-last-cand">—</span></div>
+    <div class="dbg-row">Last trade: <span id="dbg-last-trade">—</span></div>
+    <div style="border-top:1px solid var(--border);margin:6px 0"></div>
+    <div class="dbg-row">MEXC API: <span id="dbg-mexc">—</span></div>
+    <div class="dbg-row">Redis: <span id="dbg-redis">—</span></div>
+    <div class="dbg-row">Postgres: <span id="dbg-postgres">—</span></div>
+    <div style="border-top:1px solid var(--border);margin:6px 0"></div>
+    <div class="dbg-row">Control state: <span id="dbg-ctrl">—</span></div>
+    <div class="dbg-row">Engine uptime: <span id="dbg-uptime">—</span></div>
+    <div class="dbg-row">Cycle: <span id="dbg-cycle">—</span></div>
+    <div class="dbg-row">Watchdog: <span id="dbg-watchdog">—</span></div>
+</div>
+
+<script>
+const debugMode = new URLSearchParams(location.search).get('debug') === '1';
+if (debugMode) document.getElementById('dbg').style.display = 'block';
+
+const $ = id => document.getElementById(id);
+const fmt$ = n => n == null ? '—' : `$${parseFloat(n).toFixed(2)}`;
+const fmtPct = n => n == null ? '—' : `${parseFloat(n).toFixed(1)}%`;
+
+// ── Density helper (NEW) ────────────────────────────────────────────────────
+// Purely additive: marks a panel's outer .panel element as having live
+// data so CSS can grow it; panels still showing their "waiting..." empty
+// state stay compact. Does not touch or replace any existing empty-state
+// logic (the .gone toggles below are unchanged) -- this just observes the
+// same signal a second time.
+function qfosMarkHasData(emptyEl) {
+    const panel = emptyEl && emptyEl.closest ? emptyEl.closest('.panel') : null;
+    if (panel) panel.classList.add('has-data');
+}
+
+// ── AI Brain animation ─────────────────────────────────────────────────────
+const brainNodes = [
+    {id:'bn0',cx:20,cy:35},{id:'bn1',cx:60,cy:15},{id:'bn2',cx:60,cy:55},
+    {id:'bn3',cx:100,cy:25},{id:'bn4',cx:100,cy:45},
+    {id:'bn5',cx:140,cy:20},{id:'bn6',cx:140,cy:50},{id:'bn7',cx:180,cy:35},
+];
+const brainPaths = [
+    [0,1],[0,2],[1,3],[1,4],[2,3],[2,4],[3,5],[3,6],[4,5],[4,6],[5,7],[6,7]
+];
+let brainColor = 'var(--cyan)';
+
+function animateBrain(color) {
+    brainColor = color;
+    const pulse = $('brain-pulse');
+    // pick a random path through the network
+    const pathIdx = Math.floor(Math.random() * brainPaths.length);
+    const [from, to] = brainPaths[pathIdx];
+    const nodeFrom = brainNodes[from];
+    const nodeTo   = brainNodes[to];
+
+    pulse.setAttribute('cx', nodeFrom.cx);
+    pulse.setAttribute('cy', nodeFrom.cy);
+    pulse.setAttribute('fill', color);
+    pulse.setAttribute('opacity', '1');
+
+    const start = performance.now();
+    const dur = 500;
+    function step(now) {
+        const t = Math.min((now - start) / dur, 1);
+        const ease = t < .5 ? 2*t*t : -1+(4-2*t)*t;
+        pulse.setAttribute('cx', nodeFrom.cx + (nodeTo.cx - nodeFrom.cx) * ease);
+        pulse.setAttribute('cy', nodeFrom.cy + (nodeTo.cy - nodeFrom.cy) * ease);
+        pulse.setAttribute('opacity', String(1 - t));
+        if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+
+    // Light up destination node
+    const destEl = $(brainNodes[to].id);
+    destEl.setAttribute('stroke', color);
+    setTimeout(() => destEl.setAttribute('stroke', 'var(--border)'), 400);
+}
+
+// ── Pulse dot ──────────────────────────────────────────────────────────────
+const pulseDot = $('pulse-dot');
+function flash(colorClass) {
+    pulseDot.className = `flash flash-${colorClass}`;
+    setTimeout(() => pulseDot.className = '', 300);
+}
+
+// ── Animated counter ───────────────────────────────────────────────────────
+function animateCount(el, newVal) {
+    const old = parseInt(el.dataset.val || '0');
+    const delta = newVal - old;
+    if (delta === 0) return;
+    el.dataset.val = String(newVal);
+    el.textContent = newVal.toLocaleString();
+}
+
+// ── Delta flasher ──────────────────────────────────────────────────────────
+let prevFunnel = {ranked:0, stage1:0, allocator:0, opened:0};
+function showDelta(id, newVal, oldVal) {
+    const diff = newVal - oldVal;
+    if (diff <= 0) return;
+    const el = $(id);
+    el.textContent = `+${diff}`;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// ── Research ribbon builder ────────────────────────────────────────────────
+function buildRibbon(d) {
+    const f = d.funnel || {};
+    const e = d.engine || {};
+    const rejs = d.rejections || {};
+
+    const topRej = Object.entries(rejs).sort((a,b)=>b[1]-a[1])[0];
+    const totalRej = Object.values(rejs).reduce((s,v)=>s+v, 0);
+    const topPct = topRej && totalRej ? (topRej[1]/totalRej*100).toFixed(0) : 0;
+
+    const approvalRate = f.ranked > 0 ? (f.allocator / f.ranked * 100).toFixed(3) : '0.000';
+    const s1Rate = f.ranked > 0 ? (f.stage1 / f.ranked * 100).toFixed(2) : '0.00';
+
+    const lb = d.leaderboard || [];
+    const topSym = lb[0] ? lb[0].symbol : 'N/A';
+
+    const insights = [
+        topRej ? `${topPct}% of rejections are <span>${topRej[0]}</span>` : null,
+        `Overall approval rate: <span>${approvalRate}%</span>`,
+        `Stage 1 pass rate: <span>${s1Rate}%</span>`,
+        f.opened > 0 ? `<span>${f.opened}</span> position${f.opened>1?'s':''} currently open` : `No open positions`,
+        `<span>${(f.ranked||0).toLocaleString()}</span> candidates evaluated this run`,
+        topSym !== 'N/A' ? `Top-ranked symbol this cycle: <span>${topSym}</span>` : null,
+        e.bot_state ? `Engine state: <span>${e.bot_state}</span>` : null,
+    ].filter(Boolean);
+
+    // Duplicate for seamless marquee
+    const items = [...insights, ...insights]
+        .map(t => `<span class="ribbon-item">${t}</span><span class="ribbon-sep">·</span>`)
+        .join('');
+    $('ribbon').innerHTML = items;
+}
+
+// ── Open Positions renderer ────────────────────────────────────────────────
+function renderPositions(positions) {
+    const wrap  = $('pos-table-wrap');
+    const empty = $('pos-empty');
+    const badge = $('pos-count-badge');
+    const tbody = $('pos-tbody');
+    if (!positions || positions.length === 0) {
+        wrap.style.display  = 'none';
+        empty.style.display = '';
+        badge.textContent   = '';
+        empty.closest('.panel')?.classList.remove('has-data');
+        return;
+    }
+    empty.style.display = 'none';
+    wrap.style.display  = 'block';
+    empty.closest('.panel')?.classList.add('has-data');
+    badge.textContent   = positions.length;
+    tbody.innerHTML = positions.map(p => {
+        const sym  = (p.symbol || '?').replace('/USDT','').replace('USDT','');
+        const qty  = parseFloat(p.quantity  || 0);
+        const entry= parseFloat(p.avg_entry || 0);
+        const mark = parseFloat(p.mark_price|| 0);
+        const pnl  = parseFloat(p.unrealized_pnl || 0);
+        const pnlCls = pnl >= 0 ? 'pos-pnl-pos' : 'pos-pnl-neg';
+        const pnlStr = (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(4);
+        const entryStr = entry > 0 ? (entry < 0.01 ? entry.toFixed(6) : entry.toFixed(4)) : '—';
+        const markStr  = mark  > 0 ? (mark  < 0.01 ? mark.toFixed(6)  : mark.toFixed(4))  : '—';
+        return `<tr>
+            <td class="pos-sym">${sym}</td>
+            <td>${qty % 1 === 0 ? qty.toLocaleString() : qty.toFixed(4)}</td>
+            <td>${entryStr}</td>
+            <td>${markStr}</td>
+            <td class="${pnlCls}">${pnlStr}</td>
+        </tr>`;
+    }).join('');
+}
+
+// ── Candidate Race renderer (Rank / Symbol / Score / Trend / Status) ──────
+let prevConfBySymbol = {};
+function renderRace(lb) {
+    if (!lb || lb.length === 0) return;
+    $('race-empty').classList.add('gone');
+    qfosMarkHasData($('race-empty'));
+    const container = $('race-container');
+    const maxConf = Math.max(...lb.map(c => c.confidence || 0), 0.01);
+    const nextPrev = {};
+
+    container.innerHTML = lb.slice(0, 8).map(c => {
+        const pct = (c.confidence / maxConf * 100).toFixed(0);
+        const score = ((c.confidence || 0) * 100).toFixed(0);
+        const isApproved = c.status && c.status.includes('Approved');
+        const isRejected = c.status && c.status.includes('\u{1F534}');
+        const cls = isApproved ? 'approved' : (isRejected ? 'rejected' : '');
+        const sym = (c.symbol || '?').replace('/USDT','').replace('USDT','');
+        const rankLabel = (c.rank != null && c.rank !== undefined && c.rank !== 'null' && c.rank !== '') ? `#${c.rank}` : '\u2014';
+
+        // Trend: compare this tick's confidence vs the last tick we saw for this symbol
+        const prevConf = prevConfBySymbol[c.symbol];
+        nextPrev[c.symbol] = c.confidence;
+        let trendArrow = '<span style="color:var(--muted)">–</span>';
+        if (prevConf != null) {
+            if (c.confidence > prevConf) trendArrow = '<span style="color:var(--green)">▲</span>';
+            else if (c.confidence < prevConf) trendArrow = '<span style="color:var(--red)">▼</span>';
+        }
+
+        let displayStatus = c.status || '\u26AA';
+        // Make it more meaningful than SIGNAL...
+        if (displayStatus.includes('SIGNAL')) {
+            displayStatus = `Conf ${score}%`;
+        }
+        if (isRejected) {
+            displayStatus = 'Rejected';
+        }
+        if (isApproved) {
+            displayStatus = 'Passed Stage 1';
+        }
+
+        return `<div class="race-row">
+            <span class="race-sym" title="${c.symbol}">${rankLabel} ${sym}</span>
+            <span style="width:14px;text-align:center;flex-shrink:0;">${trendArrow}</span>
+            <div class="race-bar-track">
+                <div class="race-bar-fill ${cls}" style="width:${pct}%">
+                    <span class="race-score">${score}</span>
+                </div>
+            </div>
+            <span class="race-status" style="color:${isApproved?'var(--green)':isRejected?'var(--red)':'var(--text)'}" title="${c.status||''}">${displayStatus}</span>
+        </div>`;
+    }).join('');
+
+    prevConfBySymbol = nextPrev;
+}
+
+// ── Timeline renderer (newest events on top) ───────────────────────────────
+let lastTlLen = 0;
+const TL_ICONS = { blue:'ℹ️', yellow:'⚠️', green:'✅', red:'❌' };
+function renderTimeline(tl) {
+    if (!tl || tl.length === 0) return;
+    $('tl-empty').classList.add('gone');
+    qfosMarkHasData($('tl-empty'));
+    if (tl.length <= lastTlLen) return;
+    const wrap = $('tl');
+    // New events arrive at the end of the array; insert them at the top of
+    // the feed, most-recent-first, oldest inserted first so final order is correct.
+    tl.slice(lastTlLen).forEach(ev => {
+        const row = document.createElement('div');
+        row.className = 'tl-row';
+        const icon = TL_ICONS[ev.color] || 'ℹ️';
+        row.innerHTML = `<span class="tl-t">${ev.time}</span><span class="tl-${ev.color}">${icon} ${ev.text}</span>`;
+        wrap.insertBefore(row, wrap.firstChild);
+        // Limit to 120 rows — trim oldest (bottom) rows
+        while (wrap.children.length > 120) wrap.removeChild(wrap.lastChild);
+    });
+    lastTlLen = tl.length;
+    flash(tl[tl.length-1].color);
+    animateBrain({blue:'var(--cyan)', yellow:'var(--amber)', green:'var(--green)', red:'var(--red)'}[tl[tl.length-1].color] || 'var(--cyan)');
+}
+
+// ── Recent Executions renderer (NEW) ────────────────────────────────────────
+// Reuses the exact same `d.timeline` array the Live Log Stream already
+// consumes -- purely a client-side filter down to fill/execution events,
+// so operators get a focused feed without hunting through every log line.
+// No new backend field: this is the identical data already streamed.
+let lastExecTlLen = 0;
+function renderRecentExecutions(tl) {
+    if (!tl || tl.length === 0) return;
+    const execEvents = tl.filter(ev =>
+        /\bBUY\b/.test(ev.text) || /\bSELL\b/.test(ev.text) ||
+        ev.text.includes('Position opened') || ev.text.includes('Position closed')
+    );
+    if (execEvents.length === 0) return;
+    $('exec-empty').classList.add('gone');
+    qfosMarkHasData($('exec-empty'));
+    if (tl.length <= lastExecTlLen) return;
+    const wrap = $('exec-list');
+    tl.slice(lastExecTlLen).forEach(ev => {
+        const isExec = /\bBUY\b/.test(ev.text) || /\bSELL\b/.test(ev.text) ||
+            ev.text.includes('Position opened') || ev.text.includes('Position closed');
+        if (!isExec) return;
+        const row = document.createElement('div');
+        row.className = 'exec-row';
+        row.innerHTML = `<span class="exec-t">${ev.time}</span><span class="tl-${ev.color}">${ev.text}</span>`;
+        wrap.insertBefore(row, wrap.firstChild);
+        while (wrap.children.length > 60) wrap.removeChild(wrap.lastChild);
+    });
+    lastExecTlLen = tl.length;
+}
+
+// ── Current Focus renderer (NEW) ────────────────────────────────────────────
+// Built from d.leaderboard[0] (top-ranked candidate this cycle) and the
+// top entry of d.rejections -- both already present in the SSE payload.
+// Regime and Strategy are intentionally left as "not reported": the
+// current payload has no such fields, and this panel must not display
+// invented values.
+function renderCurrentFocus(d) {
+    const lb = d.leaderboard || [];
+    const top = lb[0];
+    if (top) {
+        const sym = (top.symbol || '?').replace('/USDT','').replace('USDT','');
+        $('focus-symbol').textContent = sym;
+        const conf = ((top.confidence || 0) * 100).toFixed(0);
+        $('focus-conf').textContent = `${conf}%`;
+        const isApproved = top.status && top.status.includes('Approved');
+        const isRejected = top.status && top.status.includes('\u{1F534}');
+        $('focus-status').textContent = isApproved ? 'BUY approved' : (isRejected ? 'Rejected' : (top.status || '—'));
+        $('focus-status').style.color = isApproved ? 'var(--green)' : (isRejected ? 'var(--red)' : 'var(--text)');
+    }
+    const rejs = d.rejections || {};
+    const topRej = Object.entries(rejs).sort((a,b)=>b[1]-a[1])[0];
+    $('focus-rejreason').textContent = topRej ? topRej[0] : '—';
+}
+
+// ── Last Action renderer (NEW) ──────────────────────────────────────────────
+// The single most recent entry from the same filtered set Recent Executions
+// uses. Confidence is only shown when the last action's symbol matches the
+// CURRENT top-ranked candidate (leaderboard[0]) -- attributing a different
+// candidate's confidence to a past trade would be misleading, so it's left
+// as "—" otherwise. Latency reuses the same system/SSE latency reading
+// already computed elsewhere in this handler (there is no per-trade latency
+// field in the payload), and is labeled "System latency" rather than
+// implying it belongs to that specific trade.
+function renderLastAction(tl, d) {
+    if (!tl || tl.length === 0) return;
+    const execEvents = tl.filter(ev =>
+        /\bBUY\b/.test(ev.text) || /\bSELL\b/.test(ev.text) ||
+        ev.text.includes('Position opened') || ev.text.includes('Position closed')
+    );
+    if (execEvents.length === 0) return;
+    const last = execEvents[execEvents.length - 1];
+    $('last-action-empty').style.display = 'none';
+    $('last-action-body').style.display = 'block';
+    $('last-action-time').textContent = last.time;
+    $('last-action-text').textContent = last.text;
+
+    const lb = d.leaderboard || [];
+    const top = lb[0];
+    let confShown = '—';
+    if (top && top.symbol && last.text.includes(top.symbol.replace('/USDT','').replace('USDT',''))) {
+        confShown = `${((top.confidence || 0) * 100).toFixed(0)}%`;
+    }
+    $('last-action-conf').textContent = confShown;
+    $('last-action-latency').textContent = $('obs-latency').textContent || '—';
+}
+
+// ── Rejection renderer ─────────────────────────────────────────────────────
+function renderRejections(rejs) {
+    if (!rejs) return;
+    const entries = Object.entries(rejs).sort((a,b)=>b[1]-a[1]);
+    if (entries.length === 0) return;
+    $('rej-empty').classList.add('gone');
+    qfosMarkHasData($('rej-empty'));
+    const total = entries.reduce((s,e)=>s+e[1],0);
+    const colors = ['var(--red)','var(--amber)','var(--cyan)','var(--purple)','var(--muted)'];
+    $('rej-container').innerHTML = entries.slice(0,7).map(([r,c],i) => {
+        const pct = total ? c/total*100 : 0;
+        return `<div class="rej-row">
+            <span class="rej-name" title="${r}">${r}</span>
+            <div class="rej-track"><div class="rej-fill" style="width:${pct}%;background:${colors[i]||colors[4]}"></div></div>
+            <span class="rej-pct">${pct.toFixed(0)}%</span>
+            <span class="rej-cnt">${c.toLocaleString()}</span>
+        </div>`;
+    }).join('');
+}
+
+// ── SSE ────────────────────────────────────────────────────────────────────
+let msgCount = 0, lastMsgCount = 0;
+setInterval(() => {
+    $('dbg-eps').textContent = msgCount - lastMsgCount;
+    lastMsgCount = msgCount;
+}, 1000);
+
+try {
+    const src = new EventSource('/stream');
+
+    src.onopen = () => {
+        console.log('[SSE] OPEN ✓');
+        $('dbg-conn').textContent = 'Connected';
+        $('dbg-conn').style.color = 'var(--green)';
+        $('obs-sse').textContent = 'Healthy';
+        $('obs-sse').style.color = 'var(--green)';
+        $('sh-sse').textContent = 'Healthy';
+        $('sh-dot-sse').className = 'sh-dot ok';
+    };
+    src.onerror = () => {
+        $('dbg-conn').textContent = 'Reconnecting…';
+        $('dbg-conn').style.color = 'var(--amber)';
+        $('obs-sse').textContent = 'Error';
+        $('obs-sse').style.color = 'var(--red)';
+        $('sh-sse').textContent = 'Reconnecting';
+        $('sh-dot-sse').className = 'sh-dot bad';
+    };
+
+    src.onmessage = ev => {
+        const client_ts = performance.now() + performance.timeOrigin; // approximate wall time
+        if (msgCount === 0) console.log('[SSE] First msg:', ev.data.slice(0, 100));
+        msgCount++;
+        $('dbg-total').textContent = msgCount;
+
+        let d;
+        try { d = JSON.parse(ev.data); } catch { return; }
+
+        if (d.server_ts) {
+            const lat = Math.max(0, Math.floor(client_ts - d.server_ts));
+            $('obs-latency').textContent = `${lat} ms`;
+            $('sh-latency').textContent = `${lat} ms`;
+        }
+
+        const dbg = d.debug || {};
+        $('dbg-last').textContent  = dbg.last_event_type || '—';
+        $('dbg-files').textContent = dbg.files_watched ?? '—';
+
+        // ── Diagnostics panel ──────────────────────────────────────────────────
+        try {
+            const eng  = d.engine || {};
+            const diag = d.diagnostics || {};
+            const wd   = d.watchdog || {};
+
+            // Last candidate timestamp (from last log event time)
+            const lastUpdate = dbg.last_update;
+            if (lastUpdate) $('dbg-last-cand').textContent = lastUpdate;
+
+            // Engine uptime & cycle
+            if (eng.uptime)   $('dbg-uptime').textContent = eng.uptime;
+            if (eng.cycle_id) $('dbg-cycle').textContent  = `#${eng.cycle_id}`;
+
+            const bot_state = eng.bot_state || '';
+            const engObs = $('obs-engine');
+            if (bot_state.includes('Waiting')) {
+                engObs.textContent = bot_state;
+                engObs.style.color = 'var(--amber)';
+                $('sh-engine').textContent = bot_state;
+                $('sh-dot-engine').className = 'sh-dot warn';
+            } else {
+                engObs.textContent = 'Connected';
+                engObs.style.color = 'var(--green)';
+                $('sh-engine').textContent = bot_state || 'Connected';
+                $('sh-dot-engine').className = 'sh-dot ok';
+            }
+
+            // Engine heartbeat age
+            const serverAge = diag.engine_heartbeat_age_s;
+            if (serverAge != null) {
+                const ageEl = $('dbg-hb-age');
+                ageEl.textContent = `${serverAge}s ago`;
+                ageEl.style.color = serverAge > 60 ? 'var(--red)' : serverAge > 20 ? 'var(--amber)' : 'var(--green)';
+                $('sh-heartbeat').textContent = `${serverAge}s ago`;
+            }
+
+            // Last trade timestamp
+            if (diag.last_trade_ts) $('dbg-last-trade').textContent = diag.last_trade_ts;
+
+            // MEXC API status (Exchange row, top bar + system health panel)
+            const mexc = diag.mexc_ok;
+            if (mexc != null) {
+                const mexcEl = $('dbg-mexc');
+                mexcEl.textContent = mexc ? '✓ OK' : '✗ Error';
+                mexcEl.style.color = mexc ? 'var(--green)' : 'var(--red)';
+                $('obs-exchange').textContent = mexc ? 'OK' : 'Error';
+                $('obs-exchange').style.color = mexc ? 'var(--green)' : 'var(--red)';
+                $('sh-exchange').textContent = mexc ? 'OK' : 'Error';
+                $('sh-dot-exchange').className = mexc ? 'sh-dot ok' : 'sh-dot bad';
+            }
+
+            // Redis status
+            const redis = diag.redis_ok;
+            if (redis != null) {
+                const redisEl = $('dbg-redis');
+                redisEl.textContent = redis ? '✓ OK' : '✗ Down';
+                redisEl.style.color = redis ? 'var(--green)' : 'var(--red)';
+                $('obs-redis').textContent = redis ? 'Connected' : 'Error';
+                $('obs-redis').style.color = redis ? 'var(--green)' : 'var(--red)';
+                $('sh-redis').textContent = redis ? 'Connected' : 'Down';
+                $('sh-dot-redis').className = redis ? 'sh-dot ok' : 'sh-dot bad';
+            }
+
+            // Postgres status
+            const pg = diag.postgres_ok;
+            if (pg != null) {
+                const pgEl = $('dbg-postgres');
+                pgEl.textContent = pg ? '✓ OK' : '✗ Down';
+                pgEl.style.color = pg ? 'var(--green)' : 'var(--red)';
+                $('obs-db').textContent = pg ? 'Connected' : 'Error';
+                $('obs-db').style.color = pg ? 'var(--green)' : 'var(--red)';
+                $('sh-db').textContent = pg ? 'Connected' : 'Down';
+                $('sh-dot-db').className = pg ? 'sh-dot ok' : 'sh-dot bad';
+            }
+
+            // Control state
+            const ctrl = diag.control_state;
+            if (ctrl != null) {
+                const ctrlEl = $('dbg-ctrl');
+                ctrlEl.textContent = ctrl.paused ? `⏸ PAUSED (${ctrl.reason || 'manual'})` : '▶ RUNNING';
+                ctrlEl.style.color = ctrl.paused ? 'var(--red)' : 'var(--green)';
+                $('sh-control').textContent = ctrl.paused ? `Paused (${ctrl.reason || 'manual'})` : 'Running';
+                $('sh-dot-control').className = ctrl.paused ? 'sh-dot warn' : 'sh-dot ok';
+            }
+
+            // Watchdog status
+            const wdEl = $('dbg-watchdog');
+            if (wdEl) {
+                if (wd.stalled) {
+                    wdEl.textContent = '⚠ STALLED';
+                    wdEl.style.color = 'var(--red)';
+                    $('sh-watchdog').textContent = 'Stalled';
+                    $('sh-dot-watchdog').className = 'sh-dot bad';
+                } else {
+                    const ticks = wd.consecutive_stall_ticks || 0;
+                    wdEl.textContent = `✓ Healthy (${ticks}/2)`;
+                    wdEl.style.color = ticks > 0 ? 'var(--amber)' : 'var(--green)';
+                    $('sh-watchdog').textContent = ticks > 0 ? `Watching (${ticks}/2)` : 'Healthy';
+                    $('sh-dot-watchdog').className = ticks > 0 ? 'sh-dot warn' : 'sh-dot ok';
+                }
+            }
+
+            // ── Stall banner + browser title management ────────────────────────
+            const stallBanner = $('stall-banner');
+            if (wd.stalled) {
+                stallBanner.classList.remove('gone');
+                document.title = '⚠ STALLED — Mission Control';
+            } else {
+                stallBanner.classList.add('gone');
+                const running = eng.bot_state && eng.bot_state !== 'STOPPED';
+                document.title = running ? '● Mission Control' : 'Mission Control';
+            }
+
+        } catch(e) { /* diagnostics optional */ }
+
+        // ── Engine ────────────────────────────────────────────────────────────
+        try {
+            const eng = d.engine || {};
+            const equity   = parseFloat(eng.equity ?? 0);
+            const pnl      = parseFloat(eng.realized_pnl ?? 0);
+            const exposure = parseFloat(eng.exposure ?? 0);
+            const cash     = parseFloat(eng.cash ?? 0);
+            const unreal   = parseFloat(eng.unrealized_pnl ?? 0);
+            const open     = parseInt(eng.open_positions ?? 0);
+
+            if (equity) $('h-equity').textContent = fmt$(equity);
+            $('h-pnl').textContent    = fmt$(pnl);
+            $('h-pnl').className      = `hmv ${pnl >= 0 ? 'pos' : 'neg'}`;
+            $('h-exp').textContent    = fmt$(exposure);
+            $('h-open').textContent   = open;
+            $('h-cycle').textContent  = eng.cycle_id ?? '—';
+            $('h-uptime').textContent = eng.uptime ?? '—';
+            $('h-ranked').textContent = (d.funnel?.ranked || 0).toLocaleString();
+
+            if (equity) $('pc-equity').textContent  = fmt$(equity);
+            $('pc-cash').textContent   = fmt$(cash);
+            $('pc-pnl').textContent    = fmt$(pnl);
+            $('pc-pnl').className      = `pc-val ${pnl >= 0 ? 'pos' : 'neg'}`;
+            $('pc-unreal').textContent = fmt$(unreal);
+            $('pc-open').textContent   = open;
+            $('pc-exp').textContent    = fmt$(exposure);
+            $('pc-exp-pct').textContent = equity > 0 ? fmtPct(exposure/equity*100) + ' of equity' : '';
+
+            // ── Extended stats (only shown if the engine actually reports them) ──
+            const today = eng.todays_pnl;
+            const todayEl = $('pc-today');
+            todayEl.textContent = today == null ? '—' : fmt$(today);
+            todayEl.className = `pc-val ${today >= 0 ? 'pos' : 'neg'}`;
+
+            const dd = eng.drawdown;
+            $('pc-dd').textContent = dd == null ? '—' : fmtPct(Math.abs(dd) <= 1 ? dd * 100 : dd);
+
+            $('pc-runtime').textContent = eng.uptime || '—';
+            $('pc-trades').textContent  = eng.total_trades != null ? eng.total_trades.toLocaleString() : '—';
+            $('pc-winrate').textContent = eng.win_rate == null ? '—' : fmtPct(eng.win_rate <= 1 ? eng.win_rate * 100 : eng.win_rate);
+            $('pc-pf').textContent      = eng.profit_factor == null ? '—' : parseFloat(eng.profit_factor).toFixed(2);
+
+            $('brain-cycle').textContent = `Cycle ${eng.cycle_id || '—'}`;
+            $('status-badge').textContent = `● ${eng.bot_state || 'RUNNING'}`;
+        } catch(e) { console.error('[render] engine:', e); }
+
+        // ── Funnel ────────────────────────────────────────────────────────────
+        try {
+            const f = d.funnel || {};
+            if (f.ranked > 0) {
+                $('funnel-empty').classList.add('gone');
+                qfosMarkHasData($('funnel-empty'));
+
+                showDelta('d-ranked', f.ranked,   prevFunnel.ranked);
+                showDelta('d-s1',     f.stage1,   prevFunnel.stage1);
+                showDelta('d-alloc',  f.allocator, prevFunnel.allocator);
+                showDelta('d-opened', f.opened,   prevFunnel.opened);
+
+                $('v-ranked').textContent = f.ranked.toLocaleString();
+                $('v-s1').textContent     = f.stage1.toLocaleString();
+                $('v-alloc').textContent  = f.allocator.toLocaleString();
+                $('v-opened').textContent = f.opened.toLocaleString();
+
+                const pS1    = f.ranked    ? f.stage1    / f.ranked    * 100 : 0;
+                const pAlloc = f.stage1    ? f.allocator / f.stage1    * 100 : 0;
+                const pOpen  = f.allocator ? f.opened    / f.allocator * 100 : 0;
+
+                $('b-s1').style.width    = pS1 + '%';
+                $('b-alloc').style.width = pAlloc + '%';
+                $('b-opened').style.width = pOpen + '%';
+
+                $('p-s1').textContent    = fmtPct(pS1);
+                $('p-alloc').textContent = fmtPct(pAlloc);
+                $('p-opened').textContent = fmtPct(pOpen);
+
+                prevFunnel = {...f};
+            }
+        } catch(e) { console.error('[render] funnel:', e); }
+
+        // ── Rejections, Race, Timeline, Ribbon ────────────────────────────────
+        try { renderRejections(d.rejections); } catch(e) { console.error('[render] rej:', e); }
+        try { renderRace(d.leaderboard); } catch(e) { console.error('[render] race:', e); }
+        try { renderTimeline(d.timeline); } catch(e) { console.error('[render] tl:', e); }
+        try { renderRecentExecutions(d.timeline); } catch(e) { console.error('[render] exec:', e); }
+        try { renderLastAction(d.timeline, d); } catch(e) { console.error('[render] last-action:', e); }
+        try { renderCurrentFocus(d); } catch(e) { console.error('[render] focus:', e); }
+        try { renderPositions(d.positions || []); } catch(e) { console.error('[render] pos:', e); }
+        try { if (msgCount % 5 === 0) buildRibbon(d); } catch(e) {}
+        // ── Heatmap ───────────────────────────────────────────────────────────
+        try {
+            if (d.leaderboard && d.leaderboard.length > 0) {
+                $('heat-strip').innerHTML = d.leaderboard.slice(0, 10).map(c => {
+                    const score = ((c.confidence || 0) * 100).toFixed(0);
+                    const sym = (c.symbol || '?').replace('/USDT','').replace('USDT','');
+                    const cls = score > 85 ? 'hot' : (score > 70 ? 'warm' : '');
+                    return `<div class="heat-card ${cls}"><span class="heat-sym">${sym}</span><span class="heat-score">${score}%</span></div>`;
+                }).join('');
+
+                // Chart follows the current #1-ranked candidate automatically
+                if (window.__followTopCandidate) {
+                    window.__followTopCandidate(d.leaderboard[0].symbol);
+                }
+            }
+        } catch(e) {}
+
+        // ── Chart Markers ─────────────────────────────────────────────────────
+        try {
+            if (d.timeline && window.cs) {
+                const activeSym = (window.__chartSymbol ? window.__chartSymbol() : 'BTCUSDT').replace('USDT','');
+                let markers = [];
+                d.timeline.forEach(ev => {
+                    if (!ev.raw_ts) return;
+                    let color, shape, position, text;
+                    if (ev.text.includes('BUY')) { color = '#3fb950'; shape = 'arrowUp'; position = 'belowBar'; text = 'BUY'; }
+                    else if (ev.text.includes('rejected')) { color = '#f85149'; shape = 'arrowDown'; position = 'aboveBar'; text = 'REJECT'; }
+                    else if (ev.text.includes('Position opened')) { color = '#3fb950'; shape = 'arrowUp'; position = 'belowBar'; text = 'OPEN'; }
+                    else return;
+
+                    if (ev.text.includes(activeSym)) { // Only plot events for the chart's active symbol
+                        // Parse UTC timestamp, convert to UNIX seconds. Chart is set to local timezone via formatting.
+                        const timeSec = Math.floor(new Date(ev.raw_ts.replace("Z", "") + "Z").getTime() / 1000);
+                        markers.push({ time: timeSec, position: position, color: color, shape: shape, text: text });
+                    }
+                });
+                markers.sort((a,b) => a.time - b.time);
+                // Deduplicate markers by time
+                const uniqueMarkers = markers.filter((v,i,a)=>a.findIndex(t=>(t.time === v.time && t.text === v.text))===i);
+                window.cs.setMarkers(uniqueMarkers);
+            }
+        } catch(e) {}
+    };
+
+} catch(e) { console.error('[SSE] FATAL', e); }
+
+// ── TradingView Chart ──────────────────────────────────────────────────────
+try {
+    const chartEl = $('chart-el');
+    // Force a layout pass so clientWidth/Height are available
+    const initW = chartEl.clientWidth  || chartEl.parentElement?.clientWidth  || 600;
+    const initH = chartEl.clientHeight || chartEl.parentElement?.clientHeight || 260;
+    console.log(`[Chart] Init dimensions: W=${initW}, H=${initH}`);
+
+    const tv = LightweightCharts.createChart(chartEl, {
+        width:  initW,
+        height: initH,
+        layout: { textColor: '#7d8590', background: { type: 'solid', color: 'transparent' } },
+        grid:   { vertLines: { color: 'rgba(255,255,255,.04)' }, horzLines: { color: 'rgba(255,255,255,.04)' } },
+        timeScale: { timeVisible: true, secondsVisible: false },
+        rightPriceScale: { borderColor: 'rgba(255,255,255,.07)' },
+        localization: {
+            timeFormatter: ts => new Date(ts * 1000).toLocaleTimeString('en-US', { timeZone: 'Africa/Nairobi' })
+        }
+    });
+
+    if (tv) {
+        console.log('[Chart] LightweightCharts instance created.');
+    }
+
+    const cs = tv.addCandlestickSeries({
+        upColor: '#3fb950', downColor: '#f85149', borderVisible: false,
+        wickUpColor: '#3fb950', wickDownColor: '#f85149',
+    });
+    window.cs = cs; // Expose for markers
+
+    const ro = new ResizeObserver(() => {
+        window.requestAnimationFrame(() => {
+            if (chartEl.clientWidth > 0 && chartEl.clientHeight > 0) {
+                tv.applyOptions({ width: chartEl.clientWidth, height: chartEl.clientHeight });
+            }
+        });
+    });
+    ro.observe(chartEl);
+    console.log('[Chart] ResizeObserver attached.');
+
+    // ── Symbol-follow + reconnect-with-backoff state ────────────────────────
+    let currentSymbol = 'BTCUSDT';
+    window.__chartSymbol = () => currentSymbol;
+    let liveTimer = null;
+    let reconnectAttempts = 0;
+    const emptyEl = $('chart-empty');
+
+    function setEmptyState(text) {
+        emptyEl.textContent = text;
+        emptyEl.classList.remove('gone');
+    }
+
+    function loadSymbol(symbol) {
+        currentSymbol = symbol;
+        $('chart-symbol-label').textContent = symbol;
+        setEmptyState('Loading candles…');
+        window.cs.setMarkers([]); // clear markers from the previous symbol
+
+        fetch(`/klines?symbol=${symbol}&interval=1m&limit=120`)
+            .then(r => r.json())
+            .then(rows => {
+                if (!Array.isArray(rows) || rows.length === 0) throw new Error('empty feed');
+                cs.setData(rows.map(d => ({ time: d[0]/1000, open:+d[1], high:+d[2], low:+d[3], close:+d[4] })));
+                emptyEl.classList.add('gone');
+                reconnectAttempts = 0;
+                const last = rows[rows.length-1];
+                $('btc-price').textContent = `$${parseFloat(last[4]).toLocaleString()}`;
+            })
+            .catch(() => {
+                reconnectAttempts++;
+                setEmptyState(`Market feed unavailable — retrying (attempt ${reconnectAttempts})…`);
+            });
+    }
+
+    loadSymbol(currentSymbol);
+
+    // Live candle + price updates, with auto-reconnect on failure
+    function tickLive() {
+        fetch(`/klines?symbol=${currentSymbol}&interval=1m&limit=2`)
+            .then(r => r.json())
+            .then(rows => {
+                if (!Array.isArray(rows) || rows.length === 0) throw new Error('empty feed');
+                rows.forEach(d => cs.update({ time: d[0]/1000, open:+d[1], high:+d[2], low:+d[3], close:+d[4] }));
+                const last = rows[rows.length-1];
+                $('btc-price').textContent = `$${parseFloat(last[4]).toLocaleString()}`;
+                if (!emptyEl.classList.contains('gone')) emptyEl.classList.add('gone');
+                reconnectAttempts = 0;
+            })
+            .catch(() => {
+                reconnectAttempts++;
+                setEmptyState(`Reconnecting to market feed (attempt ${reconnectAttempts})…`);
+            });
+    }
+    liveTimer = setInterval(tickLive, 10_000);
+
+    // Follow the current #1-ranked candidate's symbol automatically.
+    // Re-checked every SSE tick via window.__followTopCandidate below.
+    window.__followTopCandidate = function(symbol) {
+        if (!symbol) return;
+        const norm = symbol.toUpperCase().replace('/', '');
+        if (norm !== currentSymbol) {
+            console.log(`[Chart] Following new top candidate: ${norm}`);
+            loadSymbol(norm);
+        }
+    };
+
+    console.log('[Chart] Initialized ✓');
+} catch(e) {
+    console.error('[Chart] Failed:', e.message);
+    $('chart-empty').textContent = 'Chart unavailable.';
+}
+</script>
+</body>
+</html>
