@@ -1,10 +1,12 @@
 # Research Run 1 Baseline Manifest
+**Manifest Version:** 2
+**Research Run ID:** RR1-20260714
 
 ## Repository
 - **Branch**: milestone2a-step21-table-columns
-- **Commit SHA**: b430b94b25fa058ff88d50c0f616b086122e616c
-- **Tag**: `research-run-1-baseline` (pending creation)
-- **Status**: CLEAN (pending cleanup execution)
+- **Repository Commit**: d718f4bcf607dbb7c0cdc79d84f086be6c82c2c4
+- **Release Tag**: research-run-1-baseline
+- **Status**: CLEAN
 
 ## Docker Environment
 - **Docker Compose Version**: v5.1.4
@@ -13,7 +15,7 @@
   - `quant-fund-os-quant:latest` (ID: e8d58f93d244)
   - `postgres:16` (ID: fe03a7605299)
   - `redis:7` (ID: b2b95679e3b4)
-- **Container Names**: `quant-fund-os-quant-1`, `quant-fund-os-postgres-1`, `quant-fund-os-redis-1` (expected based on compose)
+- **Container Names**: `quant-fund-os-quant-1`, `quant-fund-os-postgres-1`, `quant-fund-os-redis-1`
 
 ## Environment Variables (Trading Configuration)
 - **Python Version**: 3.11.9
