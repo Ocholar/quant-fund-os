@@ -7709,6 +7709,18 @@ def entry_quality_ranked_symbols(feature_map, regime):
             vol = abs(_feature_value(_d, 'volatility'))
             src = str(_d.get('source', 'NORMAL')).upper()
 
+            feature_snapshot = {
+                "trend": _d.get("trend"),
+                "long_trend": _d.get("long_trend"),
+                "one_tick_momentum": _d.get("one_tick_momentum"),
+                "symbol_trend_score": _d.get("symbol_trend_score"),
+                "breakout_score": _d.get("breakout_score"),
+                "trend_quality": _d.get("trend_quality"),
+                "is_symbol_uptrend": _d.get("is_symbol_uptrend"),
+                "is_symbol_downtrend": _d.get("is_symbol_downtrend"),
+                "is_choppy": _d.get("is_choppy")
+            }
+
             if sym in eligible_lookup:
                 qs, sig, _dq, rank = eligible_lookup[sym]
                 cid = events.candidate_ranked(
@@ -7725,6 +7737,7 @@ def entry_quality_ranked_symbols(feature_map, regime):
                     ranking_population=ranking_population,
                     decision='RANKED',
                     filter_reason=None,
+                    features=feature_snapshot,
                 )
                 from observability import _manager
                 _manager.register_candidate(cycle_id, sym, cid, rank, ranking_population)
@@ -7761,6 +7774,7 @@ def entry_quality_ranked_symbols(feature_map, regime):
                     ranking_population=ranking_population,
                     decision='FILTERED',
                     filter_reason=str(_filter_reason),
+                    features=feature_snapshot,
                 )
                 from observability import _manager, RejectionReason
                 _manager.register_candidate(cycle_id, sym, cid, None, ranking_population)
@@ -11397,18 +11411,18 @@ def main():
                                     ranking_population=info.get("ranking_population"),
                                     allocator_state=alloc_state
                                 )
-                                 trade_id = events.trade_execution_started(
+                                trade_id = events.trade_execution_started(
                                     candidate_id=info["candidate_id"],
                                     cycle_id=cycle_id,
                                     symbol=symbol,
                                     allocator_state=alloc_state
-                                 )
-                                 _manager.register_trade_id(cycle_id, symbol, trade_id)
-                                 # Reuse the durable lifecycle key already understood by
-                                 # atomic persistence, so the eventual SELL can be joined.
-                                 fill["candidate_id"] = info["candidate_id"]
-                                 fill["trade_uuid"] = trade_id
-                                 fill["entry_strategy"] = strategy
+                                )
+                                _manager.register_trade_id(cycle_id, symbol, trade_id)
+                                # Reuse the durable lifecycle key already understood by
+                                # atomic persistence, so the eventual SELL can be joined.
+                                fill["candidate_id"] = info["candidate_id"]
+                                fill["trade_uuid"] = trade_id
+                                fill["entry_strategy"] = strategy
                         except Exception as e:
                             print("[OBSERVABILITY_ERROR] " + repr(e), flush=True)
 
@@ -11437,7 +11451,7 @@ def main():
                                             gate="apply_buy",
                                             reason=RejectionReason.EXECUTION_FAILED,
                                             raw_reason="apply_buy_failed"
-                                        )
+                                       )
                             except Exception as e:
                                 print("[OBSERVABILITY_ERROR] " + repr(e), flush=True)
                     else:
@@ -11612,7 +11626,7 @@ def main():
                                                 gate="final_firewall",
                                                 reason=RejectionReason.RISK_MANAGER_REJECTED,
                                                 raw_reason=str(reason)
-                                            )
+                                           )
                                 except Exception as e:
                                     print("[OBSERVABILITY_ERROR] " + repr(e), flush=True)
 
@@ -11654,7 +11668,7 @@ def main():
                                                 gate="atomic_persistence",
                                                 reason=RejectionReason.ATOMIC_PERSISTENCE_FAILED,
                                                 raw_reason="atomic_persistence_rejected"
-                                            )
+                                           )
                                 except Exception as e:
                                     print("[OBSERVABILITY_ERROR] " + repr(e), flush=True)
 
@@ -11702,14 +11716,14 @@ def main():
                                             cycle_id=cycle_id,
                                             symbol=symbol,
                                             quantity=qty,
-                                            fill_price=price
-                                        )
+                                           fill_price=price
+                                       )
                                         events.trade_opened(
                                             candidate_id=info["candidate_id"],
                                             trade_id=trade_id,
                                             cycle_id=cycle_id,
                                             symbol=symbol
-                                        )
+                                       )
                             except Exception as e:
                                 print("[OBSERVABILITY_ERROR] " + repr(e), flush=True)
                         elif side == 'SELL':
@@ -11730,7 +11744,7 @@ def main():
                                         strategy=original_strat,
                                         MFE=fill.get("mfe"),
                                         MAE=fill.get("mae"),
-                                    )
+                                   )
                             except Exception as e:
                                 print("[OBSERVABILITY_ERROR] " + repr(e), flush=True)
                         qfos_pending_trade_notifications.append(

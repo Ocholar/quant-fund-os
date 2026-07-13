@@ -358,6 +358,7 @@ class EventEmitter:
         candidate_id: str = None,
         decision: str = None,
         filter_reason: str = None,
+        features: dict = None,
     ) -> str:
         cid = candidate_id or self.generate_uuid()
         rp = _rank_percentile(rank, ranking_population) if rank is not None else None
@@ -378,6 +379,7 @@ class EventEmitter:
             "score_after_filters": score_after_filters if score_after_filters is not None else score_before_filters,
             "decision": decision,
             "filter_reason": filter_reason,
+            "features": features,
         }
         _manager.emit(EventType.CANDIDATE_RANKED, payload)
         return cid

@@ -1,9 +1,0 @@
-{
-  "verdict": "FAIL",
-  "failures": [
-    "aggregation SQL did not commit"
-  ],
-  "warnings": [
-    "trigger creation not confidently observed in SQL output"
-  ]
-}

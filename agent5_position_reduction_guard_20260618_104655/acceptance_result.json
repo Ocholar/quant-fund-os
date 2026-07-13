@@ -1,9 +1,0 @@
-{
-  "verdict": "FAIL",
-  "failures": [
-    "guard SQL did not commit",
-    "GUA position not restored to expected quantity",
-    "TRIA aggregated position not observed"
-  ],
-  "warnings": []
-}
