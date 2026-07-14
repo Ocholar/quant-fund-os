@@ -1,5 +1,6 @@
 from collections import defaultdict, deque
 import numpy as np
+import os
 
 
 class FeatureStore:
@@ -15,6 +16,7 @@ class FeatureStore:
 
     def __init__(self, window=120):
         self.window = max(60, int(window))
+        self.warmup_ticks = int(os.getenv('FEATURE_WARMUP_TICKS', '60'))
         self.history = defaultdict(lambda: deque(maxlen=window))
 
     def update(self, prices: dict[str, float]):
@@ -83,7 +85,7 @@ class FeatureStore:
     def features(self, symbol: str) -> dict:
         arr = np.array(self.history[symbol], dtype=float)
 
-        if len(arr) < 60:
+        if len(arr) < self.warmup_ticks:
             return {
                 "ready": False,
                 "symbol_regime": "WARMING_UP",

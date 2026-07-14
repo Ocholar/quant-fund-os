@@ -19,7 +19,14 @@ services/api_backup_*.py
 # Large directories to exclude from build context
 logs/
 old_logs/
-data/
+# data/ Python source modules ARE required in the image (data/ingestion.py, data/feature_store.py)
+# Exclude only runtime database files inside data/
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/*.bak
+data/*.db-journal
+data/quant_before_*
 db_backups/
 experiments/
 validation_runs/
