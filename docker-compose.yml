@@ -44,33 +44,9 @@ services:
       - postgres
     restart: unless-stopped
 
-  mission_control:
-    build: .
-    image: quant-fund-os-quant
-    container_name: quant-fund-os-mission-control-1
-    command: python mission_control.py
-    env_file:
-      - .env
-    environment:
-      - ENGINE_URL=http://quant:8080
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-    ports:
-      - "8081:8081"
-    volumes:
-      - ./logs:/app/logs
-    depends_on:
-      - redis
-      - postgres
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 5s
+  # mission_control: ARCHIVED — removed from runtime per PM directive 2026-07-14.
+  # Dashboard was consuming disproportionate engineering effort and exhausting the
+  # DB connection pool via aggressive /status polling.  Port 8080 is the sole interface.
 
 volumes:
   postgres_data:

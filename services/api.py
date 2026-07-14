@@ -387,7 +387,11 @@ def risk_status(exposure_pct, drawdown):
     if drawdown <= -0.02 or exposure_pct >= 0.35:
         return "CAUTION"
     return "SAFE"
+_api_tables_ensured = False
+
 def ensure_positions_table(conn):
+    global _api_tables_ensured
+    if _api_tables_ensured: return
     conn.execute(text("""
         CREATE TABLE IF NOT EXISTS positions (
             symbol TEXT PRIMARY KEY,
@@ -428,6 +432,7 @@ def ensure_positions_table(conn):
             created_at DATETIME DEFAULT (CURRENT_TIMESTAMP + interval '3 hours')
         )
     """))
+    _api_tables_ensured = True
 
 
 def get_quarantine(conn):
@@ -563,6 +568,8 @@ def get_performance(conn, equity):
 # ============================================================
 
 def qfo_api_ensure_trades_table(conn):
+    global _api_tables_ensured
+    if _api_tables_ensured: return True
     try:
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS trades (
@@ -634,6 +641,8 @@ def qfo_api_fetch_latest_trades(conn, limit=10):
 # - This guard creates the minimal trades table before status queries run.
 # ============================================================
 def qfo_status_preensure_trades_table(conn):
+    global _api_tables_ensured
+    if _api_tables_ensured: return True
     try:
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS trades (
@@ -661,6 +670,7 @@ def qfo_status_preensure_trades_table(conn):
         # Do NOT call conn.commit() here.
         # get_status_payload() runs this inside engine.begin().
         # Committing here closes that transaction and breaks later status queries.
+        _api_tables_ensured = True
         return True
     except Exception as e:
         try:
@@ -681,16 +691,23 @@ def qfo_status_preensure_trades_table(conn):
 
 
 def get_status_payload():
-    with engine.begin() as conn:
+    # Run DDL guard once only, in its own short write transaction that
+    # commits and releases immediately — never inside the read block.
+    if not _api_tables_ensured:
         try:
-            qfo_status_preensure_trades_table(conn)
+            with engine.begin() as _setup_conn:
+                qfo_status_preensure_trades_table(_setup_conn)
+                ensure_positions_table(_setup_conn)
         except Exception as e:
             try:
-                print(f"[STATUS_TRADES_GUARD] preensure skipped: {e}")
+                print(f"[STATUS_SETUP_GUARD] one-time setup skipped: {e}")
             except Exception:
                 pass
-        ensure_positions_table(conn)
 
+    # All status reads use engine.connect() (no write lock, returns connection
+    # to pool immediately on exit).  This prevents pool exhaustion under
+    # frequent Mission Control polling.
+    with engine.connect() as conn:
         latest = conn.execute(text("""
             SELECT equity, cash, exposure, drawdown, regime, created_at
             FROM portfolio_snapshots
@@ -699,13 +716,13 @@ def get_status_payload():
         """)).mappings().first()
 
         latest_trades = qfo_api_fetch_latest_trades(conn, 10)
-        
+
         baseline_check = conn.execute(text("""
-            SELECT 
+            SELECT
                 (SELECT COUNT(*) FROM trades) as trades_n,
                 (SELECT COUNT(*) FROM positions WHERE quantity > 0.00000001) as open_n
         """)).mappings().first()
-        
+
         is_clean_baseline = baseline_check and int(baseline_check.get("trades_n") or 0) == 0 and int(baseline_check.get("open_n") or 0) == 0
 
         portfolio = dict(latest) if latest else {
@@ -716,7 +733,7 @@ def get_status_payload():
             "regime": "UNKNOWN",
             "created_at": None,
         }
-        
+
         if is_clean_baseline:
             portfolio["equity"] = 100.0
             portfolio["cash"] = 100.0
