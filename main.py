@@ -4811,7 +4811,12 @@ def _qfos_atomic_row_get(row, key, index, default=None):
 # No commits here. Caller owns engine.begin().
 # ============================================================
 
+_main_tables_ensured = False
+
 def qfos_ensure_trades_schema(conn):
+    global _main_tables_ensured
+    if _main_tables_ensured:
+        return
     try:
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS trades (
@@ -4864,6 +4869,7 @@ def qfos_ensure_trades_schema(conn):
                 conn.execute(text(f"ALTER TABLE trades ADD COLUMN {col} {ddl}"))
                 print(f"[TRADES_SCHEMA_REPAIR] added column trades.{col}", flush=True)
 
+        _main_tables_ensured = True
     except Exception as exc:
         print(f"[TRADES_SCHEMA_REPAIR] failed: {exc}", flush=True)
 
@@ -4872,23 +4878,25 @@ def qfos_ensure_trades_schema(conn):
 # ============================================================
 
 def qfos_db_sync_positions_from_portfolio(conn, portfolio, prices):
-    try:
-        conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS positions (
-                symbol TEXT PRIMARY KEY,
-                quantity REAL,
-                avg_entry REAL,
-                realized_pnl REAL DEFAULT 0,
-                unrealized_pnl REAL DEFAULT 0,
-                last_price REAL,
-                exposure REAL,
-                strategy TEXT,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        """))
-    except Exception as e:
-        print(f"[QFOS_DB_POSITION_SYNC] ensure positions failed: {e}", flush=True)
-        return
+    global _main_tables_ensured
+    if not _main_tables_ensured:
+        try:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS positions (
+                    symbol TEXT PRIMARY KEY,
+                    quantity REAL,
+                    avg_entry REAL,
+                    realized_pnl REAL DEFAULT 0,
+                    unrealized_pnl REAL DEFAULT 0,
+                    last_price REAL,
+                    exposure REAL,
+                    strategy TEXT,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+        except Exception as e:
+            print(f"[QFOS_DB_POSITION_SYNC] ensure positions failed: {e}", flush=True)
+            return
 
     try:
         raw_positions = getattr(portfolio, "positions", {}) or {}
@@ -11689,11 +11697,12 @@ def main():
                         confidence = float(fill.get('confidence', 0) or 0)
                         is_shadow = fill.get('shadow_mode', False)
                         if not is_shadow:
-                            pos_row = conn.execute(text('SELECT quantity FROM positions WHERE symbol = :s'), {'s': symbol}).mappings().first()
-                            if pos_row:
-                                portfolio.positions[symbol] = float(pos_row['quantity'])
-                            else:
-                                portfolio.positions[symbol] = 0.0
+                            # Use the new_qty already returned by qfos_persist_fill_atomic
+                            # rather than reading back from DB inside this open write
+                            # transaction. That SELECT was the source of idle-in-transaction
+                            # locks that blocked every other query on the positions table.
+                            new_qty = float(fill.get('new_qty') or fill.get('quantity') or 0.0)
+                            portfolio.positions[symbol] = new_qty
 
                         print(
                             f"[EXECUTION_STAGE] db_trade_written side={side} symbol={symbol} "
