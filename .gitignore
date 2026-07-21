@@ -178,3 +178,11 @@ validate_phase_2*.py
 trace_sideways_exit_producers.py
 research_sprint_1.py
 dual_ranker_source_trace.py
+
+# Generated validation data
+*.csv
+*.pgdump
+validation*/
+PhaseIVB*/
+research/runtime/
+data/*.db

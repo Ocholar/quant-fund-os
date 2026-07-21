@@ -43,19 +43,30 @@ class Settings(BaseSettings):
     # SIDEWAYS controls.
     sideways_max_entries_per_hour: int = 3
     sideways_min_confidence: float = 0.75
+    use_confidence_v2: bool = False
+
+    # Portfolio Manager V2
+    pm_v2_enabled: bool = True
+    pm_v2_dry_run: bool = True
 
     # Overnight / small-account risk limits.
     trade_count_window_hours: float = 2
 
     # Entry Quality Lockdown.
     entry_quality_top_n: int = 2
-    entry_min_signal_sideways: float = 0.006
+    # Phase IVB recalibration 2026-07-17: smoothed 20-tick/60-tick MAs compressed
+    # the live signal_strength distribution by ~15x vs the old 2-tick/3-tick regime.
+    # Old values (0.006 / 0.018) now sit above the theoretical max (~0.0026).
+    # New values target P95 (sideways) and P90 (trending) of the live distribution.
+    entry_min_signal_sideways: float = 0.0017
 
     # SIDEWAYS entry pacing / exceptional ladder.
     sideways_entry_min_gap_minutes: float = 15
     sideways_reserve_final_slot_until_minute: int = 35
-    sideways_exceptional_signal: float = 0.045
-    sideways_exceptional_ladder: str = "0.045,0.050,0.055,0.060,0.065,0.070"
+    # Recalibrated 2026-07-17: old values (0.045-0.070) were above the theoretical
+    # max under the smoothed FeatureStore. New values target P99 neighbourhood.
+    sideways_exceptional_signal: float = 0.0022
+    sideways_exceptional_ladder: str = "0.0022,0.0023,0.0024,0.0025,0.0026"
     sideways_exceptional_bypass_hourly_cap: str = "true"
     sideways_exceptional_bypass_pacing: str = "true"
     entry_require_long_trend: str = "true"
@@ -64,7 +75,7 @@ class Settings(BaseSettings):
     same_symbol_entry_cooldown_minutes: float = 30
     same_symbol_exceptional_cooldown_minutes: float = 10
     entry_quality_log_rejection_limit: int = 12
-    entry_min_signal_trending: float = 0.018
+    entry_min_signal_trending: float = 0.0015
     entry_max_volatility: float = 0.008
     entry_min_expected_move_pct: float = 0.012
     entry_stop_loss_quarantine_hours: float = 4

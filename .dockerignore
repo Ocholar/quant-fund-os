@@ -51,3 +51,10 @@ startsh*
 *.tar.gz
 *.bak
 .DS_Store
+
+logs/
+PhaseIVB*/
+validation_artifacts/
+deployment/
+forensics/
+validation6h*/

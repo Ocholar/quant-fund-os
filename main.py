@@ -595,18 +595,37 @@ def _qfos_agent3_rescue_reentry_guard(proposed_fills, context):
         recent_stop_losses = int(db_state["recent_stop_losses"])
         quarantined = bool(db_state["quarantined"])
 
+        import math
         # Evidence-derived confidence. This replaces rescue defaults such as 0.95.
-        evidence_confidence = min(
-            0.90,
-            max(
-                0.0,
-                0.35
-                + min(max(signal, 0.0) * 8.0, 0.20)
-                + min(max(one_tick, 0.0) * 80.0, 0.12)
-                + min(max(breakout, 0.0) * 8.0, 0.12)
-                + min(max(trend_quality, 0.0) * 8.0, 0.11),
-            ),
-        )
+        if getattr(settings, "use_confidence_v2", False):
+            # Experiment E1: Empirical weighting without hard clamping
+            long_trend = _qfos_agent3_rescue_float(feature.get("long_trend"))
+            volatility_log = _qfos_agent3_rescue_float(feature.get("volatility_log") or feature.get("volatility"))
+            
+            raw_score = (
+                (-4.37 * one_tick) +
+                ( 2.39 * long_trend) +
+                ( 1.52 * (feature.get("trend") or 0.0)) +
+                (-0.49 * volatility_log) +
+                (-0.23 * breakout) +
+                ( 0.11 * trend_quality)
+            )
+            # Sigmoid normalization (no artificial floor/ceiling)
+            evidence_confidence = 1.0 / (1.0 + math.exp(-raw_score))
+        else:
+            # V1 logic (Original)
+            evidence_confidence = min(
+                0.90,
+                max(
+                    0.0,
+                    0.35
+                    + min(max(signal, 0.0) * 8.0, 0.20)
+                    + min(max(one_tick, 0.0) * 80.0, 0.12)
+                    + min(max(breakout, 0.0) * 8.0, 0.12)
+                    + min(max(trend_quality, 0.0) * 8.0, 0.11),
+                ),
+            )
+            
         order["confidence"] = round(evidence_confidence, 6)
 
         reject_reason = ""
@@ -1667,7 +1686,7 @@ def _qfos_guard_filter_new_buys(proposed_fills, regime, exposure_pct):
                     if info and info.get("candidate_id"): cids.append(info["candidate_id"])
                 
                 if cids:
-                    alloc_state = _make_allocator_state(**qfos_active_canbuy_ledger_state()) if 'qfos_active_canbuy_ledger_state' in globals() else None
+                    alloc_state = _make_allocator_state(**_qfos_adapt_alloc_state(qfos_active_canbuy_ledger_state())) if 'qfos_active_canbuy_ledger_state' in globals() else None
                     events.batch_filtered(
                         cycle_id=cycle_id,
                         filter_stage=2,
@@ -2567,8 +2586,8 @@ MAX_SYMBOL_EXPOSURE_PCT = float(settings.max_symbol_exposure_pct)
 MAX_TRADES_PER_SYMBOL = int(settings.max_trades_per_symbol)
 ENTRY_QUALITY_LOCKDOWN_ENABLED = True
 ENTRY_QUALITY_TOP_N = int(getattr(settings, 'entry_quality_top_n', 2))
-ENTRY_MIN_SIGNAL_SIDEWAYS = float(getattr(settings, 'entry_min_signal_sideways', 0.025))
-ENTRY_MIN_SIGNAL_TRENDING = float(getattr(settings, 'entry_min_signal_trending', 0.018))
+ENTRY_MIN_SIGNAL_SIDEWAYS = float(getattr(settings, 'entry_min_signal_sideways', 0.0017))
+ENTRY_MIN_SIGNAL_TRENDING = float(getattr(settings, 'entry_min_signal_trending', 0.0015))
 ENTRY_MAX_VOLATILITY = float(getattr(settings, 'entry_max_volatility', 0.008))
 ENTRY_MIN_EXPECTED_MOVE_PCT = float(getattr(settings, 'entry_min_expected_move_pct', 0.012))
 ENTRY_STOP_LOSS_QUARANTINE_HOURS = float(getattr(settings, 'entry_stop_loss_quarantine_hours', 4))
@@ -4645,6 +4664,7 @@ def emergency_reduce_exposure(prices):
     return sells
 
 def save_trade(conn, fill):
+    qfos_invalidate_ledger_cache()
     # Preserve legacy helper name, but route through the single atomic boundary.
     return qfos_persist_fill_atomic(conn, fill, source='save_trade')
 
@@ -7235,7 +7255,18 @@ def _qfos_exec_risk_starting_equity():
         return 100.0
 
 
-def qfos_exec_risk_authority_snapshot():
+
+def qfos_exec_risk_authority_snapshot(force_refresh=False):
+    global _QFOS_EXEC_CACHE_STATE, _QFOS_EXEC_CACHE_VERSION, _QFOS_LEDGER_STATE_VERSION, _QFOS_EVAL_BATCH_ACTIVE
+    if not force_refresh and _QFOS_EVAL_BATCH_ACTIVE and _QFOS_EXEC_CACHE_VERSION == _QFOS_LEDGER_STATE_VERSION and _QFOS_EXEC_CACHE_STATE is not None:
+        return _QFOS_EXEC_CACHE_STATE
+    state = _compute_qfos_exec_risk_authority_snapshot()
+    if _QFOS_EVAL_BATCH_ACTIVE:
+        _QFOS_EXEC_CACHE_STATE = state
+        _QFOS_EXEC_CACHE_VERSION = _QFOS_LEDGER_STATE_VERSION
+    return state
+
+def _compute_qfos_exec_risk_authority_snapshot():
     starting_equity = _qfos_exec_risk_starting_equity()
 
     snapshot = {
@@ -7507,7 +7538,47 @@ def qfos_active_canbuy_float(v, default=0.0):
         return default
 
 
-def qfos_active_canbuy_ledger_state():
+
+# QFOS_HOT_PATH_CACHE_PATCH
+_QFOS_LEDGER_STATE_VERSION = 0
+_QFOS_LEDGER_CACHE_STATE = None
+_QFOS_LEDGER_CACHE_VERSION = -1
+
+_QFOS_EXEC_CACHE_STATE = None
+_QFOS_EXEC_CACHE_VERSION = -1
+
+_QFOS_EVAL_BATCH_ACTIVE = False
+
+def qfos_start_evaluation_batch():
+    global _QFOS_EVAL_BATCH_ACTIVE, _QFOS_LEDGER_STATE_VERSION
+    _QFOS_EVAL_BATCH_ACTIVE = True
+    _QFOS_LEDGER_STATE_VERSION += 1
+
+def qfos_stop_evaluation_batch():
+    global _QFOS_EVAL_BATCH_ACTIVE, _QFOS_LEDGER_STATE_VERSION
+    _QFOS_EVAL_BATCH_ACTIVE = False
+    _QFOS_LEDGER_STATE_VERSION += 1
+
+def qfos_invalidate_ledger_cache():
+    global _QFOS_LEDGER_STATE_VERSION
+    _QFOS_LEDGER_STATE_VERSION += 1
+
+def _qfos_adapt_alloc_state(state):
+    if not isinstance(state, dict): return {}
+    valid_keys = {"cash", "equity", "exposure", "available_cash", "reserved_cash", "open_positions", "position_count", "pending_orders", "buy_slots_remaining", "risk_mode", "paper_balance_version", "drawdown"}
+    return {k: v for k, v in state.items() if k in valid_keys}
+
+def qfos_active_canbuy_ledger_state(force_refresh=False):
+    global _QFOS_LEDGER_CACHE_STATE, _QFOS_LEDGER_CACHE_VERSION, _QFOS_LEDGER_STATE_VERSION, _QFOS_EVAL_BATCH_ACTIVE
+    if not force_refresh and _QFOS_EVAL_BATCH_ACTIVE and _QFOS_LEDGER_CACHE_VERSION == _QFOS_LEDGER_STATE_VERSION and _QFOS_LEDGER_CACHE_STATE is not None:
+        return _QFOS_LEDGER_CACHE_STATE
+    state = _compute_qfos_active_canbuy_ledger_state()
+    if _QFOS_EVAL_BATCH_ACTIVE:
+        _QFOS_LEDGER_CACHE_STATE = state
+        _QFOS_LEDGER_CACHE_VERSION = _QFOS_LEDGER_STATE_VERSION
+    return state
+
+def _compute_qfos_active_canbuy_ledger_state():
     state = {
         "cash": 100.0,
         "buy_cost": 0.0,
@@ -8688,6 +8759,7 @@ def _qfos_upsert_position_atomic(conn, symbol, fill_price, strategy, new_qty, ne
 
 
 def _qfos_insert_trade_atomic(conn, normalized_fill):
+    qfos_invalidate_ledger_cache()
     cols = _qfos_table_columns(conn, "trades")
     if not cols:
         raise RuntimeError("trades table missing or unreadable")
@@ -10203,6 +10275,32 @@ def qfos_persist_fill_atomic(conn, fill, source="main_loop"):
                 source=source,
             )
 
+        # PM_V2_DRY_RUN_HOOK_V1
+        try:
+            from core.pm_v2 import pm_v2_on_trade_closed, pm_v2_record_entry_score
+            if side == "sell":
+                pm_v2_on_trade_closed(
+                    symbol=symbol,
+                    trade_uuid=fill_trade_uuid,
+                    side=side,
+                    pnl=pnl,
+                    engine=engine,
+                )
+            elif side == "buy":
+                _score = fill.get("pm_v2_score")
+                if _score is not None:
+                    pm_v2_record_entry_score(
+                        symbol=symbol,
+                        trade_uuid=fill_trade_uuid,
+                        score=float(_score),
+                        conn=conn,
+                    )
+        except Exception as _pm_v2_err:
+            try:
+                print(f"[PM_V2_HOOK_ERROR] {_pm_v2_err!r}", flush=True)
+            except Exception:
+                pass
+
         if started_tx:
             _qfos_commit(conn)
 
@@ -10909,11 +11007,21 @@ def _qfos_apply_strategy_score_updates(updates):
 
 
 def main():
+    print("================================")
+    print("PM V2")
+    print(f"Enabled : {settings.pm_v2_enabled}")
+    print(f"Dry Run : {settings.pm_v2_dry_run}")
+    from core.pm_v2 import PM_V2_MIN_AGE_MINUTES, PM_V2_SCORE_MARGIN
+    print(f"Min Age : {PM_V2_MIN_AGE_MINUTES}")
+    print(f"Margin  : {PM_V2_SCORE_MARGIN}")
+    print("================================")
+    
     positions = globals().get('positions', [])
     load_state_from_db()
     _qfos_ensure_strategy_scores_constraint()
     while True:
         try:
+            qfos_start_evaluation_batch()
             tick = market.tick()
             raw_prices = tick['prices']
             print('MARKET TICK DATA RAW:', raw_prices)
@@ -10921,6 +11029,7 @@ def main():
             print('MARKET TICK DATA VALIDATED:', prices)
             if not prices:
                 print('MARKET DATA BLOCK: no_valid_prices_this_cycle')
+                qfos_stop_evaluation_batch()
                 time.sleep(settings.trade_interval_seconds)
                 continue
             remember_prices(prices)
@@ -11268,7 +11377,7 @@ def main():
                 try:
                     from observability import events, RejectionReason, RiskRule, _make_allocator_state, _manager
                     cycle_id = qfos_observability_cycle_id()
-                    alloc_state = _make_allocator_state(**qfos_active_canbuy_ledger_state())
+                    alloc_state = _make_allocator_state(**_qfos_adapt_alloc_state(qfos_active_canbuy_ledger_state()))
                     cids = []
                     for f in (proposed_fills or []):
                         if isinstance(f, dict):
@@ -11344,7 +11453,7 @@ def main():
                             cycle_id = qfos_observability_cycle_id()
                             info = _manager.get_candidate_info(cycle_id, symbol)
                             if info and info.get("candidate_id"):
-                                alloc_state = _make_allocator_state(**qfos_active_canbuy_ledger_state())
+                                alloc_state = _make_allocator_state(**_qfos_adapt_alloc_state(qfos_active_canbuy_ledger_state()))
                                 rej_reason = RejectionReason.OTHER
                                 risk_rule = None
                                 details = {}
@@ -11410,7 +11519,7 @@ def main():
                             cycle_id = qfos_observability_cycle_id()
                             info = _manager.get_candidate_info(cycle_id, symbol)
                             if info and info.get("candidate_id"):
-                                alloc_state = _make_allocator_state(**qfos_active_canbuy_ledger_state())
+                                alloc_state = _make_allocator_state(**_qfos_adapt_alloc_state(qfos_active_canbuy_ledger_state()))
                                 events.candidate_approved(
                                     candidate_id=info["candidate_id"],
                                     cycle_id=cycle_id,
@@ -11431,10 +11540,13 @@ def main():
                                 fill["candidate_id"] = info["candidate_id"]
                                 fill["trade_uuid"] = trade_id
                                 fill["entry_strategy"] = strategy
+                                fill["pm_v2_score"] = info.get("score", 0.0)
                         except Exception as e:
                             print("[OBSERVABILITY_ERROR] " + repr(e), flush=True)
 
                         applied_ok = apply_buy(fill)
+                        if applied_ok:
+                            qfos_invalidate_ledger_cache()
                         print(
                             f"[EXECUTION_STAGE] apply_buy symbol={symbol} applied={applied_ok}",
                             flush=True,
@@ -11469,7 +11581,7 @@ def main():
                             cycle_id = qfos_observability_cycle_id()
                             info = _manager.get_candidate_info(cycle_id, symbol)
                             if info and info.get("candidate_id"):
-                                alloc_state = _make_allocator_state(**qfos_active_canbuy_ledger_state())
+                                alloc_state = _make_allocator_state(**_qfos_adapt_alloc_state(qfos_active_canbuy_ledger_state()))
                                 rej_reason = RejectionReason.OTHER
                                 risk_rule = None
                                 details = {}
@@ -11864,6 +11976,7 @@ def main():
                 log_cycle_diagnostic(market_data=prices, features={k: v for k, v in state['features'].items() if isinstance(v, dict) and v.get('ready')}, orders=applied_fills, portfolio=diagnostic_snapshot, rejected=rejected, note='main_loop_after_execution')
             except Exception as diagnostic_error:
                 print('DIAGNOSTIC_LOG_ERROR:', diagnostic_error)
+            qfos_stop_evaluation_batch()
             time.sleep(settings.trade_interval_seconds)
         except Exception as e:
             error_message = str(e)
@@ -11874,6 +11987,7 @@ def main():
                     quarantine_symbol(symbol, 'liquidity_error_circuit_breaker')
                 else:
                     register_liquidity_error(error_message)
+            qfos_stop_evaluation_batch()
             time.sleep(settings.trade_interval_seconds)
 
 # ============================================================
@@ -16178,7 +16292,7 @@ def _qfos_agent4_get_dedicated_feature_store():
     global _QFOS_AGENT4_DEDICATED_FEATURE_STORE
     if _QFOS_AGENT4_DEDICATED_FEATURE_STORE is None:
         try:
-            from feature_store import FeatureStore
+            from data.feature_store import FeatureStore
             _QFOS_AGENT4_DEDICATED_FEATURE_STORE = FeatureStore()
             print("[FEATURE_HANDOFF] dedicated_feature_store_created=True", flush=True)
         except Exception as exc:
@@ -17205,6 +17319,107 @@ _QF_QUALITY_TIMER = None
 _QF_QUALITY_SEQ = 0
 _QF_ENTRY_QUALITY_REASON_ORIGINAL = globals().get("_entry_quality_reason")
 
+# Phase IVB: hourly signal health summary buffer
+# Each entry: {signal: float, decision: 'ALLOW'|'REJECT', reason: str, confidence: float}
+_QF_HOURLY_BUFFER = []
+_QF_HOURLY_LOCK = _qf_threading.Lock()
+
+
+def _qf_emit_hourly_summary():
+    """Emit a structured hourly signal health summary and reschedule."""
+    import datetime as _qf_dt
+
+    try:
+        with _QF_HOURLY_LOCK:
+            buf = list(_QF_HOURLY_BUFFER)
+            _QF_HOURLY_BUFFER.clear()
+
+        accepted = [e for e in buf if e["decision"] == "ALLOW"]
+        rejected = [e for e in buf if e["decision"] == "REJECT"]
+
+        all_scores = sorted(e["signal"] for e in buf)
+        accepted_scores = [e["signal"] for e in accepted]
+        rejected_scores = [e["signal"] for e in rejected]
+
+        def _pct(lst, p):
+            if not lst:
+                return 0.0
+            idx = int(len(lst) * p / 100)
+            idx = min(idx, len(lst) - 1)
+            return sorted(lst)[idx]
+
+        rej_reasons = {}
+        for e in rejected:
+            rej_reasons[e["reason"]] = rej_reasons.get(e["reason"], 0) + 1
+
+        # BUY / SELL counts from DB (passive read)
+        buy_count = 0
+        sell_count = 0
+        open_positions = 0
+        try:
+            _eng = globals().get("engine")
+            _txt = globals().get("text")
+            if _eng and _txt:
+                with _eng.begin() as _conn:
+                    _r = _conn.execute(_txt(
+                        "SELECT side, COUNT(*) AS n FROM trades "
+                        "WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '1 hour' "
+                        "GROUP BY side"
+                    )).mappings().all()
+                    for _row in _r:
+                        if str(_row.get("side", "")).lower() == "buy":
+                            buy_count = int(_row.get("n") or 0)
+                        elif str(_row.get("side", "")).lower() == "sell":
+                            sell_count = int(_row.get("n") or 0)
+                    _op = _conn.execute(_txt(
+                        "SELECT COUNT(*) AS n FROM positions WHERE quantity > 0"
+                    )).mappings().first()
+                    open_positions = int((_op or {}).get("n") or 0)
+        except Exception:
+            pass
+
+        avg_entry_score = (sum(accepted_scores) / len(accepted_scores)) if accepted_scores else 0.0
+        highest_rejected = max(rejected_scores) if rejected_scores else 0.0
+        lowest_accepted = min(accepted_scores) if accepted_scores else 0.0
+
+        print(
+            f"[SIGNAL_HEALTH_HOURLY] "
+            f"ts={_qf_dt.datetime.utcnow().isoformat()} "
+            f"candidates={len(buf)} "
+            f"accepted={len(accepted)} "
+            f"rejected={len(rejected)} "
+            f"rejected_signal_too_weak={rej_reasons.get('signal_too_weak', sum(v for k,v in rej_reasons.items() if k.startswith('signal_too_weak')))} "
+            f"rejected_risk={rej_reasons.get('risk', 0)} "
+            f"rejected_exposure={rej_reasons.get('exposure', 0)} "
+            f"rejected_portfolio_full={rej_reasons.get('portfolio_full', 0)} "
+            f"score_p50={_pct(all_scores, 50):.6f} "
+            f"score_p90={_pct(all_scores, 90):.6f} "
+            f"score_p95={_pct(all_scores, 95):.6f} "
+            f"score_p99={_pct(all_scores, 99):.6f} "
+            f"buy_count_last_hour={buy_count} "
+            f"sell_count_last_hour={sell_count} "
+            f"open_positions={open_positions} "
+            f"avg_entry_score={avg_entry_score:.6f} "
+            f"highest_rejected_score={highest_rejected:.6f} "
+            f"lowest_accepted_score={lowest_accepted:.6f} "
+            f"threshold_sideways={ENTRY_MIN_SIGNAL_SIDEWAYS} "
+            f"threshold_trending={ENTRY_MIN_SIGNAL_TRENDING}",
+            flush=True,
+        )
+    except Exception as _e:
+        print(f"[SIGNAL_HEALTH_HOURLY] error={_e!r}", flush=True)
+    finally:
+        _qf_hourly_thread = _qf_threading.Timer(3600.0, _qf_emit_hourly_summary)
+        _qf_hourly_thread.daemon = True
+        _qf_hourly_thread.start()
+
+
+# Kick off the first hourly summary (fires 1 hour from engine start)
+_qf_hourly_first = _qf_threading.Timer(3600.0, _qf_emit_hourly_summary)
+_qf_hourly_first.daemon = True
+_qf_hourly_first.start()
+print("[SIGNAL_HEALTH_HOURLY] hourly_summary_scheduled interval_seconds=3600", flush=True)
+
 
 def _qf_float(v, default=0.0):
     try:
@@ -17436,6 +17651,18 @@ def _entry_quality_reason(*args, **kwargs):
             "decision": decision,
             "reason": reason,
         })
+
+    # Feed hourly signal health buffer (passive, no gate logic)
+    try:
+        with _QF_HOURLY_LOCK:
+            _QF_HOURLY_BUFFER.append({
+                "signal": signal,
+                "decision": decision,
+                "reason": reason,
+                "confidence": confidence,
+            })
+    except Exception:
+        pass
 
     _qf_schedule_summary()
 
@@ -17920,11 +18147,12 @@ def qfos_db_sync_positions_from_portfolio(conn, portfolio_obj, prices):
         "legacy_memory_to_db_write=disabled",
         flush=True,
     )
-    qfos_refresh_runtime_portfolio_from_db(source="legacy_sync_adapter")
+    _qfos_refresh_runtime_cache_from_active_conn(conn, source="legacy_sync_adapter")
     return True
 
 
 def update_position_from_fill(conn, fill, prices=None):
+    qfos_invalidate_ledger_cache()
     """
     Compatibility replacement.
     Position quantity/cost basis are rebuilt by DB trade trigger.
@@ -17935,7 +18163,7 @@ def update_position_from_fill(conn, fill, prices=None):
         "legacy_update_position_from_fill=disabled",
         flush=True,
     )
-    qfos_refresh_runtime_portfolio_from_db(source="legacy_update_position_adapter")
+    _qfos_refresh_runtime_cache_from_active_conn(conn, source="legacy_update_position_adapter")
     return True
 
 # ============================================================
